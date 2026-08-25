@@ -1,0 +1,7 @@
+# regenerable large outputs
+output/sensor_data.csv
+*.log
+.venv/
+node_modules/
+__pycache__/
+.DS_Store
