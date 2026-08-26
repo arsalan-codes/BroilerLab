@@ -195,6 +195,7 @@ function runDashboard(){
   $("ms-rows").textContent=fa(run.rowEstimate);
   $("h-mae").textContent=mae.toFixed(2)+"%";
   $("h-rows").textContent=fa(run.rowEstimate);
+  syncSettingsInfo();
 
   const ages=pooled.map(r=>r.age);
   chart("c-growth",{labels:ages.map(a=>"d"+a),
@@ -1025,10 +1026,15 @@ refreshChartTheme();
 document.documentElement.setAttribute("data-theme",THEME==="light"?"light":"dark");
 function applyThemeButtons(){
   const d=$("theme-dark"),l=$("theme-light");
+  const dd=$("theme-dark-dd"),dl=$("theme-light-dd");
   if(d){d.classList.toggle("on",THEME==="dark");
     d.setAttribute("aria-pressed",THEME==="dark"?"true":"false")}
   if(l){l.classList.toggle("on",THEME==="light");
-    l.setAttribute("aria-pressed",THEME==="light"?"true":"false")}}
+    l.setAttribute("aria-pressed",THEME==="light"?"true":"false")}
+  if(dd){dd.classList.toggle("on",THEME==="dark");
+    dd.setAttribute("aria-pressed",THEME==="dark"?"true":"false")}
+  if(dl){dl.classList.toggle("on",THEME==="light");
+    dl.setAttribute("aria-pressed",THEME==="light"?"true":"false")}}
 function setTheme(t){
   if(THEME===t)return;THEME=t;
   try{localStorage.setItem("rossim_theme",t)}catch(e){}
@@ -1075,6 +1081,49 @@ function bindTheme(){
   $("theme-dark").addEventListener("click",()=>setTheme("dark"));
   $("theme-light").addEventListener("click",()=>setTheme("light"));
   applyThemeButtons()}
+
+/* ---------------- settings dropdown (desktop) ---------------- */
+function settingsDropdownOpen(){return document.querySelector(".settings-dropdown")?.classList.contains("open")}
+function openSettingsDropdown(){
+  const dd=$("settings-dropdown"), btn=$("btn-settings");
+  if(!dd)return;
+  dd.classList.add("open");dd.hidden=false;
+  if(btn)btn.setAttribute("aria-expanded","true")}
+function closeSettingsDropdown(){
+  const dd=$("settings-dropdown"), btn=$("btn-settings");
+  if(!dd)return;
+  dd.classList.remove("open");dd.hidden=true;
+  if(btn)btn.setAttribute("aria-expanded","false")}
+function bindSettingsDropdown(){
+  on("btn-settings","click",()=>settingsDropdownOpen()?closeSettingsDropdown():openSettingsDropdown());
+  document.addEventListener("click",e=>{
+    const dd=$("settings-dropdown"), btn=$("btn-settings");
+    if(!dd||!dd.classList.contains("open"))return;
+    if(dd.contains(e.target)||(btn&&btn.contains(e.target)))return;
+    closeSettingsDropdown()});
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape"&&settingsDropdownOpen())closeSettingsDropdown()});
+  /* theme buttons in dropdown */
+  on("theme-dark-dd","click",()=>{setTheme("dark");closeSettingsDropdown()});
+  on("theme-light-dd","click",()=>{setTheme("light");closeSettingsDropdown()});
+  /* lang buttons in dropdown */
+  on("lang-fa-dd","click",()=>{setLang("fa");closeSettingsDropdown()});
+  on("lang-en-dd","click",()=>{setLang("en");closeSettingsDropdown()});
+  /* help button in dropdown */
+  on("btn-help-dd","click",()=>{showHelp();closeSettingsDropdown()});
+  /* reset button in dropdown */
+  on("btn-reset-dd","click",()=>{resetCycle();closeSettingsDropdown()});}
+
+/* sync dropdown pills with header pills */
+function syncSettingsInfo(){
+  const mae=$("h-mae")?.textContent||"—";
+  const rows=$("h-rows")?.textContent||"—";
+  if($("h-mae-dd"))$("h-mae-dd").textContent=mae;
+  if($("h-rows-dd"))$("h-rows-dd").textContent=rows;}
+
+/* dropdown action helpers */
+function showHelp(){tourStart(true)}
+function resetCycle(){resetAll();toast(tr("dyn.resetDone"))}
 
 /* =====================================================================
    BIOSTATISTICS LAB — pen = experimental unit
@@ -1542,7 +1591,7 @@ document.addEventListener("keydown",e=>{
   setTheme(THEME==="dark"?"light":"dark")});
 document.addEventListener("DOMContentLoaded",()=>{
   expLoad();initStrain();bindLang();bindTheme();applyLang();scnFill();
-  bindReset();bindDrawer();bindExportCenter();bindTour();
+  bindReset();bindDrawer();bindExportCenter();bindTour();bindSettingsDropdown();
   markTabs();
   document.documentElement.setAttribute("data-theme",THEME==="light"?"light":"dark");
   refreshChartTheme();
@@ -1551,4 +1600,5 @@ document.addEventListener("DOMContentLoaded",()=>{
   setTimeout(runDashboard,40);
   if(document.fonts&&document.fonts.ready)
     document.fonts.ready.then(()=>setTimeout(()=>repaintView(CUR_VIEW),80));
-});
+  /* sync settings info after dashboard runs */
+  setTimeout(syncSettingsInfo,120);});
