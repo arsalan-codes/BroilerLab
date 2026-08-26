@@ -6,11 +6,15 @@
 <title data-i18n="app.title">BroilerLab — شبیه‌ساز پایش مصرف خوراک طیور</title>
 <meta name="author" content="Arsalan Rezazadeh">
 <meta name="description" content="Academic broiler feeding-station simulator — Ross 308 / Cobb 500 / Arbor Acres Plus / Hubbard EP · RFID + dual load-cell · biostatistics lab">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐔</text></svg>">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAgMTIwIj4KPGRlZnM+CjxjbGlwUGF0aCBpZD0iYyI+PGNpcmNsZSBjeD0iNjAiIGN5PSI1MiIgcj0iNDYiLz48L2NsaXBQYXRoPgo8bGluZWFyR3JhZGllbnQgaWQ9ImJnIiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+CjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMxYTFhMmUiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwZDBkMWEiLz4KPC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJjb21iIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNlODMyMmUiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNjNDFlMWEiLz4KPC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJ3YXR0bGUiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4KPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2U4MzIyZSIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2I4MTgxNCIvPgo8L2xpbmVhckdyYWRpZW50Pgo8bGluZWFyR3JhZGllbnQgaWQ9ImJlYWsiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIwIj4KPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2Y1YTYyMyIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2Q0ODgwZiIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+CjxjaXJjbGUgY3g9IjYwIiBjeT0iNTIiIHI9IjQ4IiBmaWxsPSJ1cmwoI2JnKSIvPgo8Y2lyY2xlIGN4PSI2MCIgY3k9IjUyIiByPSI0NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTgzMjJlIiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iLjYiLz4KPGcgY2xpcC1wYXRoPSJ1cmwoI2MpIj4KPCEtLSBuZWNrL2ZlYXRoZXJzIC0tPgo8cGF0aCBkPSJNNDIgOTggQzM4IDgwIDQwIDYyIDQ2IDUyIEw3OCA1MiBDODIgNjIgODQgODAgODAgOTggWiIgZmlsbD0iI2U4ZThlOCIvPgo8cGF0aCBkPSJNNTAgOTggQzQ4IDgyIDUwIDY0IDU1IDU0IEw3MCA1NCBDNzQgNjQgNzYgODIgNzQgOTggWiIgZmlsbD0iI2Y1ZjVmNSIvPgo8cGF0aCBkPSJNNTggOTggQzU3IDg0IDU4IDY2IDYyIDU2IEw2OCA1NiBDNzEgNjYgNzIgODQgNzAgOTggWiIgZmlsbD0iI2ZmZiIvPgo8IS0tIGRhcmsgYmFjayBmZWF0aGVycyAtLT4KPHBhdGggZD0iTTcyIDk4IEM3NCA4MCA3NiA2MiA3NCA1MiBMODQgNTIgQzg4IDY0IDkwIDgyIDg4IDk4IFoiIGZpbGw9IiMyYTJhM2EiLz4KPHBhdGggZD0iTTgwIDk4IEM4MiA4MiA4NCA2NiA4MiA1NCBMODggNTQgQzkyIDY2IDk0IDg0IDkyIDk4IFoiIGZpbGw9IiMxYTFhMmUiLz4KPCEtLSBoZWFkIC0tPgo8ZWxsaXBzZSBjeD0iNTgiIGN5PSIzOCIgcng9IjE2IiByeT0iMTQiIGZpbGw9IiNmMGYwZjAiLz4KPHBhdGggZD0iTTQ4IDMyIEM1MCAyNiA1NiAyNCA2MiAyNSBMNzAgMjggQzcyIDMyIDcyIDM4IDcwIDQyIEw0OCA0NCBaIiBmaWxsPSIjZTBlMGUwIi8+CjwhLS0gY29tYiAtLT4KPHBhdGggZD0iTTQ2IDIyIEM0NCAxNCA0OCA4IDU0IDYgQzUyIDEwIDU0IDE0IDU4IDEyIEM1NiA4IDYwIDQgNjYgNCBDNjQgOCA2NiAxMiA3MCAxMCBDNjggNiA3NCA0IDc4IDggQzc0IDEwIDc2IDE2IDcyIDE4IEM3NiAxNiA4MCAyMCA3NiAyNCBDNzIgMjAgNjggMjIgNjYgMjYgQzYyIDIyIDU2IDIyIDUyIDI2IEM1MCAyNCA0OCAyNCA0NiAyMiBaIiBmaWxsPSJ1cmwoI2NvbWIpIi8+CjxwYXRoIGQ9Ik01MCAyMCBDNDggMTYgNTAgMTIgNTQgMTAgQzU0IDE0IDU2IDE2IDYwIDE0IEM1OCAxMCA2MiA2IDY2IDYgQzY2IDEwIDY4IDEyIDcwIDEwIEM3MiA4IDc2IDEwIDc0IDE0IEM3MCAxNCA3MiAyMCA2OCAyMCBDNjQgMTggNjAgMjAgNTggMjQgQzU0IDIyIDUyIDIyIDUwIDIwIFoiIGZpbGw9InVybCgjY29tYikiIG9wYWNpdHk9Ii44NSIvPgo8IS0tIGV5ZSAtLT4KPGVsbGlwc2UgY3g9IjU2IiBjeT0iMzQiIHJ4PSI0IiByeT0iMy41IiBmaWxsPSIjZmZmIi8+CjxjaXJjbGUgY3g9IjU2IiBjeT0iMzQiIHI9IjIuNSIgZmlsbD0iI2Q0ODgwZiIvPgo8Y2lyY2xlIGN4PSI1NiIgY3k9IjM0IiByPSIxLjIiIGZpbGw9IiMxYTFhMmUiLz4KPGNpcmNsZSBjeD0iNTYuOCIgY3k9IjMzLjQiIHI9IjAuNiIgZmlsbD0iI2ZmZiIvPgo8IS0tIGJlYWsgLS0+CjxwYXRoIGQ9Ik00NCAzNiBDNDAgMzUgMzYgMzYgMzQgMzggQzM2IDQwIDQwIDQxIDQ0IDQwIEw0NCAzOCBaIiBmaWxsPSJ1cmwoI2JlYWspIi8+CjxwYXRoIGQ9Ik00NCA0MCBDNDAgNDEgMzYgNDEgMzQgNDAgQzM1IDQyIDM4IDQzIDQ0IDQzIFoiIGZpbGw9IiNjNDdhMGEiLz4KPCEtLSB3YXR0bGUgLS0+CjxwYXRoIGQ9Ik00OCA0MiBDNDYgNDggNDYgNTQgNTAgNTggQzU0IDU2IDU2IDUwIDU0IDQ0IEM1MiA0MiA1MCA0MiA0OCA0MiBaIiBmaWxsPSJ1cmwoI3dhdHRsZSkiLz4KPHBhdGggZD0iTTUyIDQyIEM1MSA0NiA1MSA1MCA1NCA1MiBDNTYgNTAgNTYgNDYgNTUgNDMgQzU0IDQyIDUzIDQyIDUyIDQyIFoiIGZpbGw9IiNkNDI4MjQiLz4KPC9nPgo8IS0tIEJyb2lsZXJMYWIgdGV4dCBhcmMgaGludCAoc3VidGxlKSAtLT4KPHRleHQgeD0iNjAiIHk9IjExMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIKICBmb250LXdlaWdodD0iODAwIiBsZXR0ZXItc3BhY2luZz0iMSIgZmlsbD0iI2U4MzIyZSIgb3BhY2l0eT0iLjg1Ij5CUk9JTEVSTEFCPC90ZXh0Pgo8L3N2Zz4K"><text y='.9em' font-size='90'>🐔</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script>try{var _t=localStorage.getItem("rossim_theme");if(_t==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>
+<script>try{var _t=localStorage.getItem("rossim_theme");
+if(_t==="dark"){document.documentElement.setAttribute("data-theme","dark")}
+else if(_t==="light"){document.documentElement.setAttribute("data-theme","light")}
+else{document.documentElement.setAttribute("data-theme","light")}}catch(e){
+document.documentElement.setAttribute("data-theme","light")}</script>
 <style>
 /* ================= design tokens ================= */
 :root{
@@ -40,20 +44,21 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);
 .topbar-in{max-width:1280px;margin:0 auto;padding:10px 24px;display:flex;
   align-items:center;gap:16px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit}
-.brand .mark{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
-  font-size:19px;background:linear-gradient(135deg,rgba(25,195,154,.18),rgba(61,123,253,.18));
-  border:1px solid var(--line)}
+.brand .mark{width:38px;height:38px;border-radius:10px;overflow:hidden;
+  border:1.5px solid rgba(232,50,46,.35);box-shadow:0 0 12px rgba(232,50,46,.15)}
+.brand .mark img{width:100%;height:100%;object-fit:cover;display:block}
 .brand b{font-size:15.5px;font-weight:800;letter-spacing:.2px;display:block;line-height:1.2}
 .brand span{font-size:11px;color:var(--mut)}
+.brand .uni{display:block;font-size:10px;color:var(--dim);margin-top:1px}
 .hspace{flex:1}
-.hctl{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
-.hgroup{display:flex;flex-direction:column;gap:4px;min-width:0}
+.hctl{display:flex;align-items:center;gap:14px;flex-wrap:wrap;min-height:64px}
+.hgroup{display:flex;flex-direction:column;gap:4px;min-width:0;justify-content:center}
 .hlabel{font-size:9.5px;color:var(--dim);font-weight:700;line-height:1;
   letter-spacing:.03em}
 .hsel{height:32px;padding-block:0;font-size:12px;border-radius:9px;width:auto!important;min-width:150px}
 .langseg button{height:32px;padding:0 13px;display:inline-flex;align-items:center}
-.hctl .pill{height:26px;align-self:flex-end;margin-bottom:0}
-.hctl .vbadge{align-self:center}
+.hctl .pill{height:26px}
+.hctl .vbadge{align-self:center;display:inline-flex;align-items:center}
 .hpills{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 html[dir] .icon-btn.burger{display:none}
 #backdrop{position:fixed;inset:0;background:rgba(4,7,12,.42);z-index:200;
@@ -589,8 +594,9 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
 <!-- ================= TOPBAR ================= -->
 <div class="topbar"><div class="topbar-in">
   <a class="brand" href="#">
-    <span class="mark">🐔</span>
-    <span><b>BroilerLab</b><span data-i18n="app.tag">شبیه‌ساز آکادمیک دستگاه پایش مصرف خوراک</span></span>
+    <span class="mark"><img src="logo_128.png" width="56" height="56" alt="BroilerLab" style="object-fit:cover;display:block;border:none"></span>
+    <span><b>BroilerLab</b><span data-i18n="app.tag">شبیه‌ساز آکادمیک دستگاه پایش مصرف خوراک</span>
+<span class="uni" data-i18n="app.uni">گروه علوم دامی، دانشگاه تربیت مدرس</span></span>
   </a>
   <div class="hspace"></div>
   <div class="hctl">
@@ -637,6 +643,7 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
   <button class="tab" data-v="v-dev"><span class="no">06</span><span data-i18n="nav.dev">دستگاه و داده</span></button>
   <button class="tab" data-v="v-sci"><span class="no">07</span><span data-i18n="nav.sci">مبانی علمی</span></button>
   <button class="tab" data-v="v-met"><span class="no">08</span><span data-i18n="nav.met">روش‌شناسی</span></button>
+  <button class="tab" data-v="v-about"><span class="no">09</span><span data-i18n="nav.about">درباره ما</span></button>
 </nav>
 
 <main>
@@ -1207,6 +1214,37 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
     <h3><span class="ic">🔁</span><span data-i18n="met.reproT">تکرارپذیری</span></h3>
     <div class="srcs">
       <p data-i18n-html="met.reproBody">هر اجرا با seed=<code>308</code> و مولد mulberry32 آغاز می‌شود؛ بلوک‌سازی پرندگان از جریان مستقل (<code>seed×7919+13</code>) تغذیه می‌شود تا ترکیب ژنتیکی همه پن‌های هم‌تیمار یکسان باشد (Common Random Numbers). نتیجه: دو اجرا با seed یکسان بیت‌به‌بیت یکسان‌اند و مقایسه تیمارها فقط اثر واقعی را منعکس می‌کند.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ================= VIEW: ABOUT ================= -->
+<section class="view" id="v-about">
+  <div class="card">
+    <h3><span class="ic">🏛️</span><span data-i18n="about.uniT">دانشگاه تربیت مدرس — گروه علوم دامی</span></h3>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:15px">
+      <div style="width:64px;height:64px;border-radius:14px;display:grid;place-items:center;
+        border:2px solid rgba(232,50,46,.35);border-radius:14px;overflow:hidden"><img src="logo_128.png" width="64" height="64" style="object-fit:cover;display:block"></div>
+      <div>
+        <b style="font-size:17px">BroilerLab v1.0.0</b><br>
+        <small class="dm" data-i18n="about.subTitle">شبیه‌ساز آکادمیک دستگاه پایش مصرف خوراک طیور گوشتی</small>
+      </div>
+    </div>
+    <div class="srcs">
+      <p data-i18n-html="about.history"><b>تاریخچه:</b> این پروژه از یک ایده ساده آغاز شد: چگونه می‌توان بدون صرف هزینه پرورش واقعی، الگوریتم پردازش داده دستگاه پایش مصرف خوراک را طراحی، تست و بهینه کرد؟ نسخه اول (Python) برای اعتبارسنجی مدل ریاضی ساخته شد؛ سپس موتور به JavaScript منتقل و رابط وب تعاملی اضافه گردید تا محققان بتوانند بدون نصب نرم‌افزار، سناریوهای مختلف را آزموده و توان آماری طرح خود را بسنجند.</p>
+      <p data-i18n-html="about.teamT"><b>تیم:</b> طراحی، برنامه‌نویسی و نگهداری توسط Arsalan Rezazadeh انجام شده است. راهنمایی علمی و بازبینی روش‌شناسی توسط گروه علوم دامی دانشگاه تربیت مدرس صورت گرفته است.</p>
+      <p data-i18n-html="about.dataNote"><b>منابع داده:</b> جداول عملکردی Ross 308, Cobb 500, Arbor Acres Plus, Hubbard Efficiency Plus عیناً از اسناد رسمی شرکت‌های اصلاح‌نژادی استخراج و در فایل strains.js تعبیه شده‌اند. رفتار تغذیه‌ای بر اساس مقالات داوری‌شده Poultry Science و animal کالیبره شده است.</p>
+      <p data-i18n-html="about.future"><b>نقشه راه:</b> افزودن سویه‌های جدید (Indian River)، تحلیل کوواریانس با وزن شروع، خروجی PDF گزارش آماری، اتصال به سنسورهای IoT واقعی.</p>
+    </div>
+
+    <div class="own" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">
+      <a href="https://github.com/arsalan-codes" target="_blank" rel="noopener"
+         style="display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--mut);font-size:12.5px">
+        🐙 <b>github.com/arsalan-codes</b></a>
+      <a href="https://www.linkedin.com/in/arsalan-rezazadeh/" target="_blank" rel="noopener"
+         style="display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--mut);font-size:12.5px">
+        💼 <b>linkedin.com/in/arsalan-rezazadeh</b></a>
     </div>
   </div>
 </section>

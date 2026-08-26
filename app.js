@@ -1018,8 +1018,9 @@ function bindLang(){
   $("lang-en").addEventListener("click",()=>setLang("en"))}
 
 /* ---------------- theme (dark / light) ---------------- */
-let THEME="dark";
-try{THEME=localStorage.getItem("rossim_theme")==="light"?"light":"dark"}catch(e){}
+let THEME="light";
+try{const _t=localStorage.getItem("rossim_theme");
+  if(_t==="dark")THEME="dark"}catch(e){}
 refreshChartTheme();
 document.documentElement.setAttribute("data-theme",THEME==="light"?"light":"dark");
 function applyThemeButtons(){
