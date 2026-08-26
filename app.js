@@ -999,21 +999,62 @@ function strainBanner(){const st=STRAINS[CUR_STRAIN_KEY];
   $("db-guide").textContent=LI(st.guide);
   $("db-glink").href=st.guideUrl}
 function initStrain(){
-  const sel=$("strain-sel");
-  sel.innerHTML=Object.entries(STRAINS).map(([k,s])=>`<option value="${k}">${s.label}</option>`).join("");
-  sel.value=CUR_STRAIN_KEY;setStrain(CUR_STRAIN_KEY);
+  const box=document.querySelector(".strain-select");
+  const cur=$("strain-current");
+  const list=$("strain-list");
+  const valEl=$("strain-value");
+  if(!box||!cur||!list||!valEl)return;
+
+  list.innerHTML=Object.entries(STRAINS).map(([k,s])=>
+    `<li class="strain-select__option" role="option" data-key="${k}" tabindex="-1" `+
+    `aria-selected="${k===CUR_STRAIN_KEY}">${esc(s.label)}</li>`).join("");
+  function setVal(){valEl.textContent=STRAINS[CUR_STRAIN_KEY].label}
+  function open(){list.hidden=false;box.setAttribute("aria-expanded","true");
+    const sel=list.querySelector('[aria-selected="true"]');if(sel)sel.focus()}
+  function close(){list.hidden=true;box.setAttribute("aria-expanded","false")}
+  function isOpen(){return !list.hidden}
+
+  setVal();setStrain(CUR_STRAIN_KEY);
   $("in-age1").max=STRAINS[CUR_STRAIN_KEY].maxDay;
-  sel.addEventListener("change",()=>{
-    CUR_STRAIN_KEY=sel.value;setStrain(sel.value);
-    try{localStorage.setItem("rossim_strain",sel.value)}catch(e){}
-    const md=STRAINS[sel.value].maxDay;
+  strainBanner();
+
+  cur.addEventListener("click",e=>{e.stopPropagation();isOpen()?close():open()});
+
+  list.addEventListener("click",e=>{
+    const opt=e.target.closest(".strain-select__option");
+    if(!opt)return;
+    const key=opt.dataset.key;
+    CUR_STRAIN_KEY=key;setStrain(key);
+    try{localStorage.setItem("rossim_strain",key)}catch(e){}
+    list.querySelectorAll(".strain-select__option")
+      .forEach(o=>o.setAttribute("aria-selected",o===opt?"true":"false"));
+    setVal();
+    const md=STRAINS[key].maxDay;
     $("in-age1").max=md;
     ["in-age0","in-age1"].forEach(id=>{const el=$(id);
       if(el&&+el.value>md)el.value=md});
     strainBanner();expMarkStale();
     runDashboard();
-    toast(tr("dash.active")+" "+STRAINS[sel.value].label)});
-  strainBanner()}
+    close();
+    toast(tr("dash.active")+" "+STRAINS[key].label)});
+
+  box.addEventListener("keydown",e=>{
+    if(e.key==="Escape"){close();return}
+    if(e.key==="Enter"||e.key===" "){
+      if(isOpen()){const s=list.querySelector('[aria-selected="true"]');if(s)s.click()}
+      else open();
+      e.preventDefault();return}
+    if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+      const opts=[...list.querySelectorAll(".strain-select__option")];
+      if(!opts.length)return;
+      if(!isOpen()){open();return}
+      let i=opts.findIndex(o=>o.getAttribute("aria-selected")==="true");
+      i=(i+(e.key==="ArrowDown"?1:-1)+opts.length)%opts.length;
+      opts.forEach(o=>o.setAttribute("aria-selected",o===opts[i]?"true":"false"));
+      opts[i].focus();e.preventDefault()}});
+
+  document.addEventListener("click",e=>{if(isOpen()&&!box.contains(e.target))close()});
+}
 function bindLang(){
   $("lang-fa").addEventListener("click",()=>setLang("fa"));
   $("lang-en").addEventListener("click",()=>setLang("en"))}

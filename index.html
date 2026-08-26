@@ -6,9 +6,15 @@
 <title data-i18n="app.title">BroilerLab — شبیه‌ساز پایش مصرف خوراک طیور</title>
 <meta name="author" content="Arsalan Rezazadeh">
 <meta name="description" content="Academic broiler feeding-station simulator — Ross 308 / Cobb 500 / Arbor Acres Plus / Hubbard EP · RFID + dual load-cell · biostatistics lab">
+<link rel="icon" type="image/png" sizes="32x32" href="logo_32.png">
+<link rel="icon" type="image/png" sizes="180x180" href="logo_180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="logo_192.png">
+<link rel="apple-touch-icon" href="logo_180.png">
+<link rel="icon" type="image/png" sizes="512x512" href="logo_512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script>try{var _t=localStorage.getItem("rossim_theme");
 if(_t==="dark"){document.documentElement.setAttribute("data-theme","dark")}
 else if(_t==="light"){document.documentElement.setAttribute("data-theme","light")}
@@ -43,9 +49,11 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);
 .topbar-in{max-width:1280px;margin:0 auto;padding:10px 24px;display:flex;
   align-items:center;gap:16px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit}
-.brand .mark{width:38px;height:38px;border-radius:10px;overflow:hidden;
-  border:1.5px solid rgba(232,50,46,.35);box-shadow:0 0 12px rgba(232,50,46,.15)}
-.brand .mark img{width:100%;height:100%;object-fit:cover;display:block}
+.brand .mark{width:44px;height:44px;border-radius:13px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,rgba(25,195,154,.16),rgba(61,123,253,.14));
+  border:1.5px solid rgba(25,195,154,.38);box-shadow:0 0 14px rgba(25,195,154,.18)}
+.brand .mark img{width:100%;height:100%;object-fit:contain;display:block}
 .brand b{font-size:15.5px;font-weight:800;letter-spacing:.2px;display:block;line-height:1.2}
 .brand span{font-size:11px;color:var(--mut)}
 .brand .uni{display:block;font-size:10px;color:var(--dim);margin-top:1px}
@@ -54,7 +62,107 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);
 .hgroup{display:flex;flex-direction:column;gap:4px;min-width:0;justify-content:center}
 .hlabel{font-size:9.5px;color:var(--dim);font-weight:700;line-height:1;
   letter-spacing:.03em}
-.hsel{height:32px;padding-block:0;font-size:12px;border-radius:9px;width:auto!important;min-width:150px}
+
+/* ===== Modern Select (hsel) ===== */
+.hsel{
+  appearance:none;
+  background:var(--bg2);
+  border:1px solid var(--line);
+  color:var(--txt);
+  padding:0 44px 0 12px;
+  border-radius:9px;
+  font-family:inherit;
+  font-size:12px;
+  line-height:32px;
+  height:32px;
+  min-width:150px;
+  width:auto!important;
+  cursor:pointer;
+  transition:border-color .15s, box-shadow .15s, background .15s;
+  background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a95ab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat:no-repeat;
+  background-position:right 10px center;
+  background-size:16px 16px;
+}
+.hsel:hover{border-color:#33415e;background:var(--card)}
+.hsel:focus{outline:none;border-color:rgba(25,195,154,.55);box-shadow:0 0 0 3px rgba(25,195,154,.08)}
+.hsel:focus-visible{box-shadow:0 0 0 3px rgba(25,195,154,.15)}
+.hsel option{background:var(--card);color:var(--txt);padding:10px 12px}
+.hsel option:checked{background:rgba(25,195,154,.15);font-weight:600}
+
+/* light theme adjustments */
+html[data-theme=light] .hsel{
+  background:#f8fafc;
+  border-color:#e2e8f0;
+  background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+html[data-theme=light] .hsel:hover{border-color:#cbd5e1;background:#fff}
+html[data-theme=light] .hsel option{background:#fff;color:#0f172a}
+html[data-theme=light] .hsel option:checked{background:rgba(25,195,154,.12)}
+
+/* ===== Custom Strain Select (radio-based dropdown) ===== */
+.strain-select{
+  position:relative;
+  min-width:160px;
+  max-width:220px;
+  font-family:inherit;
+  font-size:12px;
+}
+.strain-select__current{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  height:36px;padding:0 14px 0 12px;
+  background:var(--bg2);border:1px solid var(--line);border-radius:10px;
+  color:var(--txt);cursor:pointer;
+  transition:border-color .15s,box-shadow .15s,background .15s;
+}
+.strain-select__current:hover{border-color:#33415e;background:var(--card)}
+.strain-select:focus-within .strain-select__current,
+.strain-select__current:focus{
+  outline:none;border-color:rgba(25,195,154,.55);
+  box-shadow:0 0 0 3px rgba(25,195,154,.12)
+}
+.strain-select__value{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.strain-select__icon{
+  flex-shrink:0;width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+  color:var(--mut);transition:transform .2s ease;
+  pointer-events:none
+}
+.strain-select[aria-expanded="true"] .strain-select__icon{transform:rotate(180deg)}
+.strain-select__list{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:200;
+  margin:0;padding:6px;list-style:none;
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
+  box-shadow:var(--sh-lg);max-height:260px;overflow-y:auto;
+  animation:strainDropIn .18s ease-out;
+}
+@keyframes strainDropIn{
+  from{opacity:0;transform:translateY(-6px)}
+  to{opacity:1;transform:none}
+}
+.strain-select__option{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-radius:8px;cursor:pointer;color:var(--txt);
+  transition:background .12s,color .12s
+}
+.strain-select__option:hover,
+.strain-select__option:focus{background:var(--bg2);color:var(--acc);outline:none}
+.strain-select__option[aria-selected="true"]{background:rgba(25,195,154,.12);color:var(--acc);font-weight:600}
+.strain-select__radio{display:none}
+html[data-theme=light] .strain-select__current{background:#f8fafc;border-color:#e2e8f0}
+html[data-theme=light] .strain-select__current:hover{background:#fff;border-color:#cbd5e1}
+html[data-theme=light] .strain-select:focus-within .strain-select__current,
+html[data-theme=light] .strain-select__current:focus{border-color:rgba(25,195,154,.6);box-shadow:0 0 0 3px rgba(25,195,154,.1)}
+html[data-theme=light] .strain-select__list{background:#fff;border-color:#e2e8f0;box-shadow:0 10px 30px rgba(15,23,42,.12)}
+html[data-theme=light] .strain-select__option:hover,
+html[data-theme=light] .strain-select__option:focus{background:#f1f5f9;color:#19c39a}
+html[data-theme=light] .strain-select__option[aria-selected="true"]{background:rgba(25,195,154,.1);color:#19c39a}
+
+/* mobile drawer adjustments */
+@media(max-width:992px){
+  .strain-select{min-width:0;flex:1 1 auto;max-width:none}
+  .strain-select__current{height:40px}
+  .strain-select__list{max-height:220px}
+}
 .langseg button{height:32px;padding:0 13px;display:inline-flex;align-items:center}
 .hctl .pill{height:26px}
 .hctl .vbadge{align-self:center;display:inline-flex;align-items:center}
@@ -639,7 +747,7 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
 <!-- ================= TOPBAR ================= -->
 <div class="topbar"><div class="topbar-in">
   <a class="brand" href="#">
-    <span class="mark"><img src="logo_128.png" width="56" height="56" alt="BroilerLab" style="object-fit:cover;display:block;border:none"></span>
+    <span class="mark"><img src="logo_128.png" width="44" height="44" alt="BroilerLab" style="object-fit:contain;display:block;border:none"></span>
     <span><b>BroilerLab</b><span data-i18n="app.tag">شبیه‌ساز آکادمیک دستگاه پایش مصرف خوراک</span>
 <span class="uni" data-i18n="app.uni">گروه علوم دامی، دانشگاه تربیت مدرس</span></span>
   </a>
@@ -647,10 +755,18 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
   <div class="hctl">
     <div class="dhead">
       <b data-i18n="hdr.settings">تنظیمات</b>
-      <button id="drawer-close" class="icon-btn" aria-label="Close">✕</button>
+      <button id="drawer-close" class="icon-btn" aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
     </div>
     <div class="hgroup">
-      <select id="strain-sel" class="hsel" aria-label="سویه"></select>
+      <div class="strain-select" role="combobox" aria-label="سویه" aria-expanded="false" aria-controls="strain-list" tabindex="0">
+        <div class="strain-select__current" id="strain-current">
+          <span class="strain-select__value" id="strain-value">—</span>
+          <span class="strain-select__icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </span>
+        </div>
+        <ul class="strain-select__list" id="strain-list" role="listbox" hidden></ul>
+      </div>
     </div>
     <div class="hgroup">
       <span class="hlabel" data-i18n="hdr.lang">زبان</span>
@@ -658,14 +774,14 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
         <button id="lang-fa" class="on" aria-pressed="true" lang="fa">فا</button><button id="lang-en" aria-pressed="false" lang="en">EN</button>
       </div>
     </div>
-    <button id="btn-help" class="icon-btn" aria-label="Help" data-title-i18n="hdr.help" title="؟">❓</button>
+    <button id="btn-help" class="icon-btn" aria-label="Help" data-title-i18n="hdr.help" title="؟"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button>
     <div class="hgroup">
       <span class="hlabel" data-i18n="hdr.theme">پوسته</span>
       <div class="langseg" role="group" aria-label="Theme">
-        <button id="theme-dark" class="on" aria-pressed="true" title="Dark" data-title-i18n="theme.dark">🌙</button><button id="theme-light" aria-pressed="false" title="Light" data-title-i18n="theme.light">☀️</button>
+        <button id="theme-dark" class="on" aria-pressed="true" title="Dark" data-title-i18n="theme.dark"><i class="fa-solid fa-moon" aria-hidden="true"></i></button><button id="theme-light" aria-pressed="false" title="Light" data-title-i18n="theme.light"><i class="fa-solid fa-sun" aria-hidden="true"></i></button>
       </div>
     </div>
-    <button id="btn-reset" class="icon-btn" title="♻️ Reset cycle data" data-title-i18n="btn.resetCycle" aria-label="Reset"><span class="rb-ic">♻️</span><span class="rb-label" data-i18n="btn.resetCycle">♻️ بازنشانی داده‌های دوره</span></button>
+    <button id="btn-reset" class="icon-btn" title="♻️ Reset cycle data" data-title-i18n="btn.resetCycle" aria-label="Reset"><span class="rb-ic"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></span><span class="rb-label" data-i18n="btn.resetCycle">بازنشانی داده‌های دوره</span></button>
     <div class="hpills">
       <span class="pill tag ok" title="Weight MAE vs catalog"><span data-i18n="hdr.mae">MAE</span> <b id="h-mae">—</b></span>
       <span class="pill tag bl" title="records per cycle">≈ <b id="h-rows">—</b> <span data-i18n="hdr.rows">رکورد</span></span>
@@ -675,14 +791,14 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
 
     <!-- Settings button + dropdown (desktop) -->
     <div class="hsettings" role="group" aria-label="Settings">
-      <button id="btn-settings" class="icon-btn" aria-label="Settings" aria-expanded="false" aria-haspopup="true" data-title-i18n="hdr.settings" title="تنظیمات">⚙️</button>
+      <button id="btn-settings" class="icon-btn" aria-label="Settings" aria-expanded="false" aria-haspopup="true" data-title-i18n="hdr.settings" title="تنظیمات"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
       <div id="settings-dropdown" class="settings-dropdown" role="menu" aria-label="تنظیمات" hidden>
         <div class="settings-section">
           <div class="settings-row">
             <span class="settings-label" data-i18n="hdr.theme">پوسته</span>
             <div class="langseg" role="group" aria-label="Theme">
-              <button id="theme-dark-dd" class="on" aria-pressed="true" title="Dark" data-title-i18n="theme.dark" role="menuitem">🌙</button>
-              <button id="theme-light-dd" aria-pressed="false" title="Light" data-title-i18n="theme.light" role="menuitem">☀️</button>
+              <button id="theme-dark-dd" class="on" aria-pressed="true" title="Dark" data-title-i18n="theme.dark" role="menuitem"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
+              <button id="theme-light-dd" aria-pressed="false" title="Light" data-title-i18n="theme.light" role="menuitem"><i class="fa-solid fa-sun" aria-hidden="true"></i></button>
             </div>
           </div>
           <div class="settings-row">
@@ -696,11 +812,11 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
         <div class="settings-divider"></div>
         <div class="settings-section">
           <button id="btn-help-dd" class="settings-action" role="menuitem" data-title-i18n="hdr.help" title="آموزش سریع">
-            <span class="settings-icon">❓</span>
+            <span class="settings-icon"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></span>
             <span class="settings-text" data-i18n="hdr.help">آموزش سریع</span>
           </button>
-          <button id="btn-reset-dd" class="settings-action" role="menuitem" data-title-i18n="btn.resetCycle" title="♻️ بازنشانی داده‌های دوره">
-            <span class="settings-icon">♻️</span>
+          <button id="btn-reset-dd" class="settings-action" role="menuitem" data-title-i18n="btn.resetCycle" title="بازنشانی داده‌های دوره">
+            <span class="settings-icon"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></span>
             <span class="settings-text" data-i18n="btn.resetCycle">بازنشانی داده‌های دوره</span>
           </button>
         </div>
@@ -716,7 +832,7 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
     </div>
 
     <button id="nav-burger" class="icon-btn burger" aria-label="Menu"
-      aria-expanded="false" aria-controls="hctl">☰</button>
+      aria-expanded="false" aria-controls="hctl"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
   </div>
 </div>
 <div id="backdrop"></div>
@@ -764,10 +880,10 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
   </div>
 
   <div class="grid g4" style="margin-top:13px">
-    <div class="ministat"><span class="mv bad" id="ms-deaths">—</span><span class="ml" data-i18n="ms.deaths">تلفات تجمعی<br>(۰٫۰۸٪/روز از d۲۱)</span></div>
-    <div class="ministat"><span class="mv blue" id="ms-fills">—</span><span class="ml" data-i18n="ms.fills">شارژ مخزن<br>(آستانه ۳kg ← ۲۵kg)</span></div>
-    <div class="ministat"><span class="mv org" id="ms-ovl">—</span><span class="ml" data-i18n="ms.ovl">رویداد هم‌زمانی<br>(صرف‌نظر از صف >۹۰s)</span></div>
-    <div class="ministat"><span class="mv acc" id="ms-rows">—</span><span class="ml" data-i18n="ms.rows">رکورد دستگاه<br>(۳ ردیف/وعده)</span></div>
+    <div class="ministat"><span class="mv bad" id="ms-deaths">—</span><span class="ml" data-i18n-html="ms.deaths">تلفات تجمعی<br>(۰٫۰۸٪/روز از d۲۱)</span></div>
+    <div class="ministat"><span class="mv blue" id="ms-fills">—</span><span class="ml" data-i18n-html="ms.fills">شارژ مخزن<br>(آستانه ۳kg ← ۲۵kg)</span></div>
+    <div class="ministat"><span class="mv org" id="ms-ovl">—</span><span class="ml" data-i18n-html="ms.ovl">رویداد هم‌زمانی<br>(صرف‌نظر از صف >۹۰s)</span></div>
+    <div class="ministat"><span class="mv acc" id="ms-rows">—</span><span class="ml" data-i18n-html="ms.rows">رکورد دستگاه<br>(۳ ردیف/وعده)</span></div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
@@ -1312,7 +1428,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
     <h3><span class="ic">🏛️</span><span data-i18n="about.uniT">دانشگاه تربیت مدرس — گروه علوم دامی</span></h3>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:15px">
       <div style="width:64px;height:64px;border-radius:14px;display:grid;place-items:center;
-        border:2px solid rgba(232,50,46,.35);border-radius:14px;overflow:hidden"><img src="logo_128.png" width="64" height="64" style="object-fit:cover;display:block"></div>
+        border:2px solid rgba(25,195,154,.38);border-radius:16px;box-shadow:0 0 16px rgba(25,195,154,.2)"><img src="logo_128.png" width="56" height="56" style="object-fit:contain;display:block" alt="BroilerLab"></div>
       <div>
         <b style="font-size:17px">BroilerLab v1.0.0</b><br>
         <small class="dm" data-i18n="about.subTitle">شبیه‌ساز آکادمیک دستگاه پایش مصرف خوراک طیور گوشتی</small>
