@@ -174,7 +174,7 @@ export function AppShell({ active, onChange, children }: {
                     </Box>
                   </ListItemIcon>
                   <ListItemText
-                    primary={<Typography variant="body2" component="span" sx={{ fontWeight: activeNow ? 700 : 500 }}>{t(tab.key as any, lang) || tab.key}</Typography>}
+                    primary={<Typography variant="body2" component="span" sx={{ fontWeight: activeNow ? 700 : 500 }}>{t(lang, tab.key) || tab.key}</Typography>}
                     secondary={tab.idx}
                   />
                   {activeNow && <Box sx={{ width: 8, height: 8, borderRadius: 999, bgcolor: tab.color }} />}
