@@ -24,9 +24,10 @@ custom design-token CSS (dark/light), NOT MUI/Material 3 — to preserve exact v
 - [x] Phase 5: Firmware — ESP32 PlatformIO scaffold + main loop + config (LittleFS) + host tests + README
 - [x] Phase 6: CI/CD — GitHub Actions + integration smoke test + architecture docs
 
-## Blocked — Waiting on Project Manager
-- EMQX/MQTT broker not running locally (Docker Hub blocked) → MQTT ingest untested E2E (REST path verified).
-- Browser E2E verification of React UI not possible (browser tool blocks localhost); verified via build + engine unit tests + dev server 200.
+## Remaining (deferred)
+- [ ] Firmware local `pio run` blocked: xtensa toolchain download stalls on this network (proxy). Validation delegated to CI job `firmware (PlatformIO build)` — `pio run -e esp32dev` on GitHub runners. Locally verified: PlatformIO 6.1.19 installed, espressif32@7.0.1 platform installed, project config parses.
+- [ ] Testcontainers-style integration test (current tsx smoke test against pg service container covers the same path in CI)
+- [ ] BullMQ worker expansion beyond visit-processor
 
 ## Latest Status
 - Backend running on http://127.0.0.1:3001 (global prefix /api/v1, docs at /docs) — rebuilt + verified 2026-08-28
