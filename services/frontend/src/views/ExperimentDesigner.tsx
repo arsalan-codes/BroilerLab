@@ -1,4 +1,9 @@
 import { useState } from 'react';
+import { Box, Grid, Stack, Typography, Table, TableHead, TableBody, TableRow, TableCell, IconButton } from '@mui/material';
+import AddIcon from '@mui/icons-material/AddOutlined';
+import RestartAltIcon from '@mui/icons-material/RestartAltOutlined';
+import BuildIcon from '@mui/icons-material/BuildOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { useStore } from '../store';
 import { t } from '../i18n/strings';
 import { Card, Button } from '../components/common';
@@ -42,57 +47,89 @@ export function ExperimentDesigner() {
   const reset = () => update([...PRESETS[0].pens]);
   const build = () => { useStore.getState().toast(t(lang, 'exp.build')); };
 
+  const sub = { color: 'text.secondary' } as const;
+
   return (
-    <section className="view" id="v-exp">
-      <div className="view-head">
-        <span className="eyebrow">EXP</span>
-        <h2>{t(lang, 'exp.title')}</h2>
-        <p>{t(lang, 'exp.p')}</p>
-      </div>
+    <Box sx={{ maxWidth: 1280, mx: 'auto', px: { xs: 2, md: 3 }, py: 3 }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: 2, color: 'primary.main', textTransform: 'uppercase' }}>
+          EXP
+        </Typography>
+        <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 800 }}>
+          {t(lang, 'exp.title')}
+        </Typography>
+        <Typography variant="body2" sx={{ ...sub, mt: 0.5 }}>
+          {t(lang, 'exp.p')}
+        </Typography>
+      </Box>
 
-      <Card title={t(lang, 'exp.preset')} icon="🧩">
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <Button variant="ghost" onClick={() => applyPreset(0)}>{t(lang, 'exp.apply')} 1</Button>
-          <Button variant="ghost" onClick={() => applyPreset(1)}>2</Button>
-          <Button variant="ghost" onClick={() => applyPreset(2)}>3</Button>
-          <Button variant="ghost" onClick={() => applyPreset(3)}>4</Button>
-          <Button variant="ghost" onClick={() => applyPreset(4)}>5</Button>
-          <Button variant="blue" onClick={addPen}>＋ {t(lang, 'exp.addPen')}</Button>
-          <Button variant="warn" onClick={reset}>{t(lang, 'exp.reset')}</Button>
-          <Button variant="pri" onClick={build}>🏗️ {t(lang, 'exp.build')}</Button>
-        </div>
+      <Card title={t(lang, 'exp.preset')} icon="🧩" sx={{ mb: 2 }}>
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+          <Button tone="default" onClick={() => applyPreset(0)}>{t(lang, 'exp.apply')} 1</Button>
+          <Button tone="default" onClick={() => applyPreset(1)}>2</Button>
+          <Button tone="default" onClick={() => applyPreset(2)}>3</Button>
+          <Button tone="default" onClick={() => applyPreset(3)}>4</Button>
+          <Button tone="default" onClick={() => applyPreset(4)}>5</Button>
+          <Button tone="primary" onClick={addPen} startIcon={<AddIcon />}>＋ {t(lang, 'exp.addPen')}</Button>
+          <Button tone="warning" onClick={reset} startIcon={<RestartAltIcon />}>{t(lang, 'exp.reset')}</Button>
+          <Button tone="success" onClick={build} startIcon={<BuildIcon />}>🏗️ {t(lang, 'exp.build')}</Button>
+        </Stack>
       </Card>
 
-      <Card title={t(lang, 'exp.penId')} icon="📑" style={{ marginTop: 14 }}>
-        <div className="tbl-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th className="num">#</th>
-                <th>{t(lang, 'exp.penId')}</th>
-                <th className="num">{t(lang, 'exp.birdCount')}</th>
-                <th>{t(lang, 'exp.treatment')}</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
+      <Card title={t(lang, 'exp.penId')} icon="📑">
+        <Box sx={{ overflowX: 'auto' }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell align="right">#</TableCell>
+                <TableCell align="right">{t(lang, 'exp.penId')}</TableCell>
+                <TableCell align="right">{t(lang, 'exp.birdCount')}</TableCell>
+                <TableCell align="right">{t(lang, 'exp.treatment')}</TableCell>
+                <TableCell align="right"></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {pens.map((p, i) => (
-                <tr key={p.id}>
-                  <td className="num">{i + 1}</td>
-                  <td><input className="field__input" style={{ height: 32 }} value={p.id} onChange={(e) => update(pens.map((x) => x.id === p.id ? { ...x, id: e.target.value } : x))} /></td>
-                  <td className="num"><input className="field__input num" style={{ height: 32, width: 80 }} type="number" value={p.birdCount} onChange={(e) => update(pens.map((x) => x.id === p.id ? { ...x, birdCount: +e.target.value } : x))} /></td>
-                  <td>
-                    <select className="field__input" style={{ height: 32 }} value={p.treatment} onChange={(e) => update(pens.map((x) => x.id === p.id ? { ...x, treatment: e.target.value as TreatmentType } : x))}>
+                <TableRow key={p.id}>
+                  <TableCell align="right">{i + 1}</TableCell>
+                  <TableCell align="right">
+                    <Box
+                      component="input"
+                      value={p.id}
+                      onChange={(e: any) => update(pens.map((x) => (x.id === p.id ? { ...x, id: e.target.value } : x)))}
+                      sx={{ height: 32, px: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper', color: 'text.primary', width: 80 }}
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Box
+                      component="input"
+                      type="number"
+                      value={p.birdCount}
+                      onChange={(e: any) => update(pens.map((x) => (x.id === p.id ? { ...x, birdCount: +e.target.value } : x)))}
+                      sx={{ height: 32, px: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper', color: 'text.primary', width: 80 }}
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Box
+                      component="select"
+                      value={p.treatment}
+                      onChange={(e: any) => update(pens.map((x) => (x.id === p.id ? { ...x, treatment: e.target.value as TreatmentType } : x)))}
+                      sx={{ height: 32, px: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper', color: 'text.primary' }}
+                    >
                       {TREATMENTS.map((tr) => <option key={tr} value={tr}>{TREAT_LABEL[tr]}</option>)}
-                    </select>
-                  </td>
-                  <td><Button variant="ghost" onClick={() => removePen(p.id)}>✕</Button></td>
-                </tr>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="right">
+                    <IconButton size="small" onClick={() => removePen(p.id)} aria-label="remove">
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Box>
       </Card>
-    </section>
+    </Box>
   );
 }

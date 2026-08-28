@@ -1,10 +1,7 @@
 import { useState } from 'react';
-import { useStore } from './store';
-import { Header } from './components/Header';
-import { Nav } from './components/Nav';
-import { MobileDrawer } from './components/MobileDrawer';
-import { GuidedTour } from './components/GuidedTour';
-import { Toasts } from './components/common';
+import { Box, Fade, Typography, Link, Button, Stack, Divider } from '@mui/material';
+import DownloadIcon from '@mui/icons-material/Download';
+import { AppShell } from './components/layout/AppShell';
 import { Dashboard } from './views/Dashboard';
 import { ExperimentDesigner } from './views/ExperimentDesigner';
 import { Farm } from './views/Farm';
@@ -15,6 +12,8 @@ import { Science } from './views/Science';
 import { Methodology } from './views/Methodology';
 import { About } from './views/About';
 import { ExportModal } from './views/ExportModal';
+import { GuidedTour } from './components/GuidedTour';
+import { useStore } from './store';
 
 const VIEWS: Record<string, () => React.JSX.Element> = {
   'v-dash': Dashboard,
@@ -31,36 +30,49 @@ const VIEWS: Record<string, () => React.JSX.Element> = {
 export default function App() {
   const [active, setActive] = useState('v-dash');
   const [exOpen, setExOpen] = useState(false);
-  const [drawer, setDrawer] = useState(false);
-  const theme = useStore((s) => s.theme);
   const lang = useStore((s) => s.lang);
   const View = VIEWS[active] ?? Dashboard;
 
   return (
-    <div className="wrap" data-theme={theme} data-lang={lang}>
-      <Header onMenu={() => setDrawer(true)} />
-      <Nav active={active} onChange={setActive} />
-      <main>
-        <div key={active} style={{ animation: 'fade .25s ease' }}>
+    <AppShell active={active} onChange={setActive}>
+      <Fade in key={active} timeout={220}>
+        <Box>
           <View />
-        </div>
-      </main>
-      <footer style={{ borderTop: '1px solid var(--line)', marginTop: 30, paddingTop: 16, textAlign: 'center', color: 'var(--mut)', fontSize: 11.5 }}>
-        <div><b style={{ color: 'var(--mut)' }}>BroilerLab v1.0.0</b> — © 2026 Arsalan Rezazadeh</div>
-        <div style={{ marginTop: 6 }}>
-          <a href="https://github.com/arsalan-codes" target="_blank" rel="noopener" style={{ marginInlineEnd: 12 }}>🐙 github</a>
-          <a href="https://www.linkedin.com/in/arsalan-rezazadeh/" target="_blank" rel="noopener">💼 linkedin</a>
-        </div>
-        <div style={{ marginTop: 6 }}>{lang === 'fa' ? 'داده‌ها: Aviagen · Cobb-Vantress · Hubbard · Poultry Science · animal' : 'Data: Aviagen · Cobb-Vantress · Hubbard · Poultry Science · animal'}</div>
-        <div>{lang === 'fa' ? 'اجرای کامل آفلاین · seed تکرارپذیر = 308 · واحد نمونه آماری: پن' : 'Fully offline · reproducible seed = 308 · statistical unit: pen'}</div>
-        <button className="btn ghost" style={{ marginTop: 12 }} onClick={() => setExOpen(true)}>⬇ {lang === 'fa' ? 'خروجی داده' : 'Export'}</button>
-      </footer>
-      {drawer && <MobileDrawer active={active} onChange={setActive} onClose={() => setDrawer(false)} />}
+        </Box>
+      </Fade>
+
+      <Divider sx={{ mt: 5, mb: 2.5 }} />
+      <Box sx={{ textAlign: 'center', py: 1 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+          BroilerLab v2.0 — © 2026 Arsalan Rezazadeh
+        </Typography>
+        <Stack direction="row" spacing={2} sx={{ mt: 1, justifyContent: 'center' }}>
+          <Link href="https://github.com/arsalan-codes" target="_blank" rel="noopener" underline="hover" variant="caption">
+            GitHub
+          </Link>
+          <Link href="https://www.linkedin.com/in/arsalan-rezazadeh/" target="_blank" rel="noopener" underline="hover" variant="caption">
+            LinkedIn
+          </Link>
+        </Stack>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>
+          {lang === 'fa' ? 'داده‌ها: Aviagen · Cobb-Vantress · Hubbard · Poultry Science' : 'Data: Aviagen · Cobb-Vantress · Hubbard · Poultry Science'}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+          {lang === 'fa' ? 'اجرای کامل آفلاین · seed تکرارپذیر = 308 · واحد نمونه آماری: پن' : 'Fully offline · reproducible seed = 308 · statistical unit: pen'}
+        </Typography>
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<DownloadIcon />}
+          onClick={() => setExOpen(true)}
+          sx={{ mt: 2 }}
+        >
+          {lang === 'fa' ? 'خروجی داده' : 'Export'}
+        </Button>
+      </Box>
+
       {exOpen && <ExportModal onClose={() => setExOpen(false)} />}
       <GuidedTour />
-      <Toasts />
-      <style>{`@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-      @media (max-width: 992px) { .mobile-only { display: grid !important; } }`}</style>
-    </div>
+    </AppShell>
   );
 }

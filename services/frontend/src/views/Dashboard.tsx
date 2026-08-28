@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
+import { Box, Grid, Stack, Typography } from '@mui/material';
 import { useStore } from '../store';
 import { t } from '../i18n/strings';
 import { Card, Kpi, MiniStat, Tag } from '../components/common';
 import { GrowthChart, IntakeChart, FcrBarChart, DiurnalChart, StationChart } from '../components/charts';
 import { validate } from '../engine/validation';
-import { catalogBW, catalogFI } from '../engine/strains';
+import type { Experiment } from '../types';
 
 export function Dashboard() {
   const { lang, strain, experiment } = useStore();
@@ -16,100 +17,135 @@ export function Dashboard() {
   const fiSim = val.rows.map((r) => ({ day: r.day, v: r.fiSim }));
   const fiPo = val.rows.map((r) => ({ day: r.day, v: r.fiPo }));
 
-  const fcrByPen = (experiment?.pens ?? []).map((p, i) => ({
+  const fcrByPen = (experiment?.pens ?? []).map((p: Experiment['pens'][number], i: number) => ({
     pen: p.id,
     fcr: Math.round((1.4 + i * 0.03) * 100) / 100,
   }));
 
   const diurnal = Array.from({ length: 24 }, (_, h) => {
-    // double-peak diurnal (18L:6D)
     const peak = Math.exp(-((h - 8) ** 2) / 8) + Math.exp(-((h - 17) ** 2) / 8);
     return { hour: h, intake: Math.round(peak * 40), dark: h >= 18 };
   });
 
-  const station = (experiment?.pens ?? []).map((p, i) => ({
+  const station = (experiment?.pens ?? []).map((p: Experiment['pens'][number], i: number) => ({
     pen: p.id,
     sat: Math.round((0.55 + i * 0.05) * 100) / 100,
   }));
 
+  const sub = { color: 'text.secondary' } as const;
+
   return (
-    <section className="view" id="v-dash">
-      <div className="view-head">
-        <span className="eyebrow">DASH</span>
-        <h2>{t(lang, 'dash.title')}</h2>
-        <p>{t(lang, 'dash.p')}</p>
-      </div>
+    <Box sx={{ maxWidth: 1280, mx: 'auto', px: { xs: 2, md: 3 }, py: 3 }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          variant="caption"
+          sx={{ fontWeight: 700, letterSpacing: 2, color: 'primary.main', textTransform: 'uppercase' }}
+        >
+          DASH
+        </Typography>
+        <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 800 }}>
+          {t(lang, 'dash.title')}
+        </Typography>
+        <Typography variant="body2" sx={{ ...sub, mt: 0.5 }}>
+          {t(lang, 'dash.p')}
+        </Typography>
+      </Box>
 
-      <Card title={t(lang, 'dash.table')} icon="📊" className="grid g4" >
-        <Kpi label={t(lang, 'dash.kpi.finalBw')} value={val.finalBw.toLocaleString()} sub="g" color="acc" />
-        <Kpi label={t(lang, 'dash.kpi.mae')} value={val.mae} sub="g" color="blue" />
-        <Kpi label={t(lang, 'dash.kpi.fcr')} value={val.fcr} sub="d15–60" color="org" />
-        <Kpi label={t(lang, 'dash.kpi.intake')} value={val.dailyIntake} sub="g/bird" color="prp" />
-      </Card>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <Kpi label={t(lang, 'dash.kpi.finalBw')} value={val.finalBw.toLocaleString()} sub="g" tone="success" />
+        </Grid>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <Kpi label={t(lang, 'dash.kpi.mae')} value={val.mae} sub="g" tone="secondary" />
+        </Grid>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <Kpi label={t(lang, 'dash.kpi.fcr')} value={val.fcr} sub="d15–60" tone="warning" />
+        </Grid>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <Kpi label={t(lang, 'dash.kpi.intake')} value={val.dailyIntake} sub="g/bird" tone="primary" />
+        </Grid>
+      </Grid>
 
-      <div className="grid g4" style={{ marginTop: 14 }}>
+      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, mb: 2 }}>
         <MiniStat value="0%" label={t(lang, 'dash.mini.loss')} />
         <MiniStat value="25 kg" label={t(lang, 'dash.mini.bin')} />
         <MiniStat value="0" label={t(lang, 'dash.mini.concurrent')} />
         <MiniStat value={val.rows.length * 36} label={t(lang, 'dash.mini.record')} />
-      </div>
+      </Stack>
 
-      <div className="grid g2" style={{ marginTop: 14 }}>
-        <Card title={t(lang, 'dash.growth')} icon="📈">
-          <div className="chart-box"><GrowthChart sim={growthSim} po={growthPo} /></div>
-          <div className="legend">
-            <span className="lg"><span className="sw" style={{ background: 'var(--acc)' }} />Simulation</span>
-            <span className="lg"><span className="sw" style={{ background: 'var(--mut)' }} />PO</span>
-          </div>
-        </Card>
-        <Card title={t(lang, 'dash.fi')} icon="🍽️">
-          <div className="chart-box"><IntakeChart sim={fiSim} po={fiPo} /></div>
-        </Card>
-      </div>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card title={t(lang, 'dash.growth')} icon="📈">
+            <Box sx={{ height: 260 }}>
+              <GrowthChart sim={growthSim} po={growthPo} />
+            </Box>
+            <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
+              <Typography variant="caption" sx={sub}>■ Simulation</Typography>
+              <Typography variant="caption" sx={sub}>■ PO</Typography>
+            </Stack>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card title={t(lang, 'dash.fi')} icon="🍽️">
+            <Box sx={{ height: 260 }}>
+              <IntakeChart sim={fiSim} po={fiPo} />
+            </Box>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card title={t(lang, 'dash.fcrPen')} icon="⚖️">
+            <Box sx={{ height: 220 }}>
+              <FcrBarChart data={fcrByPen} />
+            </Box>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card title={t(lang, 'dash.diurnal')} icon="🌗">
+            <Box sx={{ height: 220 }}>
+              <DiurnalChart data={diurnal} />
+            </Box>
+          </Card>
+        </Grid>
+      </Grid>
 
-      <div className="grid g2" style={{ marginTop: 14 }}>
-        <Card title={t(lang, 'dash.fcrPen')} icon="⚖️">
-          <div className="chart-box sm"><FcrBarChart data={fcrByPen} /></div>
-        </Card>
-        <Card title={t(lang, 'dash.diurnal')} icon="🌗">
-          <div className="chart-box sm"><DiurnalChart data={diurnal} /></div>
-        </Card>
-      </div>
-
-      <Card title={t(lang, 'dash.station')} icon="🔌" style={{ marginTop: 14 }}>
-        <div className="chart-box sm"><StationChart data={station} /></div>
+      <Card title={t(lang, 'dash.station')} icon="🔌" sx={{ mb: 2 }}>
+        <Box sx={{ height: 220 }}>
+          <StationChart data={station} />
+        </Box>
       </Card>
 
-      <Card title={t(lang, 'dash.table')} icon="📋" style={{ marginTop: 14 }}>
-        <div className="tbl-scroll">
-          <table>
+      <Card title={t(lang, 'dash.table')} icon="📋">
+        <Box sx={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr>
-                <th className="num">Day</th>
-                <th className="num">Sim (g)</th>
-                <th className="num">PO (g)</th>
-                <th className="num">Dev%</th>
-                <th className="num">FI sim</th>
-                <th className="num">FI PO</th>
-                <th>Status</th>
+                <th style={{ textAlign: 'right', padding: 8, color: 'var(--text-secondary)' }}>Day</th>
+                <th style={{ textAlign: 'right', padding: 8 }}>Sim (g)</th>
+                <th style={{ textAlign: 'right', padding: 8 }}>PO (g)</th>
+                <th style={{ textAlign: 'right', padding: 8 }}>Dev%</th>
+                <th style={{ textAlign: 'right', padding: 8 }}>FI sim</th>
+                <th style={{ textAlign: 'right', padding: 8 }}>FI PO</th>
+                <th style={{ textAlign: 'right', padding: 8 }}>Status</th>
               </tr>
             </thead>
             <tbody>
               {val.rows.filter((_, i) => i % 3 === 0).map((r) => (
-                <tr key={r.day}>
-                  <td className="num">{r.day}</td>
-                  <td className="num">{r.sim}</td>
-                  <td className="num">{r.po}</td>
-                  <td className="num">{r.dev}</td>
-                  <td className="num">{r.fiSim}</td>
-                  <td className="num">{r.fiPo}</td>
-                  <td><Tag kind={r.status === 'OK' ? 'ok' : 'wn'}>{r.status}</Tag></td>
+                <tr key={r.day} style={{ borderTop: '1px solid var(--divider)' }}>
+                  <td style={{ padding: 8, textAlign: 'right' }}>{r.day}</td>
+                  <td style={{ padding: 8, textAlign: 'right' }}>{r.sim}</td>
+                  <td style={{ padding: 8, textAlign: 'right' }}>{r.po}</td>
+                  <td style={{ padding: 8, textAlign: 'right' }}>{r.dev}</td>
+                  <td style={{ padding: 8, textAlign: 'right' }}>{r.fiSim}</td>
+                  <td style={{ padding: 8, textAlign: 'right' }}>{r.fiPo}</td>
+                  <td style={{ padding: 8, textAlign: 'right' }}>
+                    <Tag tone={r.status === 'OK' ? 'success' : 'warning'}>{r.status}</Tag>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </Box>
       </Card>
-    </section>
+    </Box>
   );
 }

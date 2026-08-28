@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Box, Grid, Stack, Typography, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
 import { useStore } from '../store';
 import { t } from '../i18n/strings';
-import { Card, Button } from '../components/common';
+import { Card, Button, Tag } from '../components/common';
 import { analyze } from '../engine/stats';
 import { validate } from '../engine/validation';
 
@@ -16,6 +17,8 @@ const EQ = [
   'm_pen ~ N(0,0.012²)',
 ];
 
+const PIPELINE = ['کاتالوگ سویه', 'مدل فردی', 'موتور وعده', 'فیزیک دستگاه', 'رکورد خام'];
+
 export function Methodology() {
   const { lang, strain, experiment } = useStore();
   const [matrix, setMatrix] = useState<any[]>([]);
@@ -25,14 +28,13 @@ export function Methodology() {
     const strains = ['ross308', 'cobb500', 'aaplus', 'hubbardep'] as const;
     const rows = strains.map((s) => {
       const v = validate(s, 308, 15, 42, 6, 12);
-      return { strain: s, horizon: 42, bw: v.finalBw, po: Math.round(v.finalBw * 1.0), dev: Math.round((Math.random() * 2) * 10) / 10, fcr: v.fcr, poFcr: v.fcr, visits: 12, mae: v.mae };
+      return { strain: s, horizon: 42, bw: v.finalBw, po: Math.round(v.finalBw * 1.0), dev: Math.round(Math.random() * 2 * 10) / 10, fcr: v.fcr, poFcr: v.fcr, visits: 12, mae: v.mae };
     });
     setMatrix(rows);
   };
 
   const runStats = () => {
     if (!experiment) return;
-    // build per-pen means from a quick sim
     const groups = experiment.pens.map((p) => ({
       group: p.id,
       values: Array.from({ length: 3 }, (_, i) => 2400 + (p.treatment === 'growth' ? 80 : p.treatment === 'heat' ? -40 : 0) + (i - 1) * 30),
@@ -40,92 +42,142 @@ export function Methodology() {
     setStats(analyze(groups));
   };
 
+  const sub = { color: 'text.secondary' } as const;
+
   return (
-    <section className="view" id="v-met">
-      <Card>
-        <h3>📝 {t(lang, 'met.abstractT')}</h3>
-        <p style={{ fontSize: 12.5, color: 'var(--mut)', lineHeight: 2.2 }}>
+    <Box sx={{ maxWidth: 1280, mx: 'auto', px: { xs: 2, md: 3 }, py: 3 }}>
+      <Card sx={{ mb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>📝 {t(lang, 'met.abstractT')}</Typography>
+        <Typography variant="body2" sx={{ ...sub, lineHeight: 2.2 }}>
           BroilerLab یک شبیه‌ساز گسسته-رویداد از ایستگاه پایش مصرف خوراک طیور است که داده‌های سطح دستگاه (RFID + دو لودسل) را با وضوح سه‌ردیفی به‌ازای هر وعده تولید می‌کند. موتور وعده‌محور آن روی کاتالوگ‌های عملکردی رسمی چهار سویه صنعتی قفل شده و فیزیک سنسورها مطابق ادبیات داوری‌شده کالیبره شده است. اعتبارسنجی در برابر جداول مرجع MAE وزن ۱–۲٪ نشان می‌دهد.
-        </p>
+        </Typography>
       </Card>
 
-      <div className="grid g2" style={{ marginTop: 14 }}>
-        <Card title={t(lang, 'met.pipeline')} icon="🔀">
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', fontSize: 12 }}>
-            {['کاتالوگ سویه', 'مدل فردی', 'موتور وعده', 'فیزیک دستگاه', 'رکورد خام'].map((s, i) => (
-              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <span className={`tag ${i === 4 ? 'ok' : 'bl'}`} style={{ padding: '6px 10px' }}>{i + 1}. {s}</span>
-                {i < 4 && <span className="dir-ltr">→</span>}
-              </span>
-            ))}
-          </div>
-        </Card>
-        <Card title={t(lang, 'met.eqTitle')} icon="🧮">
-          <div style={{ fontFamily: 'monospace', fontSize: 11.5, lineHeight: 2, direction: 'ltr', textAlign: 'start', color: 'var(--mut)' }}>
-            {EQ.map((e, i) => <div key={i}><code>{e}</code></div>)}
-          </div>
-        </Card>
-      </div>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card title={t(lang, 'met.pipeline')} icon="🔀">
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, alignItems: 'center', fontSize: 12 }}>
+              {PIPELINE.map((s, i) => (
+                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Tag tone={i === 4 ? 'success' : 'secondary'} sx={{ px: 1, py: 0.5 }}>{i + 1}. {s}</Tag>
+                  {i < 4 && <span className="dir-ltr">→</span>}
+                </span>
+              ))}
+            </Stack>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card title={t(lang, 'met.eqTitle')} icon="🧮">
+            <Box
+              sx={{
+                fontFamily: 'monospace', fontSize: 11.5, lineHeight: 2, direction: 'ltr',
+                textAlign: 'start', color: 'var(--mut)',
+              }}
+            >
+              {EQ.map((e, i) => <Box key={i} component="code">{e}</Box>)}
+            </Box>
+          </Card>
+        </Grid>
+      </Grid>
 
-      <Card title={t(lang, 'met.accTitle')} icon="🎯" style={{ marginTop: 14 }}>
-        <div className="controls" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <Button variant="blue" onClick={runAcc}>⚡ {t(lang, 'met.runAcc')}</Button>
-        </div>
+      <Card title={t(lang, 'met.accTitle')} icon="🎯" sx={{ mb: 2 }}>
+        <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+          <Button tone="primary" onClick={runAcc}>⚡ {t(lang, 'met.runAcc')}</Button>
+        </Stack>
         {matrix.length > 0 && (
-          <div className="tbl-scroll" style={{ marginTop: 12 }}>
-            <table>
-              <thead><tr><th>Strain</th><th className="num">Horizon</th><th className="num">BW d42 (g)</th><th className="num">PO</th><th className="num">Dev%</th><th className="num">FCR d15+</th><th className="num">PO FCR</th><th className="num">Visits/bird</th><th className="num">MAE%</th></tr></thead>
-              <tbody>
+          <Box sx={{ overflowX: 'auto', mt: 1.5 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Strain</TableCell>
+                  <TableCell align="right">Horizon</TableCell>
+                  <TableCell align="right">BW d42 (g)</TableCell>
+                  <TableCell align="right">PO</TableCell>
+                  <TableCell align="right">Dev%</TableCell>
+                  <TableCell align="right">FCR d15+</TableCell>
+                  <TableCell align="right">PO FCR</TableCell>
+                  <TableCell align="right">Visits/bird</TableCell>
+                  <TableCell align="right">MAE%</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {matrix.map((r) => (
-                  <tr key={r.strain}><td>{r.strain}</td><td className="num">{r.horizon}</td><td className="num">{r.bw}</td><td className="num">{r.po}</td><td className="num">{r.dev}</td><td className="num">{r.fcr}</td><td className="num">{r.poFcr}</td><td className="num">{r.visits}</td><td className="num">{r.mae}</td></tr>
+                  <TableRow key={r.strain}>
+                    <TableCell>{r.strain}</TableCell>
+                    <TableCell align="right">{r.horizon}</TableCell>
+                    <TableCell align="right">{r.bw}</TableCell>
+                    <TableCell align="right">{r.po}</TableCell>
+                    <TableCell align="right">{r.dev}</TableCell>
+                    <TableCell align="right">{r.fcr}</TableCell>
+                    <TableCell align="right">{r.poFcr}</TableCell>
+                    <TableCell align="right">{r.visits}</TableCell>
+                    <TableCell align="right">{r.mae}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </Box>
         )}
-        <div className="note gd" style={{ marginTop: 11 }}>💡 هر سویه مستقل شبیه‌سازی و در برابر کاتالوگ خودش مقایسه می‌شود.</div>
+        <Typography variant="caption" sx={{ ...sub, mt: 1.5, display: 'block' }}>
+          💡 هر سویه مستقل شبیه‌سازی و در برابر کاتالوگ خودش مقایسه می‌شود.
+        </Typography>
       </Card>
 
-      <div className="grid g2" style={{ marginTop: 14 }}>
-        <Card title={t(lang, 'met.statT')} icon="📐">
-          <div style={{ lineHeight: 2.15, fontSize: 12 }}>
-            <p><span className="tag ok">EU</span> پن آزمایشی واحد نمونه آماری است.</p>
-            <p><span className="tag ok">CRN</span> بند‌بندی تصادفی: Common Random Numbers.</p>
-            <p><span className="tag ok">TEST</span> ANOVA یک‌راهه + Welch-t + اصلاح Holm.</p>
-            <p><span className="tag ok">η²</span> نسبت واریانس بین‌گروهی به کل.</p>
-            <p><span className="tag wn">POWER</span> σ_pen ≈ ۱٫۲٪، α=۰٫۰۵، ≥۳ تکرار.</p>
-            <Button variant="blue" onClick={runStats} style={{ marginTop: 8 }}>⚡ {t(lang, 'sim.run')} ANOVA</Button>
-          </div>
-        </Card>
-        <Card title={t(lang, 'met.noiseT')} icon="🔬">
-          <div className="tbl-scroll"><table>
-            <thead><tr><th>Component</th><th>Model</th><th className="num">σ</th><th>Source</th></tr></thead>
-            <tbody>
-              <tr><td>LC1 raw</td><td className="num dir-ltr">N(0,4²)</td><td className="num">4 g</td><td className="dm">Platform spec</td></tr>
-              <tr><td>LC1 EMA</td><td className="num dir-ltr">α=0.5</td><td className="dm">—</td><td className="dm">EMA</td></tr>
-              <tr><td>RFID OK</td><td className="num dir-ltr">99.6%</td><td>—</td><td className="dm">Li 2018</td></tr>
-              <tr><td>RFID miss</td><td className="num dir-ltr">0.4%</td><td>—</td><td className="dm">=1−99.6%</td></tr>
-              <tr><td>RSSI</td><td className="num dir-ltr">N(−65,5²)</td><td className="num">5 dBm</td><td className="dm">UHF [7]</td></tr>
-              <tr><td>Pen effect</td><td className="num dir-ltr">N(0,1.2%)</td><td className="num">1.2%</td><td className="dm">Lab variance</td></tr>
-            </tbody>
-          </table></div>
-        </Card>
-      </div>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card title={t(lang, 'met.statT')} icon="📐">
+            <Stack spacing={1.2} sx={{ fontSize: 12, lineHeight: 2 }}>
+              <Typography variant="body2"><Tag tone="success">EU</Tag> پن آزمایشی واحد نمونه آماری است.</Typography>
+              <Typography variant="body2"><Tag tone="success">CRN</Tag> بند‌بندی تصادفی: Common Random Numbers.</Typography>
+              <Typography variant="body2"><Tag tone="success">TEST</Tag> ANOVA یک‌راهه + Welch-t + اصلاح Holm.</Typography>
+              <Typography variant="body2"><Tag tone="success">η²</Tag> نسبت واریانس بین‌گروهی به کل.</Typography>
+              <Typography variant="body2"><Tag tone="warning">POWER</Tag> σ_pen ≈ ۱٫۲٪، α=۰٫۰۵، ≥۳ تکرار.</Typography>
+              <Button tone="primary" onClick={runStats} sx={{ mt: 1 }}>⚡ {t(lang, 'sim.run')} ANOVA</Button>
+            </Stack>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card title={t(lang, 'met.noiseT')} icon="🔬">
+            <Box sx={{ overflowX: 'auto' }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Component</TableCell>
+                    <TableCell>Model</TableCell>
+                    <TableCell align="right">σ</TableCell>
+                    <TableCell>Source</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  <TableRow><TableCell>LC1 raw</TableCell><TableCell sx={{ direction: 'ltr' }}>N(0,4²)</TableCell><TableCell align="right">4 g</TableCell><TableCell sx={{ color: 'var(--mut)' }}>Platform spec</TableCell></TableRow>
+                  <TableRow><TableCell>LC1 EMA</TableCell><TableCell sx={{ direction: 'ltr' }}>α=0.5</TableCell><TableCell sx={{ color: 'var(--mut)' }}>—</TableCell><TableCell sx={{ color: 'var(--mut)' }}>EMA</TableCell></TableRow>
+                  <TableRow><TableCell>RFID OK</TableCell><TableCell sx={{ direction: 'ltr' }}>99.6%</TableCell><TableCell>—</TableCell><TableCell sx={{ color: 'var(--mut)' }}>Li 2018</TableCell></TableRow>
+                  <TableRow><TableCell>RFID miss</TableCell><TableCell sx={{ direction: 'ltr' }}>0.4%</TableCell><TableCell>—</TableCell><TableCell sx={{ color: 'var(--mut)' }}>=1−99.6%</TableCell></TableRow>
+                  <TableRow><TableCell>RSSI</TableCell><TableCell sx={{ direction: 'ltr' }}>N(−65,5²)</TableCell><TableCell align="right">5 dBm</TableCell><TableCell sx={{ color: 'var(--mut)' }}>UHF [7]</TableCell></TableRow>
+                  <TableRow><TableCell>Pen effect</TableCell><TableCell sx={{ direction: 'ltr' }}>N(0,1.2%)</TableCell><TableCell align="right">1.2%</TableCell><TableCell sx={{ color: 'var(--mut)' }}>Lab variance</TableCell></TableRow>
+                </TableBody>
+              </Table>
+            </Box>
+          </Card>
+        </Grid>
+      </Grid>
 
       {stats && (
-        <Card title="ANOVA / Welch Output" icon="📊" style={{ marginTop: 14 }}>
-          <div className="dir-ltr" style={{ fontSize: 12, color: 'var(--mut)' }}>
-            <p>F = {stats.anovaF} · p = {stats.anovaP} · η² = {stats.eta2}</p>
+        <Card title="ANOVA / Welch Output" icon="📊" sx={{ mb: 2 }}>
+          <Box sx={{ direction: 'ltr', fontSize: 12, color: 'var(--mut)' }}>
+            <Typography variant="body2">F = {stats.anovaF} · p = {stats.anovaP} · η² = {stats.eta2}</Typography>
             {stats.tests.map((tt: any, i: number) => (
-              <p key={i}>{tt.groupA} vs {tt.groupB}: t={tt.t} · padj={tt.padj} · {tt.significant ? '✅ sig' : '— n.s.'}</p>
+              <Typography variant="body2" key={i}>{tt.groupA} vs {tt.groupB}: t={tt.t} · padj={tt.padj} · {tt.significant ? '✅ sig' : '— n.s.'}</Typography>
             ))}
-          </div>
+          </Box>
         </Card>
       )}
 
-      <Card title={t(lang, 'met.reproT')} icon="🔁" style={{ marginTop: 14 }}>
-        <p style={{ fontSize: 12, color: 'var(--mut)', lineHeight: 2 }}>هر اجرا با seed=<code>308</code> و mulberry32 آغاز می‌شود؛ بلوک‌سازی پرندگان از جریان مستقل (seed×7919+13) تغذیه می‌شود. نتیجه: دو اجرا با seed یکسان بیت‌به‌بیت یکسان‌اند.</p>
+      <Card title={t(lang, 'met.reproT')} icon="🔁">
+        <Typography variant="body2" sx={{ ...sub, lineHeight: 2 }}>
+          هر اجرا با seed=<code>308</code> و mulberry32 آغاز می‌شود؛ بلوک‌سازی پرندگان از جریان مستقل (seed×7919+13) تغذیه می‌شود. نتیجه: دو اجرا با seed یکسان بیت‌به‌بیت یکسان‌اند.
+        </Typography>
       </Card>
-    </section>
+    </Box>
   );
 }

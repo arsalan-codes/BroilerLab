@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
+import { Box, Stack, Typography, Checkbox, FormControlLabel, IconButton, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import CloseIcon from '@mui/icons-material/CloseOutlined';
 import { useStore } from '../store';
 import { t } from '../i18n/strings';
 import { Button } from '../components/common';
@@ -18,6 +20,13 @@ export function ExportModal({ onClose }: { onClose: () => void }) {
   const buildDevice = () => sim.deviceRecords.slice(-200);
   const buildExp = () => (experiment?.pens ?? []).map((p) => ({ pen: p.id, birds: p.birdCount, treatment: p.treatment }));
   const buildCatalog = () => [{ strain, note: 'PO reference' }];
+
+  const sheetLabels: Record<string, string> = {
+    summary: 'خلاصه روزانه',
+    device: 'داده دستگاه',
+    exp: 'طرح آزمایش',
+    catalog: 'کاتالوگ PO',
+  };
 
   const generate = () => {
     if (fmt === 'xlsx') {
@@ -41,32 +50,45 @@ export function ExportModal({ onClose }: { onClose: () => void }) {
     onClose();
   };
 
+  const sub = { color: 'text.secondary' } as const;
+
   return (
-    <div className="modal-wrap" style={{ display: 'grid', placeItems: 'center', position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 300 }} onClick={onClose}>
-      <div className="modal" role="dialog" aria-modal="true" style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: 20, width: 420, maxWidth: '92vw', boxShadow: 'var(--sh-lg)' }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-          <b>{t(lang, 'ex.title')}</b>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">✕</button>
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--mut)', marginBottom: 12 }}>{t(lang, 'ex.source')} <b className="dir-ltr">simulation</b></div>
-        <div className="langseg" style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-          <button className={`btn ${fmt === 'xlsx' ? 'pri' : 'ghost'}`} onClick={() => setFmt('xlsx')}>📊 Excel</button>
-          <button className={`btn ${fmt === 'csv' ? 'pri' : 'ghost'}`} onClick={() => setFmt('csv')}>⬇ CSV</button>
-        </div>
+    <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>{t(lang, 'ex.title')}</span>
+        <IconButton size="small" onClick={onClose} aria-label="Close">
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent>
+        <Typography variant="caption" sx={{ ...sub, display: 'block', mb: 1.5 }}>
+          {t(lang, 'ex.source')} <b style={{ direction: 'ltr' }}>simulation</b>
+        </Typography>
+        <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+          <Button tone={fmt === 'xlsx' ? 'primary' : 'default'} onClick={() => setFmt('xlsx')}>📊 Excel</Button>
+          <Button tone={fmt === 'csv' ? 'primary' : 'default'} onClick={() => setFmt('csv')}>⬇ CSV</Button>
+        </Stack>
         {fmt === 'xlsx' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
+          <Stack spacing={0.5} sx={{ fontSize: 13 }}>
             {Object.entries(sheets).map(([k, v]) => (
-              <label key={k} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input type="checkbox" checked={v} onChange={(e) => setSheets((s) => ({ ...s, [k]: e.target.checked }))} /> {k === 'summary' ? 'خلاصه روزانه' : k === 'device' ? 'داده دستگاه' : k === 'exp' ? 'طرح آزمایش' : 'کاتالوگ PO'}
-              </label>
+              <FormControlLabel
+                key={k}
+                control={
+                  <Checkbox
+                    checked={v}
+                    onChange={(e) => setSheets((s) => ({ ...s, [k]: e.target.checked }))}
+                  />
+                }
+                label={sheetLabels[k]}
+              />
             ))}
-          </div>
+          </Stack>
         )}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 18 }}>
-          <Button variant="ghost" onClick={onClose}>{t(lang, 'ex.back')}</Button>
-          <Button variant="blue" onClick={generate}>⬇ {t(lang, 'ex.generate')}</Button>
-        </div>
-      </div>
-    </div>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button tone="default" onClick={onClose}>{t(lang, 'ex.back')}</Button>
+        <Button tone="primary" onClick={generate}>⬇ {t(lang, 'ex.generate')}</Button>
+      </DialogActions>
+    </Dialog>
   );
 }
