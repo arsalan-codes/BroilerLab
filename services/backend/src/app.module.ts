@@ -19,7 +19,10 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env', '../.env', '.env.local'],
+    }),
     EventEmitterModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',

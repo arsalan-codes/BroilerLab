@@ -51,9 +51,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   private async handle(topic: string, payload: string) {
     try {
       const deviceUid = topic.split('/')[2];
-      const device = await this.devices.upsert(deviceUid);
       const batch = JSON.parse(payload);
       const events = Array.isArray(batch) ? batch : batch.events || [batch];
+      const device = await this.devices.upsert(deviceUid, undefined, batch.owner_id ?? undefined);
       const cycleId = batch.cycle_id || (await this.resolveCycle(device.owner_id));
       if (!cycleId) {
         this.logger.warn(`No cycle for ${deviceUid}; drop ${events.length}`);

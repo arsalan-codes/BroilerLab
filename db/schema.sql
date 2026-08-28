@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.6
+-- Dumped from database version 16.15 (Debian 16.15-1.pgdg13+2)
 -- Dumped by pg_dump version 18.6
 
 SET statement_timeout = 0;
@@ -52,26 +52,22 @@ CREATE FUNCTION public.uuid_generate_v7() RETURNS uuid
     AS $$
 DECLARE
   ts_ms BIGINT := (EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::BIGINT;
-  rand_b BIGINT := floor(random() * 4503599627370496)::BIGINT; -- 52-bit safe
+  r bytea := gen_random_bytes(16);
+  out bytea;
 BEGIN
-  -- 48 bits time | 4-bit ver(7) | 12-bit rand_a | 62-bit rand_b packed
-  RETURN encode(
-    set_byte(
-      set_byte(
-        set_byte(
-          -- time (ms) big-endian 6 bytes
-          substring(int8send(ts_ms) from 3),  -- keep last 6 bytes of 8
-          6,                                                   -- ver byte index
-          ( ( (ts_ms >> 8) & 0x0F)::int | 0x70 )::int          -- 0x7x
-        ),
-        7,
-        (rand_b & 0xFF)::int
-      ),
-      8,
-      ( (rand_b >> 8) & 0x3F | 0x80 )::int                     -- RFC4122 variant
-    )::bytea,
-    'hex'
-  )::uuid;
+  out := r;
+  -- bytes 0..5 : 48-bit big-endian timestamp
+  out := set_byte(out, 0, (ts_ms >> 40) & 255);
+  out := set_byte(out, 1, (ts_ms >> 32) & 255);
+  out := set_byte(out, 2, (ts_ms >> 24) & 255);
+  out := set_byte(out, 3, (ts_ms >> 16) & 255);
+  out := set_byte(out, 4, (ts_ms >> 8) & 255);
+  out := set_byte(out, 5, ts_ms & 255);
+  -- byte 6 : version 7 (0111) in top nibble
+  out := set_byte(out, 6, (get_byte(r,6) & 15) | 112);
+  -- byte 8 : variant 10xx in top 2 bits
+  out := set_byte(out, 8, (get_byte(r,8) & 63) | 128);
+  RETURN out::uuid;
 END;
 $$;
 
@@ -178,6 +174,23 @@ CREATE VIEW public.flock_daily AS
 
 
 --
+-- Name: registrations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.registrations (
+    id uuid DEFAULT public.uuid_generate_v7() NOT NULL,
+    owner_id uuid NOT NULL,
+    cycle_id uuid NOT NULL,
+    bird_id text NOT NULL,
+    initial_weight_g double precision NOT NULL,
+    shamsi_date text,
+    sensor_id text,
+    registered_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -260,6 +273,14 @@ ALTER TABLE ONLY public.devices
 
 
 --
+-- Name: registrations registrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.registrations
+    ADD CONSTRAINT registrations_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -315,6 +336,13 @@ CREATE INDEX ix_cycles_owner ON public.cycles USING btree (owner_id);
 
 
 --
+-- Name: ix_reg_cycle; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_reg_cycle ON public.registrations USING btree (cycle_id, registered_at DESC);
+
+
+--
 -- Name: ix_telemetry_bird; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -363,6 +391,22 @@ ALTER TABLE ONLY public.cycles
 
 ALTER TABLE ONLY public.devices
     ADD CONSTRAINT devices_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: registrations registrations_cycle_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.registrations
+    ADD CONSTRAINT registrations_cycle_id_fkey FOREIGN KEY (cycle_id) REFERENCES public.cycles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: registrations registrations_owner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.registrations
+    ADD CONSTRAINT registrations_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --

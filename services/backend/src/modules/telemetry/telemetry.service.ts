@@ -29,7 +29,7 @@ export class TelemetryService {
     if (!cycle) throw new NotFoundException('cycle not found');
 
     // Resolve a device for this owner (default device per owner, or create one)
-    const device = await this.devicesSvc.upsert(`owner-${owner.id}`, `Lab device (${owner.email})`);
+    const device = await this.devicesSvc.upsert(`owner-${owner.id}`, `Lab device (${owner.email})`, owner.id);
 
     const closed: any[] = [];
     for (const ev of dto.events) {

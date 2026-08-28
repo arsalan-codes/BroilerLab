@@ -12,13 +12,11 @@ export class DevicesService {
   ) {}
 
   /** Find or provision a device from an MQTT client id (device_uid). */
-  async upsert(deviceUid: string, label?: string): Promise<Device> {
+  async upsert(deviceUid: string, label: string | undefined, ownerId?: string): Promise<Device> {
     let d = await this.devices.findOne({ where: { device_uid: deviceUid } });
     if (!d) {
-      // Devices provisioned by admin; default owner = first admin if missing.
-      const admin = await this.users.findOne({ where: { role: 'admin' } });
       d = this.devices.create({
-        owner_id: admin?.id ?? '00000000-0000-0000-0000-000000000000',
+        owner_id: ownerId ?? '00000000-0000-0000-0000-000000000000',
         device_uid: deviceUid,
         label: label ?? deviceUid,
         last_seen: new Date(),
