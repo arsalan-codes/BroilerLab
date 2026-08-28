@@ -1,21 +1,24 @@
-import { useState } from 'react';
-import { Box, Fade, Typography, Link, Button, Stack, Divider } from '@mui/material';
+import { useState, Suspense, lazy } from 'react';
+import { Box, Fade, Typography, Link, Button, Stack, Divider, CircularProgress } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import { AppShell } from './components/layout/AppShell';
 import { Dashboard } from './views/Dashboard';
-import { ExperimentDesigner } from './views/ExperimentDesigner';
-import { Farm } from './views/Farm';
-import { LiveSimulation } from './views/LiveSimulation';
-import { Scenarios } from './views/Scenarios';
-import { DeviceData } from './views/DeviceData';
-import { Science } from './views/Science';
-import { Methodology } from './views/Methodology';
-import { About } from './views/About';
-import { ExportModal } from './views/ExportModal';
 import { GuidedTour } from './components/GuidedTour';
 import { useStore } from './store';
 
-const VIEWS: Record<string, () => React.JSX.Element> = {
+// Route-level code splitting — heavy views (Recharts, TanStack Table, xlsx)
+// are only downloaded when the user opens their tab.
+const ExperimentDesigner = lazy(() => import('./views/ExperimentDesigner').then((m) => ({ default: m.ExperimentDesigner })));
+const Farm = lazy(() => import('./views/Farm').then((m) => ({ default: m.Farm })));
+const LiveSimulation = lazy(() => import('./views/LiveSimulation').then((m) => ({ default: m.LiveSimulation })));
+const Scenarios = lazy(() => import('./views/Scenarios').then((m) => ({ default: m.Scenarios })));
+const DeviceData = lazy(() => import('./views/DeviceData').then((m) => ({ default: m.DeviceData })));
+const Science = lazy(() => import('./views/Science').then((m) => ({ default: m.Science })));
+const Methodology = lazy(() => import('./views/Methodology').then((m) => ({ default: m.Methodology })));
+const About = lazy(() => import('./views/About').then((m) => ({ default: m.About })));
+const ExportModal = lazy(() => import('./views/ExportModal').then((m) => ({ default: m.ExportModal })));
+
+const VIEWS: Record<string, React.ComponentType> = {
   'v-dash': Dashboard,
   'v-exp': ExperimentDesigner,
   'v-farm': Farm,
@@ -27,6 +30,14 @@ const VIEWS: Record<string, () => React.JSX.Element> = {
   'v-about': About,
 };
 
+function ViewFallback() {
+  return (
+    <Box sx={{ display: 'grid', placeItems: 'center', py: 10 }}>
+      <CircularProgress size={28} thickness={4} />
+    </Box>
+  );
+}
+
 export default function App() {
   const [active, setActive] = useState('v-dash');
   const [exOpen, setExOpen] = useState(false);
@@ -37,7 +48,9 @@ export default function App() {
     <AppShell active={active} onChange={setActive}>
       <Fade in key={active} timeout={220}>
         <Box>
-          <View />
+          <Suspense fallback={<ViewFallback />}>
+            <View />
+          </Suspense>
         </Box>
       </Fade>
 
@@ -71,7 +84,11 @@ export default function App() {
         </Button>
       </Box>
 
-      {exOpen && <ExportModal onClose={() => setExOpen(false)} />}
+      {exOpen && (
+        <Suspense fallback={null}>
+          <ExportModal onClose={() => setExOpen(false)} />
+        </Suspense>
+      )}
       <GuidedTour />
     </AppShell>
   );
