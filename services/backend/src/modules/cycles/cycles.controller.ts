@@ -6,6 +6,7 @@ import {
   Param,
   Body,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -85,5 +86,23 @@ export class CyclesController {
   ) {
     // Keep cycle_id consistent with the URL param (Anti-IDOR: owner-scoped).
     return this.svc.ingestForCycle(id, dto, user);
+  }
+
+  @Get(':id/export.csv')
+  @ApiOperation({ summary: 'Export cycle data as CSV (visits|registrations)' })
+  async exportCsv(
+    @Param('id') id: string,
+    @CurrentUser() user: ReqUser,
+    @Res({ passthrough: true }) res: any,
+    @Query('type') type?: string,
+  ) {
+    const kind = type === 'registrations' ? 'registrations' : 'visits';
+    const csv = await this.svc.exportCsv(id, user, kind);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="cycle-${id.slice(0, 8)}-${kind}.csv"`,
+    );
+    return csv;
   }
 }

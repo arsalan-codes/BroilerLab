@@ -94,27 +94,26 @@ export class CyclesService {
     limit = 50,
   ): Promise<Record<string, any>[]> {
     await this.getById(id, owner);
-    return this.visitsRepo
+    // Explicit aliases so getRawMany returns clean keys (bird_id, not v_bird_id).
+    const qb = this.visitsRepo
       .createQueryBuilder('v')
-      .select([
-        'v.id',
-        'v.bird_id',
-        'v.visit_start',
-        'v.visit_end',
-        'v.age_day',
-        'v.initial_weight_g',
-        'v.final_weight_g',
-        'v.feed_intake_g',
-        'v.sensor_id',
-        'v.rssi',
-        'v.read_ok',
-        'v.co_feed',
-      ])
+      .select('v.id', 'id')
+      .addSelect('v.bird_id', 'bird_id')
+      .addSelect('v.visit_start', 'visit_start')
+      .addSelect('v.visit_end', 'visit_end')
+      .addSelect('v.age_day', 'age_day')
+      .addSelect('v.initial_weight_g', 'initial_weight_g')
+      .addSelect('v.final_weight_g', 'final_weight_g')
+      .addSelect('v.feed_intake_g', 'feed_intake_g')
+      .addSelect('v.sensor_id', 'sensor_id')
+      .addSelect('v.rssi', 'rssi')
+      .addSelect('v.read_ok', 'read_ok')
+      .addSelect('v.co_feed', 'co_feed')
       .where('v.cycle_id = :id', { id })
       .andWhere('v.owner_id = :owner', { owner: owner.id })
-      .orderBy('v.visit_start', 'DESC')
-      .limit(limit)
-      .getRawMany();
+      .orderBy('v.visit_start', 'DESC');
+    if (limit > 0) qb.limit(limit);
+    return qb.getRawMany();
   }
 
   async listRegistrations(
@@ -123,21 +122,20 @@ export class CyclesService {
     limit = 50,
   ): Promise<Record<string, any>[]> {
     await this.getById(id, owner);
-    return this.registrations
+    // Explicit aliases so getRawMany returns clean keys (bird_id, not r_bird_id).
+    const qb = this.registrations
       .createQueryBuilder('r')
-      .select([
-        'r.id',
-        'r.bird_id',
-        'r.initial_weight_g',
-        'r.shamsi_date',
-        'r.sensor_id',
-        'r.registered_at',
-      ])
+      .select('r.id', 'id')
+      .addSelect('r.bird_id', 'bird_id')
+      .addSelect('r.initial_weight_g', 'initial_weight_g')
+      .addSelect('r.shamsi_date', 'shamsi_date')
+      .addSelect('r.sensor_id', 'sensor_id')
+      .addSelect('r.registered_at', 'registered_at')
       .where('r.cycle_id = :id', { id })
       .andWhere('r.owner_id = :owner', { owner: owner.id })
-      .orderBy('r.registered_at', 'DESC')
-      .limit(limit)
-      .getRawMany();
+      .orderBy('r.registered_at', 'DESC');
+    if (limit > 0) qb.limit(limit);
+    return qb.getRawMany();
   }
 
   async createRegistration(
@@ -164,5 +162,43 @@ export class CyclesService {
     // Force cycle_id from the URL param so a caller cannot write to another cycle.
     const safeDto: IngestBatchDto = { ...dto, cycle_id: id };
     return this.telemetrySvc.ingestBatch(safeDto, owner);
+  }
+
+  /**
+   * CSV export (visits | registrations) for a cycle.
+   * Anti-IDOR enforced via getById; cells are guarded against CSV/formula
+   * injection (leading =, +, -, @ get a leading apostrophe) and proper quoting.
+   */
+  async exportCsv(id: string, owner: ReqUser, kind: 'visits' | 'registrations'): Promise<string> {
+    await this.getById(id, owner); // Anti-IDOR check
+
+    let header: string[];
+    let rows: Record<string, any>[];
+
+    if (kind === 'registrations') {
+      header = ['id', 'bird_id', 'initial_weight_g', 'shamsi_date', 'sensor_id', 'registered_at'];
+      rows = await this.listRegistrations(id, owner, 0); // 0 = no limit (full export)
+    } else {
+      header = [
+        'id', 'bird_id', 'visit_start', 'visit_end', 'age_day',
+        'initial_weight_g', 'final_weight_g', 'feed_intake_g',
+        'sensor_id', 'rssi', 'read_ok', 'co_feed',
+      ];
+      rows = await this.visits(id, owner, 0); // 0 = no limit (full export)
+    }
+
+    const lines = [header.join(',')];
+    for (const r of rows) {
+      lines.push(header.map((h) => this.csvCell(r[h])).join(','));
+    }
+    return lines.join('\r\n') + '\r\n';
+  }
+
+  /** CSV-injection-safe cell encoding (OWASP CSV Injection guidance). */
+  private csvCell(v: any): string {
+    let s = v === null || v === undefined ? '' : String(v);
+    if (s.length > 0 && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+    if (/[",\n\r]/.test(s)) s = `"${s.replace(/"/g, '""')}"`;
+    return s;
   }
 }
