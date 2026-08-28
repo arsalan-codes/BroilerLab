@@ -44,10 +44,17 @@ custom design-token CSS (dark/light), NOT MUI/Material 3 — to preserve exact v
 - src/simulation/engine.test.ts converted from standalone ts-node script to a proper vitest suite.
 
 ## Next Action
-- Commit + push to GitHub (SSH was denied earlier; use HTTPS token or fix SSH)
-- Optional: code-split frontend bundle (currently 957KB, warning only)
-- Optional: download socket.io locally for offline (currently CDN in LiveSimulation mock)
-- Optional: wire real backend stats/registrations to Device&Data view (currently uses local sim state)
+- Push `main` to GitHub: pushed as branch `next-gen` (remote `main` holds the legacy webapp history; token lacks `workflow` scope so CI workflow excluded from that branch push)
+- Verify GitHub Actions run on next-gen once CI workflow can be pushed (needs token with `workflow` scope)
+
+## Completed In This Pass (2026-08-28)
+- [x] **MQTT E2E unblocked** — EMQX 5.8.3 pulled + running via compose; broker users created (`broiler`/superuser, `device-f01`); backend connected; 2 events ingested E2E via `lab/dev/F99/events` → telemetry_raw → stats ✅
+- [x] **CSV export endpoint** — `GET /api/v1/cycles/:id/export.csv?type=visits|registrations`, OWASP formula-injection guard verified
+- [x] **Raw-key bug fixed** — visits/registrations endpoints returned `r_bird_id`-style keys → DeviceData table rendered undefined; now aliased clean keys
+- [x] **Frontend code splitting** — main bundle 1307 KB → 744 KB (all secondary views + xlsx lazy-loaded)
+- [x] **Frontend npm test/typecheck scripts added**; dev server binds all interfaces (`--host`)
+- [x] **CI updated** — backend job runs `npm test` + `test:e2e` (old tsx invocation was broken); firmware job upgraded to real `pio run -e esp32dev` build
+- [x] **Strain-key alignment** — `aaplus`/`hubbardep` consistent across engine, frontend, and API DTO
 
 ## Summary History
 - 2026-08-28: Frontend REBUILT as React18+Vite+TS with custom design tokens (fidelity to legacy HTML per directive #99). MUI discarded. 9 views, engine layer, i18n, export.

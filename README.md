@@ -51,9 +51,18 @@ poultry_sim_new/
 
 ## Status
 
-- [x] Phase 1 — Infra + DB schema (this repo)
-- [ ] Phase 2 — Backend NestJS
-- [ ] Phase 3 — Sim engine port (TS)
-- [ ] Phase 4 — Frontend React (UI replica)
-- [ ] Phase 5 — Firmware ESP32
-- [ ] Phase 6 — CI/CD + docs
+- [x] Phase 1 — Infra + DB schema
+- [x] Phase 2 — Backend NestJS (auth/cycles/telemetry/devices/ws-gateway/MQTT; JWT + RBAC/Anti-IDOR)
+- [x] Phase 3 — Sim engine port (TS) — unit-tested both sides
+- [x] Phase 4 — Frontend React 18 + Vite + TS (9 views, i18n fa/en, export, code-split)
+- [x] Phase 5 — Firmware ESP32 (PlatformIO project, CI-built)
+- [x] Phase 6 — CI/CD + docs
+- [x] MQTT E2E — EMQX 5.8 via Docker Compose → device batch → telemetry_raw → stats verified
+
+## Run it
+```bash
+docker compose up -d db redis emqx      # infra (PG :5433, Redis :6379, EMQX :1883/:18083)
+cd services/backend  && npm ci && npm run build && node dist/main.js   # API :3001
+cd services/frontend && npm ci && npm run dev                          # UI  :5173
+```
+Dev broker users: `broiler`/`broiler_dev` (backend superuser), `device-f01`/`device_dev` (devices).

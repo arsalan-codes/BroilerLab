@@ -14,9 +14,11 @@
 
 ## Planned (next)
 - [ ] **BullMQ + Redis** integration for async ingest/aggregation jobs
-- [ ] **CSV export** endpoint (`/cycles/:id/export.csv`) with formula-injection guard
+- [x] **CSV export** endpoint (`/cycles/:id/export.csv`) with formula-injection guard (2026-08-28)
+- [x] **EMQX** broker in docker-compose — running; MQTT ingest verified E2E (2026-08-28)
+- [x] **GitHub Actions** matrix: backend (node+pg: unit+e2e+smoke), frontend (typecheck+build+tests), firmware (PlatformIO build) (2026-08-28)
 - [ ] **TimescaleDB CAGGs** refreshed in CI against real TimescaleDB image
-- [ ] **EMQX** broker in docker-compose (currently blocked by Docker Hub pull)
+- [x] **EMQX** broker in docker-compose — running; MQTT ingest verified E2E (2026-08-28)
 - [ ] **Nginx** reverse proxy + TLS termination (prod)
 - [ ] **GitHub Actions** matrix: backend (node+pg), frontend (node), firmware (pio native test)
 - [ ] **Testcontainers** integration test: spin PG + backend, run ingest→stats assertion

@@ -37,9 +37,12 @@ jobs:
       - name: Build
         working-directory: services/backend
         run: npm run build
-      - name: Engine validation (deterministic MAE <5%)
+      - name: Unit tests (engine, vitest)
         working-directory: services/backend
-        run: npx tsx src/simulation/engine.test.ts
+        run: npm test
+      - name: E2E tests (health, vitest)
+        working-directory: services/backend
+        run: npm run test:e2e
       - name: Migrate
         working-directory: services/backend
         env:
@@ -80,15 +83,21 @@ jobs:
       - name: Build
         working-directory: services/frontend
         run: npx vite build --outDir dist
-      - name: Engine unit tests (vitest)
+      - name: Unit tests (vitest)
         working-directory: services/frontend
         run: npx vitest run src/engine/engine.test.ts
 
   firmware:
-    name: Firmware (syntax check)
+    name: Firmware (PlatformIO build)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PlatformIO
+        run: pip install -U platformio
       - name: Validate firmware files
         working-directory: services/firmware
         run: |
@@ -97,3 +106,6 @@ jobs:
           test -f src/config.cpp || exit 1
           test -f include/config.h || exit 1
           echo "firmware files OK"
+      - name: Build ESP32 firmware
+        working-directory: services/firmware
+        run: pio run -e esp32dev
