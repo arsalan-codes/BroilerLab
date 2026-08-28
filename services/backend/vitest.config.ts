@@ -8,7 +8,7 @@ export default defineConfig({
   test: {
     globals: true,
     root: './',
-    include: ['**/*.spec.ts'],
-    exclude: ['**/engine.test.ts', '**/node_modules/**', '**/.git/**'],
+    include: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
+    exclude: ['**/node_modules/**', '**/.git/**', 'test/**', 'dist/**'],
   },
 });

@@ -13,14 +13,20 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    // Mirror main.ts setup (global prefix).
+    app.setGlobalPrefix((process.env.API_PREFIX || '/api/v1').replace(/^\//, ''));
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('/api/v1/health (GET) returns ok', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/api/v1/health')
       .expect(200)
-      .expect('Hello World!');
+      .expect((res) => {
+        if (res.body?.status !== 'ok') {
+          throw new Error(`Unexpected health payload: ${JSON.stringify(res.body)}`);
+        }
+      });
   });
 
   afterEach(async () => {

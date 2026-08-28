@@ -29,11 +29,19 @@ custom design-token CSS (dark/light), NOT MUI/Material 3 — to preserve exact v
 - Browser E2E verification of React UI not possible (browser tool blocks localhost); verified via build + engine unit tests + dev server 200.
 
 ## Latest Status
-- Backend proc_98757a9c7ce6 on http://127.0.0.1:3001 (global prefix /api/v1)
-- Frontend dev server proc_0555a51245bf on http://127.0.0.1:5173 (Vite 8, stable)
-- DB broilerlab_ng on :5433 (user broiler, pass [REDACTED]).
-- Integration smoke test PASSED (login → cycle → ingest → stats → visits).
-- Engine validate(): MAE 14.1g vs catalog (~0.4% error), finalBw 3562g (Ross308 d42), deterministic for seed=308.
+- Backend running on http://127.0.0.1:3001 (global prefix /api/v1, docs at /docs) — rebuilt + verified 2026-08-28
+- Frontend dev server (Vite) on http://localhost:5173 — note: binds IPv6 `[::1]` only in this env; use `localhost`, not `127.0.0.1`
+- DB broilerlab_ng on :5434 (container broilerlab-pg; `.env` DATABASE_URL matches)
+- Integration smoke test PASSED (login → cycle → ingest → stats → visits)
+- Engine unit tests: 6/6 PASS (`npm test` now actually runs src/simulation/engine.test.ts)
+- E2E: 1/1 PASS (`/api/v1/health`)
+- Frontend: 12/12 vitest PASS; `tsc --noEmit` clean; production build OK (chunk-size warning only)
+
+## Bug Fixes (2026-08-28 audit)
+- AppController was never registered in AppModule (`controllers: []` missing) → `/api/v1/health` 404. Fixed.
+- vitest.config.ts excluded engine.test.ts and included a pattern matching nothing → `npm test` silently ran 0 tests. Fixed (now runs src/**/*.{spec,test}.ts).
+- test/app.e2e-spec.ts was stale Nest scaffold (expected `GET /` → 'Hello World!'). Rewritten to test `/api/v1/health`.
+- src/simulation/engine.test.ts converted from standalone ts-node script to a proper vitest suite.
 
 ## Next Action
 - Commit + push to GitHub (SSH was denied earlier; use HTTPS token or fix SSH)

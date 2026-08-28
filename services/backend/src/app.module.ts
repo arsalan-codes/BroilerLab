@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { APP_GUARD } from '@nestjs/core';
+import { AppController } from './app.controller';
 import { Cycle } from './domain/entities/cycle.entity';
 import { TelemetryRaw } from './domain/entities/telemetry.entity';
 import { Visit } from './domain/entities/visit.entity';
@@ -38,6 +39,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     WsGatewayModule,
     MqttModule,
   ],
+  controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
 export class AppModule {}

@@ -200,7 +200,7 @@ export function AppShell({ active, onChange, children }: {
         sx={{
           flexGrow: 1,
           pt: 8,
-          ml: isMobile ? 0 : drawerOpen ? 0 : `-${DRAWER_W}px`,
+          ml: isMobile ? 0 : drawerOpen ? 0 : 0,
           transition: (t) => t.transitions.create('margin', { easing: t.transitions.easing.sharp, duration: t.transitions.duration.leavingScreen }),
           minWidth: 0,
           bgcolor: 'background.default',

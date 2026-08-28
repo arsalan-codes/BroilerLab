@@ -11,8 +11,8 @@ export class CreateCycleDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['ross308', 'cobb500', 'aa+', 'hubbard'])
-  strain?: 'ross308' | 'cobb500' | 'aa+' | 'hubbard';
+  @IsIn(['ross308', 'cobb500', 'aaplus', 'hubbardep'])
+  strain?: 'ross308' | 'cobb500' | 'aaplus' | 'hubbardep';
 
   @IsOptional()
   @IsDateString()

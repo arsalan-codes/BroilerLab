@@ -1,0 +1,43 @@
+/* BroilerLab global CSS vars — bridge for legacy inline var(--x) usages.
+   Mapped to the M3 dark palette (default theme). Values mirror src/theme.ts. */
+:root {
+  --bg: #0b0f17;
+  --bg-soft: #111826;
+  --panel: #111826;
+  --line: #1f2a3d;
+  --txt: #e8edf5;
+  --text-primary: #e8edf5;
+  --text-secondary: #8a95ab;
+  --mut: #8a95ab;
+  --acc: #19c39a;
+  --accent: #19c39a;
+  --blue: #3d7bfd;
+  --purple: #8b5cf6;
+  --warn: #e99b26;
+  --tip-bg: #111826;
+  --tip-border: #1f2a3d;
+  --sh-lg: 0 8px 30px rgba(0, 0, 0, 0.4);
+  --divider: #1f2a3d;
+  --card-bg: #111826;
+}
+
+[data-theme='light'] {
+  --bg: #f8f9ff;
+  --bg-soft: #ffffff;
+  --panel: #ffffff;
+  --line: #e1e2e6;
+  --txt: #1a1c1e;
+  --text-primary: #1a1c1e;
+  --text-secondary: #44474e;
+  --mut: #44474e;
+  --acc: #006b5a;
+  --accent: #006b5a;
+  --blue: #3d5a92;
+  --purple: #7c3aed;
+  --warn: #7a5900;
+  --tip-bg: #ffffff;
+  --tip-border: #e1e2e6;
+  --sh-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --divider: #e1e2e6;
+  --card-bg: #ffffff;
+}
