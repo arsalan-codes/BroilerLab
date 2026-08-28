@@ -19,7 +19,8 @@ custom design-token CSS (dark/light), NOT MUI/Material 3 — to preserve exact v
 - [x] Phase 1: Infra — monorepo, Docker Compose, dbmate migrations (UUIDv7, hypertable, CAGGs, RBAC) — verified
 - [x] Phase 2: Backend NestJS — auth/cycles/telemetry/devices/ws-gateway/mqtt + JWT + RBAC/Anti-IDOR — E2E verified
 - [x] Phase 3: Sim engine port (engine.ts + strains.ts) — unit-tested (MAE 2.43%)
-- [x] Phase 4: Frontend — **React 18 + Vite + TS + custom design tokens**; 9 tabs (Dashboard/Experiment/Farm/Live/Scenarios/Device&Data/Science/Methodology/About); deterministic engine (MAE 14.1 ≈ 0.4%); charts (Recharts); Zustand store; i18n fa/en; Shamsi clock; Vazirmatn; export xlsx/csv; toasts. **Build passes, engine deterministic.**
+- [x] Phase 4: Frontend — **React 18 + Vite + TS + custom design tokens** (fidelity to legacy HTML per directive #99); 9 tabs; deterministic engine (MAE 14.1g ≈ 0.4%); 12 vitest unit tests PASS; connected to backend API (cycles/stats/registrations); i18n fa/en; Shamsi clock; Vazirmatn; export xlsx/csv; settings menu; mobile drawer; guided tour; toasts. **Build passes, engine deterministic, 12/12 tests green.**
+- [x] Phase 4b: Frontend ↔ Backend integration verified (auth → list cycles → stats → registrations via API client)
 - [x] Phase 5: Firmware — ESP32 PlatformIO scaffold + main loop + config (LittleFS) + host tests + README
 - [x] Phase 6: CI/CD — GitHub Actions + integration smoke test + architecture docs
 
