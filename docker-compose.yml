@@ -1,6 +1,6 @@
 # BroilerLab next-gen — local development stack
-# PG16 + TimescaleDB, Redis (BullMQ), EMQX (MQTT v5 broker), Nginx (reverse proxy)
-# Backend (NestJS) runs on host for hot-reload; webapp (vanilla static) served by Nginx.
+# PG16, Redis (BullMQ), EMQX (MQTT v5 broker), NestJS backend, React frontend (Vite)
+# Dev: backend + frontend run on host (hot-reload). Prod: all via compose.
 
 services:
   db:
@@ -50,32 +50,49 @@ services:
       timeout: 5s
       retries: 10
 
-  webapp:
+  backend:
+    build:
+      context: ./services/backend
+      dockerfile: Dockerfile
+    container_name: broilerlab-backend
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://broiler:broiler_dev@db:5432/broilerlab_ng?sslmode=disable
+      REDIS_URL: redis://redis:6379
+      MQTT_URL: mqtt://emqx:1883
+      JWT_ACCESS_SECRET: dev_access_secret_change_me
+      JWT_REFRESH_SECRET: dev_refresh_secret_change_me
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    profiles: ["prod"]
+
+  frontend:
     build:
       context: .
-      dockerfile: Dockerfile.webapp
-    container_name: broilerlab-webapp
+      dockerfile: Dockerfile.frontend
+    container_name: broilerlab-frontend
     depends_on:
-      - db
+      - backend
     ports:
       - "8080:80"
-    volumes:
-      - ./services/webapp:/usr/share/nginx/html:ro
     profiles: ["prod"]
 
   nginx:
     image: nginx:1.27-alpine
     container_name: broilerlab-nginx
     depends_on:
-      - db
-      - redis
-      - emqx
+      - backend
+      - frontend
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/certs:/etc/nginx/certs:ro
     profiles: ["prod"]
 
 volumes:
