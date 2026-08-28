@@ -1,0 +1,6 @@
+# dbmate configuration — BroilerLab next-gen
+# Database URL is supplied via the DATABASE_URL environment variable
+# (same as docker-compose: postgres://broiler:broiler_dev@db:5432/broilerlab?sslmode=disable)
+
+wait_timeout: 30s
+migrations_dir: ./db/migrations

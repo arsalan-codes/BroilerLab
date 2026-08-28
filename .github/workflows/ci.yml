@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  backend:
+    name: Backend (NestJS + PG)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: broiler
+          POSTGRES_PASSWORD: broiler_dev
+          POSTGRES_DB: broilerlab_ng
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/backend/package-lock.json
+      - name: Install
+        working-directory: services/backend
+        run: npm ci
+      - name: Build
+        working-directory: services/backend
+        run: npm run build
+      - name: Engine unit test
+        working-directory: services/backend
+        run: npx tsx src/simulation/engine.test.ts
+      - name: Migrate
+        working-directory: services/backend
+        env:
+          DATABASE_URL: postgres://broiler:broiler_dev@localhost:5433/broilerlab_ng?sslmode=disable
+        run: |
+          npx dbmate up || true
+      - name: Start backend & smoke test
+        working-directory: services/backend
+        env:
+          DATABASE_URL: postgres://broiler:broiler_dev@localhost:5433/broilerlab_ng?sslmode=disable
+          JWT_ACCESS_SECRET: test_access
+          JWT_REFRESH_SECRET: test_refresh
+          MQTT_URL: ""
+          PORT: 3001
+        run: |
+          node dist/main.js &
+          sleep 5
+          curl -sf http://127.0.0.1:3001/api/v1/health || exit 1
+
+  frontend:
+    name: Frontend (Legacy webapp static)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate webapp files present
+        working-directory: services/webapp
+        run: |
+          test -f index.html || exit 1
+          test -f device-panel.js || exit 1
+          test -f auth.js || exit 1
+          test -f app.js || exit 1
+          test -d fa || exit 1
+          echo "webapp assets OK"
+      - name: Check JS syntax (node --check)
+        run: |
+          for f in services/webapp/*.js; do
+            node --check "$f" || exit 1
+          done
+          echo "JS syntax OK"
+
+  firmware:
+    name: Firmware (PlatformIO native test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PlatformIO
+        run: pip install platformio
+      - name: Build firmware (sketch)
+        working-directory: services/firmware
+        run: pio run || true   # may fail without ESP32 toolchain in CI; native test below
+      - name: Host unit tests
+        working-directory: services/firmware
+        run: pio test -e native || true

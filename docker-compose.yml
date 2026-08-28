@@ -1,0 +1,82 @@
+# BroilerLab next-gen — local development stack
+# PG16 + TimescaleDB, Redis (BullMQ), EMQX (MQTT v5 broker), Nginx (reverse proxy)
+# Backend (NestJS) runs on host for hot-reload; webapp (vanilla static) served by Nginx.
+
+services:
+  db:
+    image: postgres:16
+    container_name: broilerlab-db
+    environment:
+      POSTGRES_USER: broiler
+      POSTGRES_PASSWORD: broiler_dev
+      POSTGRES_DB: broilerlab_ng
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U broiler -d broilerlab_ng"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: broilerlab-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  emqx:
+    image: emqx:5.8.3
+    container_name: broilerlab-emqx
+    environment:
+      EMQX_LISTENERS__SSL__DEFAULT__BIND: "8883"
+      EMQX_LISTENERS__TCP__DEFAULT__BIND: "1883"
+      EMQX_DASHBOARD__LISTENERS__HTTP__BIND: "18083"
+      EMQX_AUTHENTICATION__1__MECHANISM: "password_based"
+      EMQX_AUTHENTICATION__1__BACKEND: "built_in_database"
+    ports:
+      - "1883:1883"      # MQTT plain (dev only)
+      - "8883:8883"      # MQTT TLS
+      - "18083:18083"    # EMQX dashboard
+    healthcheck:
+      test: ["CMD", "emqx", "ctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile.webapp
+    container_name: broilerlab-webapp
+    depends_on:
+      - db
+    ports:
+      - "8080:80"
+    volumes:
+      - ./services/webapp:/usr/share/nginx/html:ro
+    profiles: ["prod"]
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: broilerlab-nginx
+    depends_on:
+      - db
+      - redis
+      - emqx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    profiles: ["prod"]
+
+volumes:
+  pgdata:
