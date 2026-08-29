@@ -2,8 +2,19 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<script id="early-auth-gate">(function(){try{
+  var tok=localStorage.getItem("broiler_token");
+  var valid=false;
+  if(tok){try{var b64=tok.split(".")[1].replace(/-/g,"+").replace(/_/g,"/");while(b64.length%4)b64+="=";var pl=JSON.parse(atob(b64));valid=pl.exp? (pl.exp*1000>Date.now()+5000):true;}catch(e){valid=false;}}
+  window.__EARLY_AUTH_VALID=valid;
+  if(!valid){
+    // unauthenticated: hide page until auth.js shows login gate (prevents dashboard flash)
+    document.documentElement.style.visibility="hidden";
+  }
+  // when authed, leave visible so dashboard shows instantly with no flash
+}catch(e){}} )();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title data-i18n="app.title">BroilerLab — شبیه‌ساز پایش مصرف خوراک طیور</title>
+<title data-i18n="app.title">ققنوس — سامانه هوشمند پرورش و اصلاح نژاد</title>
 <meta name="author" content="Arsalan Rezazadeh">
 <meta name="description" content="Academic broiler feeding-station simulator — Ross 308 / Cobb 500 / Arbor Acres Plus / Hubbard EP · RFID + dual load-cell · biostatistics lab">
 <link rel="icon" type="image/png" sizes="32x32" href="logo_32.png">
@@ -14,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="fa/all.min.css">
 <script>try{var _t=localStorage.getItem("rossim_theme");
 if(_t==="dark"){document.documentElement.setAttribute("data-theme","dark")}
 else if(_t==="light"){document.documentElement.setAttribute("data-theme","light")}
@@ -49,15 +60,30 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);
 .topbar-in{max-width:1280px;margin:0 auto;padding:10px 24px;display:flex;
   align-items:center;gap:16px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit}
-.brand .mark{width:44px;height:44px;border-radius:13px;overflow:hidden;
+.brand .mark{width:52px;height:52px;border-radius:0;overflow:visible;
   display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,rgba(25,195,154,.16),rgba(61,123,253,.14));
-  border:1.5px solid rgba(25,195,154,.38);box-shadow:0 0 14px rgba(25,195,154,.18)}
-.brand .mark img{width:100%;height:100%;object-fit:contain;display:block}
+  background:transparent;
+  border:none;box-shadow:none}
+.brand .mark img{width:100%;height:100%;object-fit:contain;display:block;padding:0}
 .brand b{font-size:15.5px;font-weight:800;letter-spacing:.2px;display:block;line-height:1.2}
 .brand span{font-size:11px;color:var(--mut)}
 .brand .uni{display:block;font-size:10px;color:var(--dim);margin-top:1px}
 .hspace{flex:1}
+.topclock{display:flex;align-items:center;gap:7px;white-space:nowrap;
+  font-variant-numeric:tabular-nums;direction:ltr;
+  padding-block:14px;padding-inline:clamp(12px, 2.2vw, 18px);border-radius:10px;
+  background:rgba(255,255,255,.06);border:1px solid var(--line);box-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 2px 8px rgba(0,0,0,.08);transition:border-color .15s, background .15s, box-shadow .15s
+  color:var(--fg);font-size:12.5px;line-height:1;user-select:none}
+.topclock:hover{border-color:rgba(25,195,154,.35);background:rgba(255,255,255,.08);box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 4px 12px rgba(0,0,0,.12)}
+.topclock .tc-ic{color:var(--accent);font-size:13px;display:inline-flex}
+.topclock .tc-date{font-weight:600}
+.topclock .tc-sep{color:var(--dim);margin:0 1px}
+.topclock .tc-time{font-weight:700;letter-spacing:.5px}
+/* show on all resolutions (was hidden <720px) */
+@media(max-width:560px){
+  .topclock{font-size:11px;padding-block:10px;padding-inline:clamp(10px, 3vw, 14px);gap:5px}
+  .topclock .tc-ic{display:none}
+}
 .hctl{display:flex;align-items:center;gap:14px;flex-wrap:wrap;min-height:64px}
 .hgroup{display:flex;flex-direction:column;gap:4px;min-width:0;justify-content:center}
 .hlabel{font-size:9.5px;color:var(--dim);font-weight:700;line-height:1;
@@ -131,7 +157,7 @@ html[data-theme=light] .hsel option:checked{background:rgba(25,195,154,.12)}
 .strain-select__list{
   position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:200;
   margin:0;padding:6px;list-style:none;
-  background:var(--card);border:1px solid var(--line);border-radius:10px;
+  background:rgba(255,255,255,.08);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,.14);border-radius:10px;
   box-shadow:var(--sh-lg);max-height:260px;overflow-y:auto;
   animation:strainDropIn .18s ease-out;
 }
@@ -163,12 +189,199 @@ html[data-theme=light] .strain-select__option[aria-selected="true"]{background:r
   .strain-select__current{height:40px}
   .strain-select__list{max-height:220px}
 }
+
+/* ============ Devices & Data panel (modern redesign) ============ */
+.dev-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));
+  gap:14px;
+  margin-top:14px;
+}
+.dev-card{display:flex;flex-direction:column}
+.dev-card__title{
+  font-size:11px;font-weight:750;color:var(--mut);margin:0 0 14px;
+  letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:8px
+}
+html[dir=ltr] .dev-card__title{letter-spacing:.08em}
+.dev-card__title .ic{font-size:14px;filter:saturate(.85)}
+
+/* cycle creation form */
+.cy-form{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px
+}
+.field{
+  position:relative;display:flex;flex-direction:column;
+  min-width:0;flex:1 1 130px
+}
+.field--grow{flex:1 1 180px}
+.field--select{flex:0 0 auto}
+.field__input{
+  width:100%;height:42px;padding:14px 13px 4px;
+  background:var(--card2);border:1px solid var(--line);border-radius:10px;
+  color:var(--fg);font-family:inherit;font-size:12.5px;
+  transition:border-color .15s,box-shadow .15s,background .15s;
+  box-sizing:border-box
+}
+.field__input:focus{
+  outline:none;border-color:rgba(25,195,154,.6);
+  box-shadow:0 0 0 3px rgba(25,195,154,.1);background:var(--card)
+}
+.field__label{
+  position:absolute;top:13px;right:13px;left:13px;
+  font-size:12.5px;color:var(--mut);pointer-events:none;
+  transform-origin:right center;
+  transition:transform .15s ease,color .15s ease;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis
+}
+html[dir=ltr] .field__label{transform-origin:left center}
+.field__input:focus + .field__label,
+.field__input:not(:placeholder-shown) + .field__label{
+  transform:translateY(-10px) scale(.78);color:var(--acc)
+}
+.field__bar{
+  position:absolute;bottom:0;left:50%;width:0;height:2px;
+  background:var(--acc);border-radius:2px;transform:translateX(-50%);
+  transition:width .2s ease
+}
+.field__input:focus ~ .field__bar{width:100%}
+/* keep select component aligned with fields */
+.field--select .strain-select{width:100%}
+.field--select .strain-select__current{height:42px}
+
+.cy-form__submit{
+  flex:0 0 auto;height:42px;padding:0 20px;white-space:nowrap;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px
+}
+@media(max-width:560px){
+  .field{flex:1 1 100%}
+  .cy-form__submit{width:100%}
+  .field--select{flex:1 1 100%}
+}
+
+/* cycle list */
+.cy-list{
+  max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:8px;
+  margin-top:4px
+}
+.cy-list:empty::before{
+  content:"دوره‌ای ثبت نشده است.";
+  display:block;padding:18px;text-align:center;color:var(--dim);
+  font-size:11.5px;border:1px dashed var(--line);border-radius:10px
+}
+.cy-item{
+  display:flex;align-items:center;gap:10px;padding:11px 13px;
+  border:1px solid var(--line);border-radius:11px;background:var(--card2);
+  transition:border-color .15s,box-shadow .15s,transform .12s
+}
+.cy-item:hover{border-color:var(--acc);transform:translateY(-1px)}
+.cy-item.active{
+  border-color:var(--acc);
+  box-shadow:0 0 0 2px var(--acc-soft,#e8f0ff) inset
+}
+.cy-code{
+  font-weight:800;font-size:13px;min-width:40px;color:var(--acc);
+  direction:ltr;font-variant-numeric:tabular-nums
+}
+.cy-label{
+  flex:1;font-size:12px;color:var(--fg);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap
+}
+.cy-meta{font-size:10.5px;color:var(--dim);white-space:nowrap}
+.cy-del{
+  margin-left:auto;border:none;background:transparent;color:var(--bad,#e5484d);
+  cursor:pointer;font-size:14px;padding:6px 8px;border-radius:8px;transition:.15s;
+  flex-shrink:0
+}
+.cy-del:hover{background:var(--bad-soft,#ffecec)}
+html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
+
+/* live feed */
+.live-feed{
+  flex:1;min-height:180px;max-height:300px;overflow:auto;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;line-height:1.6;
+  background:var(--code,#0e1626);color:#cfe3ff;border-radius:11px;
+  padding:11px 13px;direction:ltr;text-align:left;
+  border:1px solid rgba(25,195,154,.15)
+}
+.live-feed .lf-row{
+  white-space:nowrap;opacity:0;animation:lfIn .25s forwards;
+  padding:1px 0
+}
+.live-feed .lf-row .t{color:#7fd1ff}
+.live-feed .lf-row .b{color:#9effa0}
+.live-feed .lf-row .w{color:#ffd479}
+.live-feed .lf-row .f{color:#ff9bb0}
+@keyframes lfIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* stats */
+.dev-stats .ministats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px
+}
+.dev-stats .mstat{
+  background:var(--card2);border:1px solid var(--line);border-radius:11px;
+  padding:13px 14px;text-align:center;transition:border-color .15s,transform .12s
+}
+.dev-stats .mstat:hover{border-color:rgba(25,195,154,.4);transform:translateY(-1px)}
+.dev-stats .mstat .mv{
+  display:block;font-size:22px;font-weight:800;
+  font-variant-numeric:tabular-nums;color:var(--fg);direction:ltr
+}
+.dev-stats .mstat .ml{display:block;font-size:10.5px;color:var(--mut);margin-top:4px}
+
+/* ============ Realtime registrations (bird entry log) ============ */
+.dev-regs__live{
+  display:inline-flex;align-items:center;gap:5px;margin-inline-start:auto;
+  font-size:10px;font-weight:700;color:var(--acc);letter-spacing:.02em
+}
+.dev-regs__live .fa-circle{font-size:7px;color:#2bbf6a;filter:drop-shadow(0 0 4px #2bbf6a);
+  animation:regPulse 1.6s ease-in-out infinite}
+@keyframes regPulse{0%,100%{opacity:1}50%{opacity:.35}}
+.dev-regs__note{margin-top:12px}
+.reg-table{border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.reg-thead{
+  display:grid;
+  grid-template-columns:1.4fr 1fr 1.2fr .9fr .8fr .7fr;
+  gap:0;background:var(--bg2);border-bottom:1px solid var(--line)
+}
+.reg-thead .reg-cell{
+  font-size:10px;font-weight:750;color:var(--mut);text-transform:uppercase;
+  letter-spacing:.03em;padding:9px 12px;white-space:nowrap
+}
+.reg-body{max-height:340px;overflow-y:auto;direction:ltr}
+.reg-row{
+  display:grid;grid-template-columns:1.4fr 1fr 1.2fr .9fr .8fr .7fr;
+  align-items:center;border-bottom:1px solid rgba(31,42,61,.45);
+  font-size:12px;color:var(--fg);transition:background .2s,opacity .3s;
+  animation:regIn .25s ease-out
+}
+.reg-row:last-child{border-bottom:none}
+.reg-row:hover{background:rgba(25,195,154,.045)}
+.reg-row.new{animation:regFlash 1.6s ease-out}
+@keyframes regIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+@keyframes regFlash{0%{background:rgba(25,195,154,.22)}100%{background:transparent}}
+.reg-cell{padding:10px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reg-cell--tag{font-weight:800;color:var(--acc);font-variant-numeric:tabular-nums}
+.reg-cell--w{font-variant-numeric:tabular-nums;font-weight:650}
+.reg-cell--w .reg-unit{font-size:10px;color:var(--dim);font-weight:500;margin-inline-start:3px}
+.reg-cell--date{color:var(--mut);font-variant-numeric:tabular-nums}
+.reg-cell--time{color:#7fd1ff;font-variant-numeric:tabular-nums;font-family:ui-monospace,Consolas,monospace}
+.reg-cell--sensor{color:var(--dim);font-variant-numeric:tabular-nums}
+.reg-cell--rssi{color:var(--warn);font-variant-numeric:tabular-nums;direction:ltr}
+.reg-empty{
+  padding:22px;text-align:center;color:var(--dim);font-size:11.5px;direction:rtl
+}
+.reg-empty .fa{display:block;font-size:20px;margin-bottom:8px;opacity:.5}
+/* responsive: collapse to horizontal scroll on narrow screens */
+@media(max-width:720px){
+  .reg-thead,.reg-row{grid-template-columns:1.2fr 1fr 1.1fr .9fr;min-width:430px}
+  .reg-cell--rssi,.reg-cell--sensor{display:none}
+}
 .langseg button{height:32px;padding:0 13px;display:inline-flex;align-items:center}
 .hctl .pill{height:26px}
 .hctl .vbadge{align-self:center;display:inline-flex;align-items:center}
 .hpills{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 html[dir] .icon-btn.burger{display:none}
-#backdrop{position:fixed;inset:0;background:rgba(4,7,12,.42);z-index:200;
+#backdrop{position:fixed;inset:0;background:rgba(4,7,12,.28);z-index:200;
   opacity:0;pointer-events:none;transition:opacity .25s}
 html[data-theme=light] #backdrop{background:rgba(20,30,48,.32)}
 /* while the drawer is open the whole header (its stacking context)
@@ -286,24 +499,30 @@ select:focus,input:focus{outline:none;border-color:rgba(25,195,154,.55);
 .sheetrow input{accent-color:var(--acc);width:15px;height:15px}
 .sheetrow.locked{opacity:.75;cursor:default}
 .sheetrow .cnt{margin-inline-start:auto;color:var(--dim);font-size:10.5px;direction:ltr}
-/* ---------- guided tour ---------- */
-#tour-shade{position:fixed;inset:0;z-index:298;display:none;pointer-events:none;
-  background:rgba(4,7,12,.55)}
+/* ---------- guided tour — modern glass + progress ---------- */
+#tour-shade{position:fixed;inset:0;z-index:298;display:none;pointer-events:none;background:rgba(4,7,12,.58);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
 #tour-shade.on{display:block}
-.tour-spot{position:relative!important;z-index:301!important;border-radius:10px!important;
-  box-shadow:0 0 0 3px var(--acc),0 0 0 9999px rgba(4,7,12,.62)!important;
-  transition:box-shadow .25s}
-#tour-tip{position:fixed;z-index:302;width:min(320px,86vw);display:none;
-  background:var(--card);border:1px solid var(--line);border-radius:13px;
-  box-shadow:var(--sh-lg);padding:14px 16px}
-.tt-head{display:flex;align-items:center;gap:9px;margin-bottom:7px}
-.tt-head b{font-size:13.5px}
-#tt-text{font-size:12px;color:var(--mut);line-height:2;margin-bottom:11px}
-.tt-foot{display:flex;align-items:center;gap:8px}
-.tt-foot .btn{padding:7px 13px}
-.dots{display:flex;gap:5px;margin-inline:auto}
-.dots i{width:7px;height:7px;border-radius:50%;background:#2a3550;transition:.2s}
-.dots i.on{background:var(--acc);transform:scale(1.15)}
+.tour-spot{position:relative!important;z-index:301!important;border-radius:12px!important;box-shadow:0 0 0 2px #19c39a, 0 0 0 6px rgba(25,195,154,.18), 0 0 0 9999px rgba(4,7,12,.62), 0 12px 32px rgba(0,0,0,.35)!important;transition:box-shadow .28s ease}
+#tour-tip{position:fixed;z-index:302;width:min(420px,92vw);display:none;background:rgba(22,30,46,.96);backdrop-filter:blur(18px) saturate(1.25);-webkit-backdrop-filter:blur(18px) saturate(1.25);border:1px solid rgba(255,255,255,.10);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06) inset;padding:0;overflow:hidden}
+html[data-theme=light] #tour-tip{background:rgba(255,255,255,.97);border-color:rgba(0,0,0,.08)}
+#tour-tip .tt-progress{height:3px;background:rgba(255,255,255,.10);position:relative;overflow:hidden}
+#tour-tip .tt-progress i{position:absolute;inset:0 100% 0 0;background:linear-gradient(90deg,#19c39a,#3b82f6);border-radius:999px;transition:width .35s ease}
+.tt-head{display:flex;align-items:center;gap:10px;padding:14px 16px 8px}
+.tt-head b{font-size:13.5px;line-height:1.3}
+.tt-head .tt-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(25,195,154,.14);border:1px solid rgba(25,195,154,.22);color:#19c39a;flex-shrink:0;font-size:15px}
+#tt-text{font-size:12.5px;color:var(--mut);line-height:1.9;padding:0 16px 12px;max-height:38vh;overflow:auto}
+#tt-text strong{color:var(--txt);font-weight:800}
+.tt-foot{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,255,.07)}
+html[data-theme=light] .tt-foot{background:rgba(0,0,0,.03);border-top-color:rgba(0,0,0,.06)}
+.tt-foot .btn{padding:7px 14px;border-radius:9px;font-size:12px;font-weight:700}
+.tt-foot .btn.ghost{background:transparent;border:1px solid var(--line)}
+.dots{display:flex;gap:5px;margin-inline:auto;align-items:center}
+.dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18);transition:.25s;cursor:pointer}
+html[data-theme=light] .dots i{background:rgba(0,0,0,.14)}
+.dots i.on{background:#19c39a;transform:scale(1.25);box-shadow:0 0 8px rgba(25,195,154,.45)}
+.dots i:hover{transform:scale(1.15)}
+#tt-step{font-size:11px;font-weight:800;letter-spacing:.04em;opacity:.9}
+@media(max-width:560px){#tour-tip{width:94vw}.tt-head{padding:12px 14px 6px}#tt-text{padding:0 14px 10px}}
 
 .colpick-head{display:flex;align-items:center;justify-content:space-between;
   margin-bottom:7px}
@@ -381,6 +600,34 @@ section.view.on{display:block;animation:fade .3s ease}
   gap:8px;flex-wrap:wrap}
 html[dir=ltr] .card h3{letter-spacing:.08em}
 .card h3 .ic{font-size:14px;filter:saturate(.85)}
+.cy-list{max-height:280px;overflow:auto;display:flex;flex-direction:column;gap:7px}
+.cy-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--line);
+  border-radius:9px;background:var(--card2);transition:.15s}
+.cy-item:hover{border-color:var(--acc)}
+.cy-code{font-weight:800;font-size:13px;min-width:42px}
+.cy-label{flex:1;font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cy-meta{font-size:10.5px;color:var(--mut);opacity:.8}
+.cy-del{margin-left:auto;border:none;background:transparent;color:var(--bad,#e5484d);cursor:pointer;
+  font-size:14px;padding:4px 6px;border-radius:7px;transition:.15s}
+.cy-del:hover{background:var(--bad-soft,#ffecec)}
+.cy-item.active{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc-soft,#e8f0ff) inset}
+.ws-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-inline-start:6px;
+  background:#bbb;box-shadow:0 0 0 2px rgba(0,0,0,.05)}
+.ws-dot.on{background:#2bbf6a;box-shadow:0 0 8px #2bbf6a88}
+.ws-dot.off{background:#e5484d;box-shadow:0 0 8px #e5484d66}
+.live-feed{max-height:260px;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:11px;line-height:1.55;background:var(--code,#0e1626);color:#cfe3ff;
+  border-radius:9px;padding:10px 12px;direction:ltr;text-align:left}
+.live-feed .lf-row{white-space:nowrap;opacity:0;animation:lfIn .25s forwards}
+.live-feed .lf-row .t{color:#7fd1ff}
+.live-feed .lf-row .b{color:#9effa0}
+.live-feed .lf-row .w{color:#ffd479}
+.live-feed .lf-row .f{color:#ff9bb0}
+@keyframes lfIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.ministats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.mstat{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;text-align:center}
+.mstat .mv{display:block;font-size:21px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--fg)}
+.mstat .ml{display:block;font-size:10.5px;color:var(--mut);margin-top:3px}
 .kpi .v{font-size:26px;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums;
   letter-spacing:-.3px}
 .kpi .u{font-size:11px;color:var(--mut);margin-top:5px;line-height:1.7}
@@ -739,6 +986,207 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
   .topbar,nav,.controls,.btn{display:none!important}
   body{background:#fff;color:#000}
 }
+/* ================= auth (user panel) ================= */
+#auth-area{display:flex;align-items:center}
+.auth-login-btn{font-size:12.5px;padding:7px 14px;border-radius:10px}
+.auth-user{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;
+  padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid var(--line);transition:background .15s;position:relative}
+.auth-user:hover{background:rgba(255,255,255,.1)}
+.auth-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-weight:800;font-size:13px;flex-shrink:0}
+.auth-name{font-size:12.5px;font-weight:600;color:var(--txt);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.auth-chevron{font-size:10px;color:var(--mut)}
+.auth-dropdown{position:absolute;top:calc(100% + 8px);inset-inline-end:0;min-width:200px;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh-lg);padding:8px;z-index:80}
+#auth-area{position:relative}
+.auth-dropdown-head{padding:8px 10px 10px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.auth-dropdown-head b{display:block;font-size:13px;color:var(--txt)}
+.auth-dropdown-head span{display:block;font-size:11px;color:var(--mut);margin-top:2px;word-break:break-all}
+.auth-dropdown-item{display:flex;align-items:center;gap:8px;width:100%;text-align:start;
+  padding:8px 10px;border-radius:8px;border:none;background:transparent;color:var(--txt);cursor:pointer;font-family:inherit;font-size:12.5px}
+.auth-dropdown-item:hover{background:var(--bg2)}
+.auth-dropdown-item.danger{color:var(--bad)}
+#auth-area{gap:6px}
+.auth-modal-backdrop{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.06);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);padding:16px}
+.auth-modal-backdrop[hidden]{display:none !important}
+.auth-modal{position:relative;width:100%;max-width:400px;background:rgba(255,255,255,.08);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,.14);
+  border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.12) inset;padding:22px 20px 18px;animation:fade .2s ease}
+.auth-modal-close{position:absolute;inset-inline-end:12px;top:12px;width:32px;height:32px;border-radius:50%;
+  border:1px solid var(--line);background:var(--bg2);color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.auth-modal-close:hover{color:var(--txt);border-color:var(--acc)}
+.auth-modal-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.auth-modal-head b{display:block;font-size:15px;font-weight:800}
+.auth-modal-head span{display:block;font-size:11px;color:var(--mut)}
+.auth-tabs{display:flex;gap:6px;margin-bottom:16px;background:var(--bg2);padding:4px;border-radius:10px}
+.auth-tab{flex:1;padding:7px;border-radius:8px;border:none;background:transparent;color:var(--mut);cursor:pointer;font-family:inherit;font-weight:600;font-size:13px}
+.auth-tab.on{background:var(--card);color:var(--txt);box-shadow:var(--sh-sm)}
+.auth-form{display:none;flex-direction:column;gap:10px}
+.auth-form.on{display:flex}
+.auth-form label{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--mut);font-weight:600}
+.auth-form input{padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--bg2);color:var(--txt);font-family:inherit;font-size:13px;outline:none}
+.auth-form input:focus{border-color:rgba(25,195,154,.55);box-shadow:0 0 0 3px rgba(25,195,154,.12)}
+.auth-submit{margin-top:4px;width:100%;justify-content:center}
+.auth-error{padding:8px 10px;border-radius:8px;background:rgba(229,72,77,.12);border:1px solid rgba(229,72,77,.3);color:var(--bad);font-size:12px}
+.auth-error[hidden]{display:none !important}
+.auth-hint{font-size:11.5px;color:var(--mut);text-align:center;margin-top:2px}
+.auth-hint a{color:var(--acc);text-decoration:none}
+.auth-hint a:hover{text-decoration:underline}
+/* ===== Material Dialog (confirm/prompt/alert) ===== */
+.m-dialog-backdrop{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(10,14,22,.38);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
+.m-dialog-backdrop.on{opacity:1;visibility:visible}
+.m-dialog{width:100%;max-width:440px;background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.38),0 1px 0 rgba(255,255,255,.06) inset;padding:22px 20px 16px;transform:translateY(8px) scale(.98);transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.m-dialog-backdrop.on .m-dialog{transform:translateY(0) scale(1)}
+.m-dialog-icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:18px;margin-bottom:14px}
+.m-dialog-icon.warn{background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.28);color:#d97706}
+.m-dialog-icon.danger{background:rgba(229,72,77,.12);border:1px solid rgba(229,72,77,.28);color:#dc2626}
+.m-dialog-icon.info{background:rgba(59,130,246,.10);border:1px solid rgba(59,130,246,.22);color:#2563eb}
+.m-dialog-icon.success{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.28);color:#059669}
+.m-dialog h3{font-size:15px;font-weight:900;line-height:1.4;margin:0 0 8px;color:var(--txt)}
+.m-dialog p{font-size:13px;line-height:1.8;color:var(--mut);margin:0 0 6px;white-space:pre-line}
+.m-dialog-input{width:100%;margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);color:var(--txt);font-family:inherit;font-size:13px;outline:none;transition:border-color .15s,box-shadow .15s}
+.m-dialog-input:focus{border-color:rgba(25,195,154,.55);box-shadow:0 0 0 3px rgba(25,195,154,.12)}
+.m-dialog-input::placeholder{color:var(--dim)}
+.m-dialog-error{font-size:12px;color:var(--bad);margin-top:8px;display:none}
+.m-dialog-error.on{display:block}
+.m-dialog-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.m-dialog-actions .btn{border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;min-width:84px;justify-content:center}
+.m-dialog-actions .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+.m-dialog-actions .btn-ghost:hover{background:var(--bg2)}
+.m-dialog-actions .btn-primary{background:var(--acc);border:1px solid var(--acc);color:#fff;box-shadow:0 4px 14px rgba(25,195,154,.25)}
+.m-dialog-actions .btn-primary:hover{filter:brightness(1.05)}
+.m-dialog-actions .btn-danger{background:#dc2626;border:1px solid #dc2626;color:#fff;box-shadow:0 4px 14px rgba(220,38,38,.25)}
+.m-dialog-actions .btn-danger:hover{background:#b91c1c;border-color:#b91c1c}
+html[data-theme=light] .m-dialog-backdrop{background:rgba(255,255,255,.42)}
+html[data-theme=light] .m-dialog{box-shadow:0 24px 64px rgba(15,23,42,.18),0 1px 0 rgba(255,255,255,.8) inset}
+@media(max-width:560px){.m-dialog{padding:18px 16px;border-radius:16px}.m-dialog h3{font-size:14px}}
+@media(max-width:560px){ .auth-name{max-width:80px} .auth-modal{padding:18px 16px} }
+
+
+/* gate: when not authed, hide app and show only brand + login */
+body.needs-auth #v-workspace, body.needs-auth #v-dash, body.needs-auth #v-exp, body.needs-auth #v-farm, body.needs-auth #v-sim, body.needs-auth #v-scn, body.needs-auth #v-dev, body.needs-auth #v-sci, body.needs-auth #v-met{display:none !important}
+body.needs-auth .tab[data-v]:not([data-v="v-landing"]):not([data-v="v-about"]){opacity:.55}
+body.needs-auth .topbar{backdrop-filter:none}
+body.needs-auth .auth-modal-backdrop{background:rgba(255,255,255,.06);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
+body.needs-auth .auth-modal{animation:none;box-shadow:0 24px 64px rgba(0,0,0,.55)}
+html[data-theme=light] .auth-modal-backdrop{background:rgba(255,255,255,.32);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
+html[data-theme=light] .auth-modal{background:rgba(255,255,255,.72);backdrop-filter:blur(20px) saturate(1.3);border-color:rgba(0,0,0,.08)}
+/* scroll allowed when gated but on public pages - modal JS handles lock */
+
+
+/* ===== Landing (public) ===== */
+#v-landing.on{display:block}
+/* ===== Workspace / User Panel ===== */
+#v-workspace{display:none}
+#v-workspace.on{display:block}
+.ws-wrap{max-width:1160px;margin:0 auto;padding:24px 18px 40px}
+.ws-head{display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:18px 20px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(135deg,rgba(25,195,154,.10),rgba(59,130,246,.08)),var(--card);backdrop-filter:blur(14px)}
+.ws-avatar{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-weight:900;font-size:22px;color:#fff;background:linear-gradient(135deg,#19c39a,#2563eb);box-shadow:0 8px 22px rgba(37,99,235,.25)}
+.ws-head-main{flex:1;min-width:200px}
+.ws-head-main b{font-size:18px;font-weight:900}
+.ws-head-main span{color:var(--mut);font-size:13px;display:block;margin-top:2px}
+.ws-badges{display:flex;gap:8px;flex-wrap:wrap}
+.ws-badge{font-size:11px;font-weight:800;letter-spacing:.02em;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--mut)}
+.ws-badge.ok{background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.25);color:#065f46}
+.ws-badge.warn{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.25);color:#92400e}
+.ws-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+@media(max-width:760px){.ws-stats{grid-template-columns:repeat(2,1fr)}}
+.ws-stat{padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:var(--card);text-align:center;box-shadow:var(--sh-sm)}
+.ws-stat b{font-size:22px;font-weight:900;display:block;line-height:1}
+.ws-stat span{font-size:11px;color:var(--mut);letter-spacing:.04em}
+.ws-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+@media(max-width:1000px){.ws-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.ws-grid{grid-template-columns:1fr}}
+.ws-card{position:relative;padding:16px 16px 14px;border-radius:18px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(10px);display:flex;flex-direction:column;gap:10px;transition:transform .18s,box-shadow .18s,border-color .18s;cursor:pointer;text-align:right;box-shadow:var(--sh-sm)}
+.ws-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(15,23,42,.10);border-color:rgba(25,195,154,.35)}
+.ws-card i{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(135deg,rgba(25,195,154,.14),rgba(59,130,246,.12));color:#0f766e;font-size:18px}
+.ws-card h3{font-size:14px;font-weight:900;margin:0}
+.ws-card p{font-size:12px;color:var(--mut);line-height:1.7;margin:0;min-height:36px}
+.ws-card .ws-go{margin-top:auto;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#0f766e}
+.ws-card .ws-go i{width:auto;height:auto;background:none;font-size:11px}
+.ws-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.ws-actions .btn{border-radius:12px}
+/* Dynamic theme tuning for workspace */
+html[data-theme=dark] .ws-head{background:linear-gradient(135deg,rgba(25,195,154,.12),rgba(59,130,246,.09)),rgba(17,24,38,.78);border-color:rgba(255,255,255,.07)}
+html[data-theme=dark] .ws-stat{background:rgba(17,24,38,.82);border-color:rgba(255,255,255,.06)}
+html[data-theme=dark] .ws-card{background:rgba(17,24,38,.78);border-color:rgba(255,255,255,.06)}
+html[data-theme=dark] .ws-card:hover{box-shadow:0 12px 28px rgba(0,0,0,.35)}
+html[data-theme=dark] .ws-badge{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.08);color:var(--mut)}
+html[data-theme=light] .ws-head{background:linear-gradient(135deg,rgba(25,195,154,.08),rgba(59,130,246,.06)),#ffffff;box-shadow:var(--sh-sm)}
+html[data-theme=light] .ws-stat{background:#ffffff}
+html[data-theme=light] .ws-card{background:#ffffff}
+html[data-theme=light] .ws-card:hover{box-shadow:var(--sh-md)}
+#v-landing{display:none}
+.landing-hero{position:relative;border-radius:28px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:
+  radial-gradient(820px 520px at 72% -8%, rgba(25,195,154,.18), transparent 58%),
+  radial-gradient(640px 420px at 4% 102%, rgba(59,130,246,.13), transparent 60%),
+  radial-gradient(500px 300px at 45% 45%, rgba(139,92,246,.08), transparent 70%),
+  linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.015)), var(--card);
+  padding:30px;display:grid;grid-template-columns:1.08fr .92fr;gap:30px;align-items:center;isolation:isolate}
+.landing-hero::before{content:"";position:absolute;inset:0;background:
+  linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px),
+  linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px);
+  background-size:32px 32px;mask:radial-gradient(700px 400px at 60% 40%, black 40%, transparent 75%);-webkit-mask:radial-gradient(700px 400px at 60% 40%, black 40%, transparent 75%);pointer-events:none;opacity:.55}
+.landing-hero-bg{position:absolute;inset:0;background:linear-gradient(180deg, transparent 40%, rgba(0,0,0,.22));pointer-events:none;z-index:0}
+.landing-hero-inner{position:relative;z-index:1;min-width:0;display:flex;flex-direction:column;gap:20px}
+.landing-hero-inner .landing-badge{margin:0}
+.landing-hero-inner .landing-title{margin:-6px 0 8px}
+.landing-hero-inner .landing-cta{margin:0;display:flex;gap:12px;flex-wrap:wrap}
+.landing-hero-inner .landing-stats{margin:0}
+.landing-visual{position:relative;z-index:1;border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.10);background:#0b1220;aspect-ratio:1.38;box-shadow:0 24px 64px rgba(0,0,0,.38), 0 1px 2px rgba(0,0,0,.3), 0 0 0 1px rgba(255,255,255,.06) inset;transform:rotate(-.35deg);transition:transform .4s ease, box-shadow .4s ease}
+.landing-visual:hover{transform:rotate(0deg) translateY(-2px);box-shadow:0 28px 72px rgba(0,0,0,.42), 0 0 0 1px rgba(255,255,255,.08) inset}
+.landing-visual picture,.landing-visual img{width:100%;height:100%;display:block;object-fit:cover;transition:transform .6s ease}
+.landing-visual:hover img{transform:scale(1.035)}
+.landing-visual::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, transparent 42%, rgba(6,12,24,.58) 92%);pointer-events:none}
+.landing-visual-glow{position:absolute;inset:-22%;background:radial-gradient(420px 320px at 32% 28%, rgba(25,195,154,.30), transparent 62%), radial-gradient(360px 260px at 78% 78%, rgba(59,130,246,.22), transparent 60%);filter:blur(18px);pointer-events:none;z-index:0;opacity:.9}
+.landing-visual-float{position:absolute;inset-inline-start:14px;inset-inline-end:14px;bottom:14px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;border-radius:14px;background:rgba(16,24,39,.68);backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);border:1px solid rgba(255,255,255,.13);box-shadow:0 8px 24px rgba(0,0,0,.28)}
+.landing-visual-float .lvf-left{display:flex;align-items:center;gap:10px;min-width:0}
+.landing-visual-float .lvf-dot{width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 6px rgba(34,197,94,.18), 0 0 14px rgba(34,197,94,.55);animation:lvfPulse 1.8s infinite}
+@keyframes lvfPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.92);opacity:.9}}
+.landing-visual-float .lvf-txt{line-height:1.2}
+.landing-visual-float .lvf-txt b{display:block;font-size:12px;font-weight:800;letter-spacing:-.01em}
+.landing-visual-float .lvf-txt span{font-size:11px;color:rgba(255,255,255,.72)}
+.landing-visual-float .lvf-badge{flex-shrink:0;padding:6px 10px;border-radius:999px;background:rgba(25,195,154,.16);border:1px solid rgba(25,195,154,.28);color:#5eead4;font-size:11px;font-weight:800;white-space:nowrap}
+.landing-badge{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;background:rgba(25,195,154,.12);border:1px solid rgba(25,195,154,.22);color:var(--acc);font-size:12px;font-weight:700;backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(25,195,154,.12)}
+.landing-title{margin:16px 0 10px;font-size:34px;line-height:1.15;font-weight:900;letter-spacing:-.03em}
+.landing-title span{display:block;font-size:18px;font-weight:700;color:var(--mut);margin-top:6px;min-height:26px}
+.landing-title .typed-cursor{display:inline-block;width:2px;height:1.15em;background:var(--acc);margin-inline-start:3px;vertical-align:-2px;animation:typed-blink .75s step-end infinite}
+@keyframes typed-blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.landing-title .typed-cursor{animation:none}}
+/* landing-desc-box removed — unused */
+.landing-cta{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 18px}
+.btn.lg{padding:10px 18px;font-size:13px;border-radius:12px}
+.btn.primary.lg{background:var(--acc);color:#fff;border:1px solid var(--acc);box-shadow:0 6px 18px rgba(25,195,154,.25)}
+.btn.ghost.lg{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--txt)}
+.landing-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+.landing-stats .ls{padding:14px 12px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid var(--line);text-align:center;display:flex;flex-direction:column;justify-content:center;min-height:72px;backdrop-filter:blur(6px);transition:border-color .15s,transform .15s}
+.landing-stats .ls:hover{border-color:rgba(25,195,154,.28);transform:translateY(-1px)}
+.landing-stats .ls b{display:block;font-size:14px;font-weight:900;line-height:1.35;white-space:normal}
+.landing-stats .ls span{font-size:11px;color:var(--mut);margin-top:4px}
+@media(max-width:900px){.landing-stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.landing-stats{grid-template-columns:1fr}}
+.landing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0}
+.landing-grid .lcard{padding:16px;border-radius:16px;background:var(--card);border:1px solid var(--line);transition:transform .15s, border-color .15s}
+.landing-grid .lcard:hover{transform:translateY(-2px);border-color:rgba(25,195,154,.28)}
+.landing-grid .lcard i{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(25,195,154,.12);color:var(--acc);margin-bottom:10px}
+.landing-grid .lcard h3{margin:0 0 6px;font-size:13px;font-weight:800}
+.landing-grid .lcard p{margin:0;color:var(--mut);font-size:12px;line-height:1.7}
+.landing-foot{margin:8px 0 0;padding:16px;border-radius:16px;background:var(--card);border:1px dashed var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.landing-foot p{margin:0;color:var(--mut);font-size:12px;line-height:1.8;max-width:620px}
+@media(max-width:900px){.landing-hero{grid-template-columns:1fr}.landing-visual{aspect-ratio:16/9;order:-1}.landing-grid{grid-template-columns:repeat(2,1fr)}.landing-title{font-size:26px}.landing-badge{align-self:center}.landing-cta{justify-content:center}}
+@media(max-width:560px){.landing-grid{grid-template-columns:1fr}.landing-hero{padding:22px 16px}.landing-title{font-size:22px}.landing-title span{font-size:15px}.landing-badge{align-self:center}.landing-cta{justify-content:center}}
+html[data-theme=light] .landing-hero{background:radial-gradient(820px 520px at 72% -8%, rgba(25,195,154,.12), transparent 58%), radial-gradient(640px 420px at 4% 102%, rgba(59,130,246,.09), transparent 60%), linear-gradient(180deg, #fff, #f6f7f9);border-color:rgba(0,0,0,.06)}
+html[data-theme=light] .landing-visual{border-color:rgba(0,0,0,.08);box-shadow:0 20px 50px rgba(0,0,0,.12)}
+html[data-theme=light] .landing-visual-float{background:rgba(255,255,255,.78);border-color:rgba(0,0,0,.07)}
+html[data-theme=light] .landing-visual-float .lvf-txt span{color:var(--mut)}
+
+
+/* ===== INP: render optimization ===== */
+.view{content-visibility:auto; contain-intrinsic-size: 600px 800px}
+.view.on{content-visibility:visible}
+.tab{will-change: transform}
+canvas{will-change: contents}
+
 </style>
 </head>
 <body>
@@ -747,27 +1195,22 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
 <!-- ================= TOPBAR ================= -->
 <div class="topbar"><div class="topbar-in">
   <a class="brand" href="#">
-    <span class="mark"><img src="logo_128.png" width="44" height="44" alt="BroilerLab" style="object-fit:contain;display:block;border:none"></span>
-    <span><b>BroilerLab</b><span data-i18n="app.tag">شبیه‌ساز آکادمیک دستگاه پایش مصرف خوراک</span>
+    <span class="mark"><img src="logo_128.png" width="52" height="52" alt="ققنوس" style="object-fit:contain;display:block;border:none"></span>
+    <span><b>ققنوس</b><span data-i18n="app.tag">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی</span>
 <span class="uni" data-i18n="app.uni">گروه علوم دامی، دانشگاه تربیت مدرس</span></span>
   </a>
   <div class="hspace"></div>
   <div class="hctl">
+    <div class="topclock" id="topclock" aria-live="off" title="تاریخ و ساعت کنونی">
+      <span class="tc-date" id="tc-date">—</span>
+      <span class="tc-sep">·</span>
+      <span class="tc-time" id="tc-time">—</span>
+    </div>
     <div class="dhead">
       <b data-i18n="hdr.settings">تنظیمات</b>
       <button id="drawer-close" class="icon-btn" aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
     </div>
-    <div class="hgroup">
-      <div class="strain-select" role="combobox" aria-label="سویه" aria-expanded="false" aria-controls="strain-list" tabindex="0">
-        <div class="strain-select__current" id="strain-current">
-          <span class="strain-select__value" id="strain-value">—</span>
-          <span class="strain-select__icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-          </span>
-        </div>
-        <ul class="strain-select__list" id="strain-list" role="listbox" hidden></ul>
-      </div>
-    </div>
+
     <div class="hgroup">
       <span class="hlabel" data-i18n="hdr.lang">زبان</span>
       <div class="langseg" role="group" aria-label="Language">
@@ -781,13 +1224,15 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
         <button id="theme-dark" class="on" aria-pressed="true" title="Dark" data-title-i18n="theme.dark"><i class="fa-solid fa-moon" aria-hidden="true"></i></button><button id="theme-light" aria-pressed="false" title="Light" data-title-i18n="theme.light"><i class="fa-solid fa-sun" aria-hidden="true"></i></button>
       </div>
     </div>
-    <button id="btn-reset" class="icon-btn" title="♻️ Reset cycle data" data-title-i18n="btn.resetCycle" aria-label="Reset"><span class="rb-ic"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></span><span class="rb-label" data-i18n="btn.resetCycle">بازنشانی داده‌های دوره</span></button>
+    <button id="btn-reset" class="icon-btn" title="Reset cycle data" data-title-i18n="btn.resetCycle" aria-label="Reset"><span class="rb-ic"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></span><span class="rb-label" data-i18n="btn.resetCycle">بازنشانی داده‌های دوره</span></button>
     <div class="hpills">
       <span class="pill tag ok" title="Weight MAE vs catalog"><span data-i18n="hdr.mae">MAE</span> <b id="h-mae">—</b></span>
       <span class="pill tag bl" title="records per cycle">≈ <b id="h-rows">—</b> <span data-i18n="hdr.rows">رکورد</span></span>
       <span class="vbadge">v1.0.0</span>
     </div>
     </div><!-- /hctl -->
+  <div id="auth-area"></div>
+
 
     <!-- Settings button + dropdown (desktop) -->
     <div class="hsettings" role="group" aria-label="Settings">
@@ -806,6 +1251,18 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
             <div class="langseg" role="group" aria-label="Language">
               <button id="lang-fa-dd" class="on" aria-pressed="true" lang="fa" role="menuitem">فا</button>
               <button id="lang-en-dd" aria-pressed="false" lang="en" role="menuitem">EN</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label" data-i18n="hdr.strain">سویه</span>
+            <div class="strain-select" role="combobox" aria-label="سویه" aria-expanded="false" aria-controls="strain-list" tabindex="0">
+              <div class="strain-select__current" id="strain-current">
+                <span class="strain-select__value" id="strain-value">—</span>
+                <span class="strain-select__icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </span>
+              </div>
+              <ul class="strain-select__list" id="strain-list" role="listbox" hidden></ul>
             </div>
           </div>
         </div>
@@ -831,28 +1288,114 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
       </div>
     </div>
 
-    <button id="nav-burger" class="icon-btn burger" aria-label="Menu"
+      
+<button id="nav-burger" class="icon-btn burger" aria-label="Menu"
       aria-expanded="false" aria-controls="hctl"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
   </div>
 </div>
 <div id="backdrop"></div>
 
 <nav id="mainnav">
-  <button class="tab on" data-v="v-dash"><span class="no">01</span><span data-i18n="nav.dash">داشبورد اعتبارسنجی</span></button>
-  <button class="tab" data-v="v-exp"><span class="no">02</span><span data-i18n="nav.exp">طرح آزمایش</span></button>
-  <button class="tab" data-v="v-farm"><span class="no">03</span><span data-i18n="nav.farm">نقشه فارم پویا</span></button>
-  <button class="tab" data-v="v-sim"><span class="no">04</span><span data-i18n="nav.sim">شبیه‌سازی زنده</span></button>
-  <button class="tab" data-v="v-scn"><span class="no">05</span><span data-i18n="nav.scn">سناریوها</span></button>
-  <button class="tab" data-v="v-dev"><span class="no">06</span><span data-i18n="nav.dev">دستگاه و داده</span></button>
-  <button class="tab" data-v="v-sci"><span class="no">07</span><span data-i18n="nav.sci">مبانی علمی</span></button>
-  <button class="tab" data-v="v-met"><span class="no">08</span><span data-i18n="nav.met">روش‌شناسی</span></button>
-  <button class="tab" data-v="v-about"><span class="no">09</span><span data-i18n="nav.about">درباره ما</span></button>
+  <button class="tab on" data-v="v-landing" id="tab-landing"><span>صفحه اصلی</span></button>
+  <button class="tab" data-v="v-dash"><span data-i18n="nav.dash">داشبورد اعتبارسنجی</span></button>
+  <button class="tab" data-v="v-exp"><span data-i18n="nav.exp">طرح آزمایش</span></button>
+  <button class="tab" data-v="v-farm"><span data-i18n="nav.farm">نقشه فارم پویا</span></button>
+  <button class="tab" data-v="v-sim"><span data-i18n="nav.sim">شبیه‌سازی زنده</span></button>
+  <button class="tab" data-v="v-scn"><span data-i18n="nav.scn">سناریوها</span></button>
+  <button class="tab" data-v="v-dev"><span data-i18n="nav.dev">دستگاه و داده</span></button>
+  <button class="tab" data-v="v-sci"><span data-i18n="nav.sci">مبانی علمی</span></button>
+  <button class="tab" data-v="v-met"><span data-i18n="nav.met">روش‌شناسی</span></button>
+  <button class="tab" data-v="v-about"><span data-i18n="nav.about">درباره ما</span></button>
 </nav>
 
 <main>
 
 <!-- ================= 01 DASHBOARD ================= -->
-<section class="view on" id="v-dash">
+<!-- ================= LANDING (public) ================= -->
+<section class="view on" id="v-landing" aria-label="Landing">
+  <div class="landing-hero">
+    <div class="landing-hero-bg"></div>
+    <div class="landing-hero-inner">
+      <div class="landing-badge"><i class="fa-solid fa-flask"></i> سامانه هوشمند پایش مصرف خوراک و سیستم‌های کنترل محیطی</div>
+      <h1 class="landing-title">ققنوس <span id="landing-typed" data-text="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی" aria-label="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی"></span></h1>
+      <div class="landing-cta">
+        <button class="btn primary lg" id="landing-login"><i class="fa-solid fa-right-to-bracket"></i> ورود به پنل</button>
+        <button class="btn ghost lg" id="landing-register">ثبت‌نام رایگان</button>
+        <button class="btn ghost lg" id="landing-guest">مشاهده معرفی</button>
+      </div>
+      <div class="landing-stats">
+        <div class="ls"><b>طرح‌های آزمایشی</b></div>
+        <div class="ls"><b>آزمایشگاه مجازی و تخصصی</b></div>
+        <div class="ls"><b>۲۴ ساعته</b><span>داده زنده دستگاه</span></div>
+        <div class="ls"><b>کاربرمحور</b><span>داده‌های کاربرمحور</span></div>
+      </div>
+    </div>
+    <div class="landing-visual" aria-hidden="true">
+      <div class="landing-visual-glow"></div>
+      <picture>
+        <source srcset="assets/landing-hero.webp" type="image/webp">
+        <img src="assets/landing-hero-900.jpg" alt="ققنوس - سامانه هوشمند پرورش" loading="eager" decoding="async" width="900" height="620">
+      </picture>
+      <div class="landing-visual-float">
+        <div class="lvf-left">
+          <span class="lvf-dot"></span>
+          <span class="lvf-txt"><b>داده زنده · ۲۴ ساعته</b><span>داده‌های کاربرمحور و ایمن</span></span>
+        </div>
+        <span class="lvf-badge"><i class="fa-solid fa-shield-halved"></i> ایزوله</span>
+      </div>
+    </div>
+  </div>
+  <div class="landing-grid">
+    <div class="lcard"><i class="fa-solid fa-chart-line"></i><h3>داشبورد اعتبارسنجی</h3><p>مقایسه لحظه‌ای نتایج شبیه‌سازی با عملکرد استاندارد سویه، همراه با نمودار رشد و ضریب تبدیل خوراک اختصاصی هر کاربر.</p></div>
+    <div class="lcard"><i class="fa-solid fa-vial"></i><h3>طرح آزمایش</h3><p>تعریف دوره‌های پرورشی، گروه‌های تیمار و تکرارهای آزمایشی — هر دوره به‌صورت کامل و ایزوله در حساب کاربری شما ثبت می‌شود.</p></div>
+    <div class="lcard"><i class="fa-solid fa-map"></i><h3>نقشه فارم پویا</h3><p>جانمایی جایگاه‌های پرورشی، حسگرها و نمایش وضعیت زنده فارم — داده‌ها به‌صورت اختصاصی و ایزوله در اختیار شما قرار دارد.</p></div>
+    <div class="lcard"><i class="fa-solid fa-satellite-dish"></i><h3>شبیه‌سازی زنده</h3><p>اجرای سناریو با شناسه اختصاصی و مشاهده بلادرنگ نتایج و خروجی‌های شبیه‌سازی.</p></div>
+    <div class="lcard"><i class="fa-solid fa-layer-group"></i><h3>سناریوها</h3><p>ذخیره‌سازی، مقایسه و اجرای مجدد سناریوهای شخصی‌سازی‌شده با امکان بازبینی دقیق نتایج.</p></div>
+    <div class="lcard"><i class="fa-solid fa-microchip"></i><h3>دستگاه و داده</h3><p>ثبت و ذخیره‌سازی خودکار اطلاعات دستگاه‌های پایش — داده‌ها به‌صورت کامل کاربرمحور، ایمن و اختصاصی شما نگهداری می‌شود.</p></div>
+  </div>
+  <div class="landing-foot">
+    <p>برای دسترسی به داشبورد، آزمایش‌ها و داده‌های دستگاه، وارد حساب کاربری خود شوید. داده‌ها و شبیه‌سازی‌ها کاملاً اختصاصی و بر اساس عملکرد شما ذخیره می‌شوند.</p>
+    <button class="btn primary" id="landing-enter"><i class="fa-solid fa-arrow-left"></i> ورود و شروع</button>
+  </div>
+</section>
+
+<section class="view" id="v-workspace" aria-label="محیط کاربری">
+  <div class="ws-wrap">
+    <div class="ws-head" id="ws-head">
+      <div class="ws-avatar" id="ws-avatar">ق</div>
+      <div class="ws-head-main">
+        <b id="ws-name">محیط کاربری ققنوس</b>
+        <span id="ws-email">وارد شده — داده‌های شما کاملاً اختصاصی و ایزوله است</span>
+      </div>
+      <div class="ws-badges">
+        <span class="ws-badge ok" id="ws-role">کاربر</span>
+        <span class="ws-badge" id="ws-status">فعال • کاربرمحور</span>
+      </div>
+    </div>
+    <div class="ws-stats">
+      <div class="ws-stat"><b id="ws-n-cycles">—</b><span>دوره‌ها</span></div>
+      <div class="ws-stat"><b id="ws-n-scenarios">—</b><span>سناریوها</span></div>
+      <div class="ws-stat"><b id="ws-n-device">—</b><span>رکورد دستگاه</span></div>
+      <div class="ws-stat"><b>۲۴ ساعته</b><span>داده زنده</span></div>
+    </div>
+    <div class="ws-grid">
+      <div class="ws-card" data-go="v-dash"><i class="fa-solid fa-chart-line"></i><h3>داشبورد اعتبارسنجی</h3><p>مقایسه شبیه‌سازی با داده واقعی و نمودار رشد</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-exp"><i class="fa-solid fa-vial"></i><h3>طرح آزمایش</h3><p>تعریف دوره‌ها، تیمارها و تکرارها</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-farm"><i class="fa-solid fa-map"></i><h3>نقشه فارم پویا</h3><p>جانمایی پن‌ها و حسگرها به‌صورت زنده</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-sim"><i class="fa-solid fa-satellite-dish"></i><h3>شبیه‌سازی زنده</h3><p>اجرای سناریو با نتیجه بلادرنگ</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-scn"><i class="fa-solid fa-layer-group"></i><h3>سناریوها</h3><p>ذخیره، مقایسه و اجرای مجدد</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-dev"><i class="fa-solid fa-microchip"></i><h3>دستگاه و داده</h3><p>ثبت خودکار داده‌ها — داده‌های کاربرمحور</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-sci"><i class="fa-solid fa-book-open"></i><h3>مبانی علمی</h3><p>مدل‌های رشد و مصرف خوراک</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-met"><i class="fa-solid fa-flask-vial"></i><h3>روش‌شناسی</h3><p>روش اندازه‌گیری و اعتبارسنجی</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+    </div>
+    <div class="ws-actions">
+      <button class="btn primary" id="ws-go-dash"><i class="fa-solid fa-gauge"></i> رفتن به داشبورد</button>
+      <button class="btn ghost" id="ws-logout"><i class="fa-solid fa-right-from-bracket"></i> خروج از حساب</button>
+      <button class="btn ghost" id="ws-back-landing"><i class="fa-solid fa-house"></i> بازگشت به صفحه اصلی</button>
+    </div>
+  </div>
+</section>
+<section class="view" id="v-dash">
   <div class="view-head">
     <span class="eyebrow">DASH · <span data-i18n="dash.h">dash.h</span></span>
     <h2 data-i18n="dash.h.t">dash.h.t</h2>
@@ -1243,6 +1786,86 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
       <div class="note" style="margin-top:12px" data-i18n-html="dev.excelNote"><b>خروجی Excel</b> چهار شیت دارد: خلاصه روزانه · داده دستگاه · طرح آزمایش · کاتالوگ PO مرجع — با هدر فریز و نمای RTL.</div>
     </div>
   </div>
+
+  <!-- ===== Cycle manager + live device stream ===== -->
+  <div class="dev-grid">
+    <!-- Cycle manager card -->
+    <div class="card dev-card">
+      <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></span><span data-i18n="dev.cycles">دوره‌های پرورشی</span></h3>
+
+      <form class="cy-form" id="cy-form" autocomplete="off">
+        <div class="field">
+          <input id="cy-code" class="field__input" type="text" placeholder=" " maxlength="12" />
+          <label class="field__label" for="cy-code">کد دوره (مثلاً F01)</label>
+          <span class="field__bar"></span>
+        </div>
+        <div class="field field--grow">
+          <input id="cy-label" class="field__input" type="text" placeholder=" " />
+          <label class="field__label" for="cy-label">نام دوره</label>
+          <span class="field__bar"></span>
+        </div>
+        <div class="field field--select">
+          <div class="strain-select" id="cy-strain" role="combobox" aria-label="سویه" aria-expanded="false" aria-controls="cy-strain-list" tabindex="0">
+            <div class="strain-select__current" id="cy-strain-current">
+              <span class="strain-select__value" id="cy-strain-value">Ross 308</span>
+              <span class="strain-select__icon" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span>
+            </div>
+            <ul class="strain-select__list" id="cy-strain-list" role="listbox" hidden>
+              <li class="strain-select__option" role="option" data-key="ross308" aria-selected="true" tabindex="-1"><span class="strain-select__radio" aria-hidden="true"></span>Ross 308</li>
+              <li class="strain-select__option" role="option" data-key="cobb500" aria-selected="false" tabindex="-1"><span class="strain-select__radio" aria-hidden="true"></span>Cobb 500</li>
+              <li class="strain-select__option" role="option" data-key="aaplus" aria-selected="false" tabindex="-1"><span class="strain-select__radio" aria-hidden="true"></span>AA+</li>
+              <li class="strain-select__option" role="option" data-key="hubbardep" aria-selected="false" tabindex="-1"><span class="strain-select__radio" aria-hidden="true"></span>Hubbard EP</li>
+            </ul>
+          </div>
+        </div>
+        <button type="submit" id="cy-create" class="btn pri cy-form__submit">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i> <span data-i18n="dev.newCycle">ایجاد دوره</span>
+        </button>
+      </form>
+
+      <div id="cy-list" class="cy-list"></div>
+    </div>
+
+    <!-- Live stream card -->
+    <div class="card dev-card">
+      <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-wave-square" aria-hidden="true"></i></span><span data-i18n="dev.live">جریان داده دستگاه (زنده)</span>
+        <span id="ws-dot" class="ws-dot off" title="WebSocket"></span></h3>
+      <div id="live-feed" class="live-feed" data-skip-i18n-scan></div>
+      <div class="note" data-i18n="dev.liveNote">رویدادهای خام دستگاه (RFID ورود + لودسل مخزن + تایم وعده) به‌صورت زنده از بک‌اند دریافت می‌شوند.</div>
+    </div>
+  </div>
+
+  <div class="card dev-stats" style="margin-top:14px">
+    <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-chart-simple" aria-hidden="true"></i></span><span data-i18n="dev.stats">آمار دوره انتخاب‌شده</span></h3>
+    <div id="cy-stats" class="ministats" data-skip-i18n-scan>
+      <div class="mstat"><span class="mv" id="st-visits">—</span><span class="ml">بازدید</span></div>
+      <div class="mstat"><span class="mv" id="st-birds">—</span><span class="ml">پرندگان یکتا</span></div>
+      <div class="mstat"><span class="mv" id="st-rows">—</span><span class="ml">ردیف دستگاه</span></div>
+      <div class="mstat"><span class="mv" id="st-intake">—</span><span class="ml">مصرف کل (g)</span></div>
+      <div class="mstat"><span class="mv" id="st-avgw">—</span><span class="ml">میانگین وزن اولیه (g)</span></div>
+      <div class="mstat"><span class="mv" id="st-miss">—</span><span class="ml">RFID ازدست‌رفته</span></div>
+    </div>
+  </div>
+
+  <!-- ===== Realtime registrations (bird tag + initial weight + exact timestamp) ===== -->
+  <div class="card dev-regs" style="margin-top:14px">
+    <h3 class="dev-card__title">
+      <span class="ic"><i class="fa-solid fa-tag" aria-hidden="true"></i></span><span data-i18n="dev.regs">ثبت‌های لحظه‌ای ورود پرنده</span>
+      <span class="dev-regs__live"><i class="fa-solid fa-circle" aria-hidden="true"></i> <span>زنده</span></span>
+    </h3>
+    <div class="reg-table" data-skip-i18n-scan>
+      <div class="reg-thead">
+        <span class="reg-cell reg-cell--tag">تگ / کد مرغ</span>
+        <span class="reg-cell reg-cell--w">وزن اولیه</span>
+        <span class="reg-cell reg-cell--date">تاریخ</span>
+        <span class="reg-cell reg-cell--time">ساعت</span>
+        <span class="reg-cell reg-cell--sensor">سنسور</span>
+        <span class="reg-cell reg-cell--rssi">RSSI</span>
+      </div>
+      <div id="reg-body" class="reg-body"></div>
+    </div>
+    <div class="note dev-regs__note" data-i18n="dev.regsNote">هر پرنده هنگام ورود به دستگاه تگ‌خوانی می‌شود؛ وزن اولیه، تاریخ و ساعت ثبت دقیقاً در لحظه ورود ثبت و در دیتابیس ذخیره می‌گردد — این پنل همان داده‌ها را زنده نمایش می‌دهد.</div>
+  </div>
 </section>
 
 <!-- ================= 07 SCIENCE ================= -->
@@ -1311,7 +1934,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   <div class="card" style="margin-top:13px">
     <h3><span class="ic">👤</span><span data-i18n="about.title">درباره و مالکیت</span></h3>
     <div class="srcs" style="line-height:2.2">
-      <p data-i18n-html="about.body">BroilerLab نسخه ۳٫۰ — ساخته و نگهداری‌شده توسط <b>Arsalan Rezazadeh</b>. شبیه‌ساز آکادمیک دستگاه RFID + دو لودسل برای سویه‌های گوشتی صنعتی با کاتالوگ‌های رسمی Aviagen/Cobb-Vantress/Hubbard، موتور وعده‌محور و آزمایشگاه آمار زیستی. اجرای کاملاً آفلاین، بدون سرور، seed تکرارپذیر.</p>
+      <p data-i18n-html="about.body">ققنوس نسخه ۳٫۰ — ساخته و نگهداری‌شده توسط <b>Arsalan Rezazadeh</b>. شبیه‌ساز آکادمیک دستگاه RFID + دو لودسل برای سویه‌های گوشتی صنعتی با کاتالوگ‌های رسمی Aviagen/Cobb-Vantress/Hubbard، موتور وعده‌محور و آزمایشگاه آمار زیستی. اجرای کاملاً آفلاین، بدون سرور، seed تکرارپذیر.</p>
     </div>
   </div>
 </section>
@@ -1322,7 +1945,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   <div class="card">
     <h3><span class="ic">📝</span><span data-i18n="met.abstractT">چکیده</span></h3>
     <p class="abstract" style="font-size:12.5px;color:var(--mut);line-height:2.2" data-i18n-html="met.abstract">
-      BroilerLab یک شبیه‌ساز گسسته-رویداد از ایستگاه پایش مصرف خوراک طیور است که داده‌های سطح دستگاه
+      ققنوس یک شبیه‌ساز گسسته-رویداد از ایستگاه پایش مصرف خوراک طیور است که داده‌های سطح دستگاه
       (RFID + دو لودسل) را با وضوح سه‌ردیفی به‌ازای هر وعده تولید می‌کند. موتور وعده‌محور آن روی
       کاتالوگ‌های عملکردی رسمی چهار سویه صنعتی قفل شده و فیزیک سنسورها مطابق ادبیات داوری‌شده کالیبره شده است.
       اعتبارسنجی در برابر جداول مرجع MAE وزن ۱–۲٪ نشان می‌دهد.</p>
@@ -1428,9 +2051,9 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
     <h3><span class="ic">🏛️</span><span data-i18n="about.uniT">دانشگاه تربیت مدرس — گروه علوم دامی</span></h3>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:15px">
       <div style="width:64px;height:64px;border-radius:14px;display:grid;place-items:center;
-        border:2px solid rgba(25,195,154,.38);border-radius:16px;box-shadow:0 0 16px rgba(25,195,154,.2)"><img src="logo_128.png" width="56" height="56" style="object-fit:contain;display:block" alt="BroilerLab"></div>
+        border:2px solid rgba(25,195,154,.38);border-radius:16px;box-shadow:0 0 16px rgba(25,195,154,.2)"><img src="logo_128.png" width="56" height="56" style="object-fit:contain;display:block" alt="ققنوس"></div>
       <div>
-        <b style="font-size:17px">BroilerLab v1.0.0</b><br>
+        <b style="font-size:17px">ققنوس v1.0.0</b><br>
         <small class="dm" data-i18n="about.subTitle">شبیه‌ساز آکادمیک دستگاه پایش مصرف خوراک طیور گوشتی</small>
       </div>
     </div>
@@ -1455,7 +2078,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 </main>
 
 <footer>
-  <div><b style="color:var(--mut)">BroilerLab v1.0.0</b> — © 2026 Arsalan Rezazadeh</div>
+  <div><b style="color:var(--mut)">ققنوس v1.0.0</b> — © 2026 Arsalan Rezazadeh</div>
   <div class="own">
     <a href="https://github.com/arsalan-codes" target="_blank" rel="noopener">🐙 github.com/<b>arsalan-codes</b></a>
     <a href="https://www.linkedin.com/in/arsalan-rezazadeh/" target="_blank" rel="noopener">💼 linkedin.com/in/<b>arsalan-rezazadeh</b></a>
@@ -1468,12 +2091,16 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js"></script>
-<script src="engine.js"></script>
-<script src="xlsx.js"></script>
-<script src="stats.js"></script>
-<script src="i18n.js"></script>
-<script src="app.js"></script>
+<script src="strains.js" defer></script>
+<script src="engine.js" defer></script>
+<script src="xlsx.js" defer></script>
+<script src="stats.js" defer></script>
+<script src="i18n.js" defer></script>
+<script src="shamsi.js" defer></script>
+<script src="auth.js" defer></script>
+<script src="device-panel.js" defer></script>
+<script src="dialog.js" defer></script>
+<script src="app.js" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
@@ -1505,17 +2132,66 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 </div>
 
 <!-- ================= GUIDED TOUR ================= -->
-<div id="tour-tip" style="display:none">
-  <div class="tt-head"><span id="tt-step" class="tag bl"></span>
-    <b id="tt-title"></b></div>
+<div id="tour-tip" style="display:none" role="dialog" aria-modal="true" aria-labelledby="tt-title">
+  <div class="tt-progress"><i id="tt-bar"></i></div>
+  <div class="tt-head"><span class="tt-icon" id="tt-icon"><i class="fa-solid fa-graduation-cap"></i></span><b id="tt-title"></b><span id="tt-step" class="tag bl" style="margin-inline-start:auto"></span></div>
   <div id="tt-text"></div>
   <div class="tt-foot">
     <button id="tt-skip" class="btn ghost" data-i18n="tour.skip">رد کردن</button>
     <span class="dots" id="tt-dots"></span>
-    <button id="tt-prev" class="btn ghost">‹</button>
-    <button id="tt-next" class="btn">›</button>
+    <button id="tt-prev" class="btn ghost" aria-label="Previous">‹ <span data-i18n="tour.prev">قبلی</span></button>
+    <button id="tt-next" class="btn primary" aria-label="Next"><span data-i18n="tour.next">بعدی</span> ›</button>
   </div>
 </div>
 <div id="tour-shade"></div>
+<script>
+(function(){
+  var el=document.getElementById('landing-typed');
+  if(!el) return;
+  var full=el.getAttribute('data-text')||'';
+  var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce){ el.textContent=full; return; }
+  el.textContent='';
+  var cursor=document.createElement('span');
+  cursor.className='typed-cursor';
+  cursor.setAttribute('aria-hidden','true');
+  el.appendChild(cursor);
+  var i=0;
+  var speed=45;
+  function type(){
+    if(i<full.length){
+      var ch=full.charAt(i);
+      el.insertBefore(document.createTextNode(ch), cursor);
+      i++;
+      var d=speed + (ch===' '||ch==='،' ? 18 : 0);
+      setTimeout(type, d);
+    } else {
+      setTimeout(function(){
+        // clear and restart loop
+        el.textContent='';
+        el.appendChild(cursor);
+        i=0;
+        setTimeout(type, 400);
+      }, 2600);
+    }
+  }
+  setTimeout(type, 400);
+})();
+</script>
+<!-- Material Dialog -->
+<div class="m-dialog-backdrop" id="m-dialog" hidden aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="m-dialog" role="document">
+    <div class="m-dialog-icon info" id="m-dialog-icon"><i class="fa-solid fa-circle-info"></i></div>
+    <h3 id="m-dialog-title"></h3>
+    <p id="m-dialog-msg"></p>
+    <input class="m-dialog-input" id="m-dialog-input" type="password" hidden>
+    <input class="m-dialog-input" id="m-dialog-input2" type="password" hidden placeholder="">
+    <div class="m-dialog-error" id="m-dialog-error"></div>
+    <div class="m-dialog-actions">
+      <button class="btn btn-ghost" id="m-dialog-cancel"></button>
+      <button class="btn btn-primary" id="m-dialog-confirm"></button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

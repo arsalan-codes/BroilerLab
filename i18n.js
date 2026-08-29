@@ -7,18 +7,38 @@ fa:{
 "bio.title":"آزمایشگاه آمار زیستی","bio.sub":"واحد نمونه = پن · Welch t / ANOVA یک‌راهه / η² / Holm",
 "bio.metric":"متغیر پاسخ","bio.bw":"وزن پایان دوره (g)","bio.fi":"کل مصرف هر پرنده (g)",
 "bio.fcr":"ضریب تبدیل خوراک دوره","bio.mort":"تلفات (%)",
-"app.title":"BroilerLab — شبیه‌ساز آکادمیک پایش مصرف خوراک طیور",
-"app.tag":"شبیه‌ساز آکادمیک دستگاه پایش مصرف خوراک",
+"app.title":"ققنوس — سامانه هوشمند پرورش و اصلاح نژاد",
+"app.tag":"سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی",
 "app.uni":"گروه علوم دامی، دانشگاه تربیت مدرس",
-"hdr.strain":"سویه","hdr.lang":"زبان","hdr.mae":"MAE","hdr.theme":"پوسته",
+"hdr.strain":"سویه","hdr.lang":"زبان","hdr.mae":"میانگین قدرمطلق خطا","hdr.theme":"پوسته",
 "nav.about":"درباره ما","hdr.help":"آموزش سریع",
-"tour.welcomeT":"🎓 خوش آمدید — آموزش ۶۰ ثانیه‌ای",
-"tour.welcomeP":"در یک دقیقه با بخش‌های کلیدی BroilerLab آشنا شوید. هر وقت خواستید از دکمه ❓ بالای صفحه دوباره ببینید.",
-"tour.navT":"تب‌های اصلی","tour.navP":"از اعتبارسنجی شروع کنید؛ طرح آزمایش، نقشه فارم، جریان دستگاه، سناریوها و مستندات در همین نوار هستند.",
-"tour.strainT":"انتخاب سویه","tour.strainP":"Ross 308، Cobb 500، Arbor Acres+ یا Hubbard — همه محاسبات با کاتالوگ رسمی همان سویه انجام می‌شود.",
-"tour.langT":"زبان و پوسته","tour.langP":"تعویض فارسی/English و تم تیره/روشن؛ کلید T میان‌بر تم است.",
-"tour.resetT":"بازنشانی دوره","tour.resetP":"برای پاک‌کردن داده‌های اجراها، دکمه را دوبار کلیک کنید (تأیید دومرحله‌ای).",
-"tour.doneT":"🎉 آماده‌اید!","tour.doneP":"از داشبورد شروع کنید یا مستقیم به «طرح آزمایش» بروید و نقشه فارم را بسازید. موفق باشید!",
+"tour.welcomeT":"🎓 خوش آمدید — آموزش سریع ۹۰ ثانیه‌ای",
+"tour.welcomeP":"ققنوس یک سامانه یکپارچه هوشمند اصلاح نژادی و مدیریت پرورش جوجه‌های گوشتی است که برای هر کاربر، داده‌ها را به‌صورت کاملا اختصاصی و جداگانه ذخیره می‌کند. در کمتر از دو دقیقه با کلیت سامانه آشنا می‌شوید و در هر زمان می‌توانید از بخش تنظیمات، گزینه آموزش سریع را دوباره ببینید.",
+"tour.authT":"🔒 ورود و ایزوله‌سازی",
+"tour.authP":"صفحه اصلی و صفحه درباره ما برای همه بازدیدکنندگان قابل مشاهده است. هفت بخش تخصصی دیگر پس از ورود به حساب کاربری فعال می‌شود و تمام اطلاعات دوره پرورش و گزارش‌های دستگاه تنها در حساب کاربری شما ذخیره خواهد شد.",
+"tour.strainT":"🧬 انتخاب سویه",
+"tour.strainP":"چهار سویه معتبر شامل راس ۳۰۸، کاب ۵۰۰، آربور آکرز پلاس و هوبارد در دسترس است. از منوی سویه در بخش تنظیمات می‌توانید سویه مورد نظر را انتخاب کنید. تمامی شاخص‌ها، نمودارها و میانگین قدرمطلق خطا بر اساس راهنمای رسمی همان سویه به‌صورت دقیق محاسبه می‌شود.",
+"tour.settingsT":"⚙️ تنظیمات و زبان",
+"tour.settingsP":"از طریق دکمه تنظیمات در نوار بالا می‌توانید سویه مورد نظر را تغییر دهید، زبان سامانه را بین فارسی و انگلیسی جابه‌جا کنید، پوسته را بین حالت تیره و روشن انتخاب نمایید، و به ساعت شمسی و میلادی و همچنین بخش آموزش سریع دسترسی داشته باشید. کلید میانبر T نیز برای تغییر پوسته در نظر گرفته شده است.",
+"tour.navT":"🧭 تب‌های اصلی",
+"tour.navP":"نوار پیمایش سامانه شامل نه بخش اصلی است: صفحه اصلی، داشبورد اعتبارسنجی، طرح آزمایش، نقشه پویای فارم، شبیه‌سازی زنده، سناریوها، دستگاه و داده، مبانی علمی، روش‌شناسی و درباره ما. با انتخاب هر گزینه وارد بخش مربوطه خواهید شد.",
+"tour.dashT":"📊 داشبورد اعتبارسنجی",
+"tour.dashP":"در داشبورد اعتبارسنجی، شاخص‌های کلیدی مانند میانگین قدرمطلق خطا، ضریب تبدیل خوراک و وزن نهایی دوره را مشاهده می‌کنید. علاوه بر آن، نمودار رشد در مقایسه با راهنمای رسمی سویه، میزان مصرف روزانه، الگوی مصرف در طول شبانه‌روز و وضعیت اشباع ایستگاه تغذیه نمایش داده می‌شود. اگر میانگین خطا کمتر از دو درصد باشد، نشان‌دهنده اعتبار بسیار بالای شبیه‌سازی است.",
+"tour.expT":"🧪 طرح آزمایش",
+"tour.expP":"در بخش طرح آزمایش می‌توانید جایگاه‌های پرورشی را تعریف کنید، تعداد پرنده، نوع تیمار و تعداد تکرار هر تیمار را مشخص نمایید. این طرح، مبنای نمایش نقشه فارم، انجام تحلیل‌های آماری و تهیه فایل‌های خروجی خواهد بود.",
+"tour.farmT":"🗺 نقشه فارم پویا",
+"tour.farmP":"نقشه پویای فارم، روند رشد را به‌صورت زمانی و متحرک نمایش می‌دهد. پرنده‌ها در جایگاه خود حرکت می‌کنند، میزان شلوغی و اشغال هر جایگاه قابل مشاهده است و با انتخاب هر پرنده می‌توانید وزن فعلی، میزان خوراک مصرفی و وضعیت سلامت آن را به‌صورت جداگانه بررسی کنید.",
+"tour.simT":"📡 شبیه‌سازی زنده دستگاه",
+"tour.simP":"در بخش شبیه‌سازی زنده، اطلاعات دریافتی از سامانه تشخیص هوشمند و حسگرهای وزن‌کشی را به‌صورت لحظه‌ای مشاهده می‌کنید. نمودار رشد زنده، نمودار مصرف تجمعی، جدول کامل رویدادهای تغذیه و امکان دریافت خروجی در قالب فایل متنی یا صفحه گسترده در همین بخش قرار دارد.",
+"tour.scnT":"🧪 آزمایشگاه سناریو",
+"tour.scnP":"در آزمایشگاه سناریو می‌توانید دو شرایط مختلف را با شرایط اولیه کاملا یکسان مقایسه کنید؛ برای مثال اثر تنش گرمایی یا افزودن ایستگاه دوم تغذیه. نتیجه به‌صورت نمودار رشد، نمودار مصرف خوراک و جدول تغییرات روزانه نمایش داده می‌شود.",
+"tour.devT":"💻 دستگاه و داده",
+"tour.devP":"در بخش دستگاه و داده، با معماری ارتباطی سامانه، نحوه عملکرد حسگرهای وزن‌کشی و سامانه تشخیص، منطق مدیریت صف انتظار تغذیه و ساختار دوازده‌ستونی هر رکورد آشنا می‌شوید. تمام داده‌ها به‌صورت ایمن و اختصاصی برای هر کاربر ذخیره می‌شود.",
+"tour.sciT":"📚 مبانی علمی و روش‌شناسی",
+"tour.sciP":"در بخش‌های مبانی علمی و روش‌شناسی می‌توانید منابع معتبر علمی، زنجیره کامل مدل‌سازی، معادلات مورد استفاده و محدودیت‌های شبیه‌سازی را با توضیحی شفاف و مستند مطالعه کنید.",
+"tour.expT2":"📦 خروجی داده",
+"tour.expP2":"برای دریافت داده‌ها، از دکمه خروجی در بخش شبیه‌سازی زنده یا نقشه فارم استفاده کنید. می‌توانید ستون‌های مورد نظر را انتخاب نمایید و خروجی را در قالب فایل متنی یا چند برگه صفحه گسترده دریافت کنید.",
+"tour.doneT":"🎉 آماده‌اید!","tour.doneP":"پیشنهاد می‌کنیم کار را از داشبورد اعتبارسنجی آغاز کنید یا مستقیما وارد بخش طرح آزمایش شوید و جایگاه‌های پرورشی مورد نظر خود را طراحی کنید. آرزوی موفقیت داریم. برای بستن این راهنما از کلید خروج و برای جابه‌جایی بین مراحل از کلیدهای جهت‌نما استفاده کنید.",
 "tour.next":"بعدی","tour.prev":"قبلی","tour.skip":"رد کردن","tour.finish":"پایان",
 "ex.title":"مرکز خروجی داده","ex.back":"↩ بازگشت","ex.source":"منبع","ex.format":"قالب",
 "ex.summary":"خلاصه روزانه پن‌ها","ex.device":"رکوردهای خام دستگاه",
@@ -28,7 +48,7 @@ fa:{
 "ex.rawSkip":"گله بزرگ — شیت داده خام رد شد.","ex.rowcap":"سقف {cap} ردیف",
 "ex.ctxLive":"اجرای زنده · پن {pen} · d{a0}–{a1} · سویه {strain}",
 "ex.ctxFarm":"کل فارم · {pens} پن · d{a0}–{a1} · سویه {strain}","theme.dark":"تم تیره","theme.light":"تم روشن",
-"btn.resetCycle":"♻️ بازنشانی داده‌های دوره","dyn.resetArmed":"⚠️ دوباره کلیک کنید تا همه داده‌های دوره پاک شود","dyn.resetDone":"♻️ همه داده‌های دوره بازنشانی شد",
+"btn.resetCycle":"بازنشانی داده‌های دوره","dyn.resetArmed":"⚠️ دوباره کلیک کنید تا همه داده‌های دوره پاک شود","dyn.resetDone":"♻️ همه داده‌های دوره بازنشانی شد",
 "btn.defaults":"بازگشت به پیش‌فرض","dyn.designReset":"↺ طرح آزمایش به قالب پیش‌فرض بازگشت",
 "dyn.visitOk":"وعده ثبت شد","dyn.readFail":"خطای خوانش RFID","hdr.rows":"رکورد/دوره",
 "nav.dash":"داشبورد اعتبارسنجی","nav.exp":"طرح آزمایش","nav.farm":"نقشه فارم پویا",
@@ -59,7 +79,7 @@ fa:{
 "ch.liveGrowth":"رشد زنده vs کاتالوگ","ch.liveCum":"مصرف تجمعی vs هدف",
 "ch.farmGrowth":"رشد به تفکیک تیمار (±SE)","ch.farmFi":"مصرف روزانه به تفکیک تیمار",
 "nav.met":"روش‌شناسی","met.abstractT":"چکیده",
-"met.abstract":"BroilerLab یک شبیه‌ساز گسسته-رویداد از ایستگاه پایش مصرف خوراک طیور است که داده‌های سطح دستگاه (RFID + دو لودسل) را با وضوح سه‌ردیفی به‌ازای هر وعده تولید می‌کند. موتور وعده‌محور آن روی کاتالوگ‌های عملکردی رسمی چهار سویه صنعتی قفل شده و فیزیک سنسورها مطابق ادبیات داوری‌شده کالیبره شده است. اعتبارسنجی در برابر جداول مرجع MAE وزن ۱–۲٪ نشان می‌دهد.",
+"met.abstract":"ققنوس یک شبیه‌ساز گسسته-رویداد از ایستگاه پایش مصرف خوراک طیور است که داده‌های سطح دستگاه (RFID + دو لودسل) را با وضوح سه‌ردیفی به‌ازای هر وعده تولید می‌کند. موتور وعده‌محور آن روی کاتالوگ‌های عملکردی رسمی چهار سویه صنعتی قفل شده و فیزیک سنسورها مطابق ادبیات داوری‌شده کالیبره شده است. اعتبارسنجی در برابر جداول مرجع MAE وزن ۱–۲٪ نشان می‌دهد.",
 "met.pipeline":"خط تولید داده",
 "met.p1":"کاتالوگ سویه","met.p1s":"BW/FI روزانه نر و ماده",
 "met.p2":"مدل فردی","met.p2s":"CV≈۵٪ + AR(1) + بلوک‌بندی",
@@ -145,6 +165,11 @@ fa:{
 "dev.queue":"<b>④ منطق صف:</b> سوراخ واحد؛ انتظار ≤۹۰ ثانیه وگرنه رویداد هم‌زمانی — گلوگاه پن‌های بزرگ.",
 "dev.threeRows":"هر وعده دقیقاً ۳ ردیف تولید می‌کند (شروع/میانه/پایان) مثل نمونه سه‌ردیفی مرجع.",
 "dev.excelNote":"<b>خروجی Excel</b> چهار شیت دارد: خلاصه روزانه · داده دستگاه · طرح آزمایش · PO مرجع — با هدر فریز و نمای RTL.",
+"dev.cycles":"دوره‌های پرورشی","dev.newCycle":"ایجاد دوره","dev.live":"جریان داده دستگاه (زنده)",
+"dev.liveNote":"رویدادهای خام دستگاه (RFID ورود + لودسل مخزن + تایم وعده) به‌صورت زنده از بک‌اند دریافت می‌شوند.",
+"dev.stats":"آمار دوره انتخاب‌شده",
+"dev.regs":"ثبت‌های لحظه‌ای ورود پرنده",
+"dev.regsNote":"هر پرنده هنگام ورود به دستگاه تگ‌خوانی می‌شود؛ وزن اولیه، تاریخ و ساعت ثبت دقیقاً در لحظه ورود ثبت و در دیتابیس ذخیره می‌گردد — این پنل همان داده‌ها را زنده نمایش می‌دهد.",
 
 "sci.sources":"منابع علمی — با نقل‌قول مستقیم","sci.use1":"جدول وزن↔دما و برنامه نوری مدل.",
 "sci.use2":"پارامترهای گومپرتز Ross.","sci.use3":"کاتالوگ کامل وزن/مصرف/FCR هر سویه — عیناً از اسناد رسمی، بدون تکرار بین سویه‌ها.",
@@ -167,7 +192,7 @@ fa:{
 "lim.5":"⑤ ضرایب تیمارها و سناریوی تنش گرمایی کالیبره‌شده‌اند و معادل استخراج مستقیم از منبع نیستند.",
 "lim.6":"⑥ آمار استنباطی روی «پن» به‌عنوان واحد نمونه است؛ n کم = توان کم.",
 "about.title":"درباره و مالکیت",
-"about.body":"BroilerLab نسخه ۱٫۰٫۰ — ساخته و نگهداری‌شده توسط <b>Arsalan Rezazadeh</b>. شبیه‌ساز آکادمیک دستگاه RFID + دو لودسل برای سویه‌های گوشتی صنعتی با کاتالوگ‌های رسمی Aviagen / Cobb-Vantress / Hubbard، موتور وعده‌محور و آزمایشگاه آمار زیستی. اجرای کاملاً آفلاین، بدون سرور، seed تکرارپذیر.",
+"about.body":"ققنوس نسخه ۱٫۰٫۰ — ساخته و نگهداری‌شده توسط <b>Arsalan Rezazadeh</b>. شبیه‌ساز آکادمیک دستگاه RFID + دو لودسل برای سویه‌های گوشتی صنعتی با کاتالوگ‌های رسمی Aviagen / Cobb-Vantress / Hubbard، موتور وعده‌محور و آزمایشگاه آمار زیستی. اجرای کاملاً آفلاین، بدون سرور، seed تکرارپذیر.",
 "foot.data":"داده‌ها: Aviagen · Cobb-Vantress · Hubbard · Poultry Science · animal · Arch Anim Breed",
 "foot.offline":"اجرای کامل آفلاین · seed تکرارپذیر = 308 · واحد نمونه آماری: پن",
 
@@ -225,24 +250,44 @@ en:{
 "bio.title":"Biostatistics laboratory","bio.sub":"unit = pen · Welch t / one-way ANOVA / η² / Holm",
 "bio.metric":"Response variable","bio.bw":"Final weight (g)","bio.fi":"Total intake per bird (g)",
 "bio.fcr":"Window FCR","bio.mort":"Mortality (%)",
-"app.title":"BroilerLab — Academic Poultry Feeding-Station Simulator",
-"app.tag":"Academic feeding-station simulator",
+"app.title":"Ghoghnous — Intelligent Poultry Breeding & Rearing Platform",
+"app.tag":"Intelligent Breeding & Rearing Platform",
 "app.uni":"Animal Science Dept., Tarbiat Modares University",
 "hdr.strain":"Strain","hdr.rows":"records/cycle",
 "nav.dash":"Validation dashboard","nav.exp":"Trial designer","nav.farm":"Live farm map",
 "nav.sim":"Live device stream","nav.scn":"Scenario lab","nav.dev":"Device & schema","nav.sci":"Scientific basis",
-"btn.defaults":"Defaults","btn.resetCycle":"♻️ Reset cycle data",
+"btn.defaults":"Defaults","btn.resetCycle":"Reset cycle data",
 "dyn.designReset":"↺ Trial design restored to defaults","dyn.readFail":"RFID read failure",
 "dyn.resetArmed":"⚠️ Click again to clear all cycle data","dyn.resetDone":"♻️ All cycle data has been reset",
 "dyn.visitOk":"Visit logged","hdr.lang":"Language","hdr.mae":"MAE","hdr.theme":"Theme",
 "nav.about":"About us","hdr.help":"Quick tour",
-"tour.welcomeT":"🎓 Welcome — 60-second tour",
-"tour.welcomeP":"Get familiar with BroilerLab's key areas in a minute. Re-open anytime with the ❓ button.",
-"tour.navT":"Main tabs","tour.navP":"Start at validation; trial designer, live farm map, device stream, scenarios and docs live in this bar.",
-"tour.strainT":"Strain selector","tour.strainP":"Ross 308, Cobb 500, Arbor Acres+ or Hubbard \u2014 every calculation uses that strain's official catalog.",
-"tour.langT":"Language & theme","tour.langP":"FA/EN switch and dark/light theme; T is the theme shortcut.",
-"tour.resetT":"Cycle reset","tour.resetP":"Double-click to clear run data (two-step confirmation).",
-"tour.doneT":"🎉 You're ready!","tour.doneP":"Start from the dashboard or jump to the Trial designer and build your farm map. Good luck!",
+"tour.welcomeT":"🎓 Welcome — 90-second guided tour",
+"tour.welcomeP":"Ghoghnous is an intelligent broiler growth and feed intake simulator. Each account keeps its own fully isolated data. In less than two minutes you will learn the whole workflow, and you can always reopen this guide from Settings.",
+"tour.authT":"🔒 Sign in and data isolation",
+"tour.authP":"The landing page and About page are open to all visitors. The other seven specialist sections become available after you sign in, and every rearing cycle and device report is stored exclusively in your own account.",
+"tour.strainT":"🧬 Choosing the strain",
+"tour.strainP":"Four validated strains are available: Ross 308, Cobb 500, Arbor Acres Plus and Hubbard. You can select your preferred strain from the strain menu in Settings. All indicators, charts and the mean absolute error are calculated precisely according to the official guide for that strain.",
+"tour.settingsT":"⚙️ Settings and language",
+"tour.settingsP":"Use the settings button in the top bar to change the strain, switch the language between English and Persian, choose between dark and light appearance, and access the Shamsi and Gregorian clock as well as this quick guide. The T key is also a shortcut for switching appearance.",
+"tour.navT":"🧭 Main navigation",
+"tour.navP":"The navigation bar contains nine main sections: Landing page, Validation Dashboard, Trial Design, Dynamic Farm Map, Live Simulation, Scenarios, Device and Data, Scientific Basis, Methodology and About. Selecting any item will take you to that section.",
+"tour.dashT":"📊 Validation Dashboard",
+"tour.dashP":"On the Validation Dashboard you will see the key indicators such as the mean absolute error, the feed conversion ratio and the final body weight. You will also find the growth curve compared with the official guide for the strain, daily feed intake, the feeding pattern throughout the day and the feeder station saturation. A mean error below two percent indicates very high simulation fidelity.",
+"tour.expT":"🧪 Trial Design",
+"tour.expP":"In the Trial Design section you can define rearing pens, specify the number of birds, the treatment type and the number of replications. This design forms the basis for displaying the farm map, performing statistical analyses and preparing export files.",
+"tour.farmT":"🗺 Dynamic Farm Map",
+"tour.farmP":"The dynamic farm map shows the rearing process on a timeline. Birds move inside their pens, the crowding and occupancy of each pen can be observed, and by selecting any bird you can individually review its current weight, feed consumption and health status.",
+"tour.simT":"📡 Live Device Simulation",
+"tour.simP":"In the Live Simulation section you can watch the data arriving from the intelligent identification system and the weighing sensors in real time. The live growth chart, cumulative intake chart, complete feeding event table and the option to download the results as a text file or spreadsheet are all located here.",
+"tour.scnT":"🧪 Scenario Laboratory",
+"tour.scnP":"In the Scenario Laboratory you can compare two different conditions with exactly the same starting point, for example the effect of heat stress or the addition of a second feeding station. The result is shown as growth charts, feed intake charts and a daily change table.",
+"tour.devT":"💻 Device and Data",
+"tour.devP":"In the Device and Data section you will learn about the communication architecture, how the weighing sensors and the identification system work, the feeding queue management logic and the twelve-column structure of each record. All data is stored securely and exclusively for each user.",
+"tour.sciT":"📚 Scientific Basis and Methodology",
+"tour.sciP":"In the Scientific Basis and Methodology sections you can review the peer-reviewed references, the complete modelling chain, the equations used and the limitations of the simulation with clear and well-documented explanations.",
+"tour.expT2":"📦 Data Export",
+"tour.expP2":"To obtain your data, use the export button in the Live Simulation or Farm Map section. You can select the desired columns and receive the output as a text file or as a multi-sheet spreadsheet.",
+"tour.doneT":"🎉 You are ready!","tour.doneP":"We recommend starting from the Validation Dashboard or going directly to the Trial Design section to create your own rearing pens. We wish you success. Use the Escape key to close this guide and the arrow keys to move between steps.",
 "tour.next":"Next","tour.prev":"Back","tour.skip":"Skip","tour.finish":"Finish",
 "ex.title":"Export center","ex.back":"↩ Back","ex.source":"Source","ex.format":"Format",
 "ex.summary":"Daily pen summary","ex.device":"Raw device records",
@@ -279,7 +324,7 @@ en:{
 "ch.liveGrowth":"Live growth vs catalog","ch.liveCum":"Cumulative intake vs target",
 "ch.farmGrowth":"Growth by treatment (±SE)","ch.farmFi":"Daily intake by treatment",
 "nav.met":"Methodology","met.abstractT":"Abstract",
-"met.abstract":"BroilerLab is a discrete-event simulator of a poultry feeding-monitoring station that produces device-level data (RFID + dual load-cell) at three-row resolution per visit. Its visit-based engine is locked onto official performance catalogs of four industrial strains, and sensor physics are calibrated against peer-reviewed literature. Validation against reference tables shows weight MAE of 1\u20132%.",
+"met.abstract":"Ghoghnous is a discrete-event simulator of a poultry feeding-monitoring station that produces device-level data (RFID + dual load-cell) at three-row resolution per visit. Its visit-based engine is locked onto official performance catalogs of four industrial strains, and sensor physics are calibrated against peer-reviewed literature. Validation against reference tables shows weight MAE of 1\u20132%.",
 "met.pipeline":"Data pipeline",
 "met.p1":"Strain catalog","met.p1s":"Daily BW/FI male & female",
 "met.p2":"Individual model","met.p2s":"CV\u22485% + AR(1) + blocking",
@@ -364,6 +409,11 @@ en:{
 "dev.queue":"<b>④ Queue logic:</b> single head-hole; birds wait ≤90 s otherwise a co-feeding event is logged — the bottleneck of large pens.",
 "dev.threeRows":"Every visit emits exactly 3 rows (start/mid/end), mirroring the user's three-row sample.",
 "dev.excelNote":"<b>The Excel export</b> contains four sheets: daily summary · raw device data · trial design · reference PO — frozen header, RTL views.",
+"dev.cycles":"Rearing cycles","dev.newCycle":"New cycle","dev.live":"Live device stream",
+"dev.liveNote":"Raw device events (RFID entry + bin load cell + visit timing) arrive live from the backend.",
+"dev.stats":"Selected cycle statistics",
+"dev.regs":"Live bird-entry registrations",
+"dev.regsNote":"Each bird is tag-read on entry; initial weight and the exact date/time of entry are recorded and saved to the database — this panel shows that same data live.",
 
 "sci.sources":"Scientific sources — direct quotations","sci.use1":"weight↔temperature table and lighting program of the model.",
 "sci.use2":"Ross Gompertz parameters.","sci.use3":"complete BW/intake/FCR catalogs per strain — verbatim from breeder documents, no cross-strain duplication.",
@@ -386,7 +436,7 @@ en:{
 "lim.5":"⑤ Treatment and heat coefficients are calibrated, not extracted directly from sources.",
 "lim.6":"⑥ Inference uses the pen as the sampling unit; small n = low power.",
 "about.title":"About & ownership",
-"about.body":"BroilerLab v1.0.0 — designed and maintained by <b>Arsalan Rezazadeh</b>. An academic simulator of an RFID + dual load-cell feeding station for industrial broiler strains using official Aviagen / Cobb-Vantress / Hubbard catalogs, a visit-based engine and a biostatistics laboratory. Fully offline, server-less, reproducible seed.",
+"about.body":"ققنوس v1.0.0 — designed and maintained by <b>Arsalan Rezazadeh</b>. An academic simulator of an RFID + dual load-cell feeding station for industrial broiler strains using official Aviagen / Cobb-Vantress / Hubbard catalogs, a visit-based engine and a biostatistics laboratory. Fully offline, server-less, reproducible seed.",
 "foot.data":"Data: Aviagen · Cobb-Vantress · Hubbard · Poultry Science · animal · Arch Anim Breed",
 "foot.offline":"Fully offline · reproducible seed = 308 · statistical unit: pen",
 
@@ -450,6 +500,16 @@ function trf(key,vars){let s=tr(key);
 function num(v,d=0){
   const loc=LANG==="fa"?"fa-IR":"en-US";
   return new Intl.NumberFormat(loc,{minimumFractionDigits:d,maximumFractionDigits:d}).format(v)}
+/* plain integer/float formatter that follows LANG (no thousands grouping) */
+function lnum(v,d=0){
+  if(v==null||isNaN(v))return "—";
+  const s=Number(v).toFixed(d);
+  if(LANG==="fa"){
+    const FA=["۰","۱","۲","۳","۴","۵","۶","۷","۸","۹"];
+    return s.replace(/[0-9]/g,c=>FA[+c]);
+  }
+  return s;
+}
 function applyLang(){
   document.documentElement.lang=LANG;
   document.documentElement.dir=LANG==="fa"?"rtl":"ltr";
@@ -461,9 +521,12 @@ function applyLang(){
   const t=document.querySelector("title");if(t)t.textContent=tr("app.title");
   $("lang-fa").classList.toggle("on",LANG==="fa");
   $("lang-en").classList.toggle("on",LANG==="en");
+  $("lang-fa-dd").classList.toggle("on",LANG==="fa");
+  $("lang-en-dd").classList.toggle("on",LANG==="en");
 }
 function setLang(l){if(LANG===l)return;LANG=l;
   try{localStorage.setItem("rossim_lang",l)}catch(e){}
+  try{window.dispatchEvent(new CustomEvent("rossim:lang",{detail:l}))}catch(e){}
   applyLang();
   try{
     if(typeof expRender==="function")expRender();

@@ -13,9 +13,25 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>(
   {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const LI=s=>LRI+s+PDI; // bidi-isolate a Latin/technical token
 function on(id,ev,fn){const el=$(id);
-  if(el)el.addEventListener(ev,fn);else console.warn("[BroilerLab] missing #"+id)}
+  if(el)el.addEventListener(ev,fn);else console.warn("[Ghoghnous] missing #"+id)}
 const fa=(v,d=0)=>num(v,d); // locale-aware via i18n.js (fa digits | latin)
-const en=v=>Math.round(v).toLocaleString("en-US");
+const en=v=>{ // now locale-aware: fa digits in fa mode, latin in en mode
+  const n=Math.round(Number(v)||0);
+  if(LANG==="fa"){
+    const FA=["۰","۱","۲","۳","۴","۵","۶","۷","۸","۹"];
+    return String(n).replace(/[0-9]/g,c=>FA[+c]);
+  }
+  return n.toLocaleString("en-US");
+};
+/* formatted fixed-decimal that follows LANG (e.g. fx(12.3,1) -> "۱۲.۳" or "12.3") */
+function fx(v,d=1){
+  const s=Number(v).toFixed(d);
+  if(LANG==="fa"){
+    const FA=["۰","۱","۲","۳","۴","۵","۶","۷","۸","۹"];
+    return s.replace(/[0-9]/g,c=>FA[+c]);
+  }
+  return s;
+}
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");
   clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("on"),2600)}
 function animNum(el,target,fm){if(!el)return;const t0=performance.now(),dur=750,from=0;
@@ -142,18 +158,30 @@ function repaintView(vid){
 /* =====================================================================
    TABS
    ===================================================================== */
-let CUR_VIEW="v-dash";
+let CUR_VIEW="v-landing";
 if($("mainnav"))$("mainnav").setAttribute("role","tablist");
 function markTabs(){document.querySelectorAll(".tab").forEach(b=>{
   b.setAttribute("role","tab");b.setAttribute("aria-controls",b.dataset.v);
   b.setAttribute("aria-selected",b.classList.contains("on")?"true":"false")})}
 document.querySelectorAll(".tab").forEach(btn=>{
   btn.addEventListener("click",()=>{
+    var targetV = btn.dataset.v;
+    var isLanding = targetV==="v-landing" || targetV==="v-about";
+    var needsAuth = document.body.classList.contains("needs-auth");
+    var authed = window.isTokenValid && window.isTokenValid(localStorage.getItem("broiler_token"));
+    if(!isLanding && (needsAuth || !authed)){
+      if(window.Auth && window.Auth.showAuthModal) window.Auth.showAuthModal("login", {gated:false});
+      else if(window.showAuthModal) window.showAuthModal("login");
+      if(window.toast) toast("برای دسترسی به این بخش وارد شوید");
+      return;
+    }
     document.querySelectorAll(".tab").forEach(b=>{b.classList.remove("on");b.setAttribute("aria-selected","false")});
     document.querySelectorAll("section.view").forEach(s=>s.classList.remove("on"));
     btn.classList.add("on");btn.setAttribute("aria-selected","true");
     CUR_VIEW=btn.dataset.v;$(CUR_VIEW).classList.add("on");
-    requestAnimationFrame(()=>requestAnimationFrame(()=>repaintView(CUR_VIEW)));
+    var doPaint = ()=>repaintView(CUR_VIEW);
+    if(window.requestIdleCallback) requestIdleCallback(doPaint, {timeout:120});
+    else requestAnimationFrame(doPaint);
   })});
 
 /* =====================================================================
@@ -166,6 +194,7 @@ function poWinFCR(){const P=PO();
   let fi=0;for(let i=i0;i<=i1;i++)fi+=(P.fiAsh[i]??0);
   return fi/(P.bwAsh[i1]-P.bwAsh[i0])}
 function runDashboard(){
+  var t0=performance.now();
   const endAge=Math.min(60,PO().maxDay);
   const run=simulateRun({ageStart:15,ageEnd:endAge,strain:CUR_STRAIN_KEY,seed:308});
   const pooled=poolByAge(run.summaries);
@@ -181,19 +210,19 @@ function runDashboard(){
   animNum($("k-bw"),pooled[pooled.length-1].bw,en);
   $("k-bw-po").textContent=en(poBW("ash",endAge));
   const devEnd=100*(pooled[pooled.length-1].bw-poBW("ash",endAge))/poBW("ash",endAge);
-  $("k-bw-dev").textContent=(devEnd>=0?"+":"")+devEnd.toFixed(1)+"%";
-  $("k-mae").textContent=mae.toFixed(2)+"%";
+  $("k-bw-dev").textContent=(devEnd>=0?"+":"")+fx(devEnd,1)+"%";
+  $("k-mae").textContent=fx(mae,2)+"%";
   $("db-strain").textContent=LI(STRAINS[CUR_STRAIN_KEY].label)+" · "+LI(STRAINS[CUR_STRAIN_KEY].breeder);
   $("db-guide").textContent=LI(STRAINS[CUR_STRAIN_KEY].guide);
-  $("k-fcr").textContent=fcrWin.toFixed(3);
-  $("k-fcr-po").textContent=poWinFCR().toFixed(3);
+  $("k-fcr").textContent=fx(fcrWin,3);
+  $("k-fcr-po").textContent=fx(poWinFCR(),3);
   $("k-visits").textContent=en(Math.round(vMean));
   $("k-vrange").textContent=`${en(Math.round(vP5))}–${en(Math.round(vP95))}`;
   $("ms-deaths").textContent=fa(run.deaths.length);
   $("ms-fills").textContent=fa(run.fills.length);
   $("ms-ovl").textContent=fa(ovlTotal);
   $("ms-rows").textContent=fa(run.rowEstimate);
-  $("h-mae").textContent=mae.toFixed(2)+"%";
+  $("h-mae").textContent=fx(mae,2)+"%";
   $("h-rows").textContent=fa(run.rowEstimate);
   syncSettingsInfo();
 
@@ -216,11 +245,11 @@ function runDashboard(){
   const busyPeaks=penIds.map(p=>Math.max(...run.perPen[p].busy));
   const worst=penIds[busyPeaks.indexOf(Math.max(...busyPeaks))];
   chart("c-fcr",{type:"bar",series:[{y:fcrs,c:"#22d3a5",name:"FCR"}],
-    refLines:[{v:poWinFCR(),label:"PO "+poWinFCR().toFixed(3),c:"#f59e0b"}],
-    min:0,zeroBase:true,labels:penIds,vFmt:v=>(+v).toFixed(2),
+    refLines:[{v:poWinFCR(),label:"PO "+fx(poWinFCR(),3),c:"#f59e0b"}],
+    min:0,zeroBase:true,labels:penIds,vFmt:v=>fx(+v,2),
     hoverTitle:i=>`${penIds[i]} (n=${PENS_CFG[penIds[i]].n})`});
-  $("fcr-note").innerHTML=trf("fcr.note",{lo:Math.min(...fcrs).toFixed(3),
-    hi:Math.max(...fcrs).toFixed(3),worst:worst,peak:Math.max(...busyPeaks).toFixed(0)});
+  $("fcr-note").innerHTML=trf("fcr.note",{lo:fx(Math.min(...fcrs),3),
+    hi:fx(Math.max(...fcrs),3),worst:worst,peak:fx(Math.max(...busyPeaks),0)});
 
   const dtot=run.diurnal.reduce((a,b)=>a+b,0)||1;
   const shares=run.diurnal.map(g=>100*g/dtot);
@@ -228,7 +257,7 @@ function runDashboard(){
     series:[{y:shares,c:"#8b5cf6",name:tr("lg.hourShare")}],
     labels:Array.from({length:24},(_,h)=>String(h)),
     shades:[{from:0,to:L_ON-1,c:"rgba(20,27,43,.75)"},{from:L_OFF,to:23,c:"rgba(20,27,43,.75)"}],
-    zeroBase:true,vFmt:v=>v.toFixed(1)+"%",hoverTitle:i=>String(i)});
+    zeroBase:true,vFmt:v=>fx(v,1)+"%",hoverTitle:i=>String(i)});
 
   const stRows=[...penIds].sort((a,b)=>busyPeaks[penIds.indexOf(b)]-busyPeaks[penIds.indexOf(a)])
     .map(pid=>{
@@ -240,7 +269,7 @@ function runDashboard(){
       return `<div class="busyrow">
         <span class="tag ${cls}" style="min-width:86px;text-align:center">${pid} · ${num(PENS_CFG[pid].n)}</span>
         <span class="bp"><i style="width:${clamp(bp,2,100)}%;background:${col}"></i></span>
-        <b class="num" style="width:48px;text-align:left;font-size:12px">${bp.toFixed(0)}%</b>
+        <b class="num" style="width:48px;text-align:left;font-size:12px">${fx(bp,0)}%</b>
         <span class="dm" style="font-size:10.5px;width:74px">${tr("st.ovlShort")}: ${num(ovl)}</span>
         <span class="tag ${cls}">${verdict}</span></div>`}).join("");
   $("st-list").innerHTML=stRows;
@@ -249,7 +278,7 @@ function runDashboard(){
     const dev=100*(r.bw-poBW("ash",r.age))/poBW("ash",r.age);
     const cls=Math.abs(dev)<1.5?"ok":Math.abs(dev)<3?"wn":"bd";
     return `<tr><td>${fa(r.age)}</td><td class="num">${en(r.bw)}</td><td class="num">${en(poBW("ash",r.age))}</td>
-      <td class="num" style="color:${dev>=0?'var(--acc)':'var(--warn)'}">${dev>=0?"+":""}${dev.toFixed(1)}%</td>
+      <td class="num" style="color:${dev>=0?'var(--acc)':'var(--warn)'}">${dev>=0?"+":""}${fx(dev,1)}%</td>
       <td class="num">${en(r.fi)}</td><td class="num">${en(r.fiPo)}</td>
       <td><span class="tag ${cls}">${cls==="ok"?tr("val.excellent"):cls==="wn"?tr("val.ok"):tr("val.review")}</span></td></tr>`}).join("");
   DASH={run,pooled,mae};
@@ -289,16 +318,16 @@ function lvDayDone(s){
   LV.cum+=s.fiPerBird;LV.cums.push(LV.cum);
   LV.poCums.push((LV.poCums.at(-1)||0)+poFI("ash",s.age));
   $("l-day").textContent=(LANG==="fa"?"روز ":"Day ")+num(s.age);
-  $("l-date").textContent=s.date;
+  $("l-date").textContent = (window.Shamsi ? window.Shamsi.toShamsi(s.date, { longMonth: LANG === "fa" }) : s.date);
   animNum($("l-bw"),s.meanBW,v=>en(v));
   $("l-bwpo").textContent=en(poBW("ash",s.age));
-  $("l-temp").textContent=s.temp.toFixed(1);
+  $("l-temp").textContent=fx(s.temp,1);
   $("l-fi").textContent=en(s.fiPerBird);
   $("l-visits").textContent=en(Math.round(s.visits/s.alive));
-  const b=$("l-busy");b.textContent=s.busyPct.toFixed(0)+"%";
+  const b=$("l-busy");b.textContent=fx(s.busyPct,0)+"%";
   b.className="v "+(s.busyPct>=95?"bad":s.busyPct>=75?"org":"acc");
   $("pg").style.width=(100*LV.di/Math.max(1,LV.run.summaries.length))+"%";
-  $("pg-lbl").textContent=trf("dyn.running",{pen:LV.pen,day:fa(s.age),date:s.date});
+  $("pg-lbl").textContent=trf("dyn.running",{pen:LV.pen,day:fa(s.age),date:(window.Shamsi?window.Shamsi.toShamsi(s.date):s.date)});
   $("pg-rows").textContent=trf("dyn.records",{n:fa(LV.ri)});
   const k=LV.ages.length;
   chart("c-live-growth",{labels:LV.ages.map(a=>"d"+a),
@@ -319,7 +348,7 @@ function lvDevice(r,s){
   $("dv-bird").textContent=bid||(LANG==="fa"?"؟؟؟":"???");
   $("dv-rssi").textContent=rssi;
   $("dv-w").textContent=w;$("dv-raw").textContent=raw;
-  $("dv-binval").textContent=(+bin).toFixed(2);
+  $("dv-binval").textContent=fx(+bin,2);
   $("dv-delta").textContent=delta;
   const pct=clamp(100*bin/25,2,100);
   $("dv-gfill").style.height=pct+"%";
@@ -335,7 +364,7 @@ function feedAppend(r){
   const div=document.createElement("span");div.className="r flash";
   const [,fk,bid,sen,age,raw,w,bin,delta,tp,hm,rssi]=r;
   div.textContent="";
-  div.innerHTML=`${r[0]} <span class="dm">${fk}</span> <span class="${bid?"id":"pos"}">${bid||"??"}</span> ${sen} ${age} ${raw} <b>${w}</b> <span class="neg">${(+bin).toFixed(2)}</span> <span class="neg">${delta}</span> ${tp} ${hm} <span class="dm">${rssi}</span>`;
+  div.innerHTML=`${r[0]} <span class="dm">${fk}</span> <span class="${bid?"id":"pos"}">${bid||"??"}</span> ${sen} ${age} ${raw} <b>${w}</b> <span class="neg">${fx(+bin,2)}</span> <span class="neg">${delta}</span> ${tp} ${hm} <span class="dm">${rssi}</span>`;
   feedEl.appendChild(div);
   while(feedEl.children.length>130)feedEl.removeChild(feedEl.firstChild);
   feedEl.scrollTop=feedEl.scrollHeight}
@@ -378,9 +407,9 @@ function lvFinish(jumped){
   const gain=LV.bws[LV.bws.length-1]-LV.bws[0];
   const fcr=LV.cum/gain;
   $("pg-lbl").innerHTML=trf("dyn.done",{rows:fa(LV.allRows.length),
-    bw:en(LV.bws.at(-1)),fcr:fcr.toFixed(3)});
+    bw:en(LV.bws.at(-1)),fcr:fx(fcr,3)});
   $("pg-rows").textContent=trf("dyn.records",{n:fa(LV.allRows.length)});
-  toast(trf("dyn.done",{rows:fa(LV.allRows.length),bw:en(LV.bws.at(-1)),fcr:fcr.toFixed(3)}));
+  toast(trf("dyn.done",{rows:fa(LV.allRows.length),bw:en(LV.bws.at(-1)),fcr:fx(fcr,3)}));
   lvSetBtns()}
 function lvStop(silent){
   clearTimeout(LVT);LVT=null;
@@ -444,19 +473,19 @@ on("btn-scn","click",()=>{
   const worstPen=r=>Object.entries(r.perPen).sort((a,b)=>Math.max(...b[1].busy)-Math.max(...a[1].busy))[0][0];
 
   const el=$("d-bw");
-  el.textContent=(dB>=0?"+":"")+dB.toFixed(0)+" g ("+(dBp>=0?"+":"")+dBp.toFixed(1)+"%)";
+  el.textContent=(dB>=0?"+":"")+fx(dB,0)+" g ("+(dBp>=0?"+":"")+fx(dBp,1)+"%)";
   el.className="v "+(dB>=0?"acc":"bad");
   $("d-bw-sub").textContent=(LANG==="fa"?"پایه: ":"base: ")+en(endB)+" g → "+en(endS)+" g";
-  $("d-dip").textContent="-"+dipP.toFixed(1)+"%";
+  $("d-dip").textContent="-"+fx(dipP,1)+"%";
   $("d-dip-sub").textContent=trf("scn.dipSub",{age:num(dipAge)});
   const fB=fcrW(base),fS=fcrW(scn);
-  $("d-fcr").textContent=`${fB.toFixed(3)} → ${fS.toFixed(3)}`;
+  $("d-fcr").textContent=`${fx(fB,3)} → ${fx(fS,3)}`;
   $("d-fcr").className="v blue";
   const fcrU=$("d-fcr").nextElementSibling;
   if(fcrU)fcrU.textContent=tr(mode==="heat"?"scn.fcrSub":"scn.dBusy");
   const wp=worstPen(base);
   const pkB=Math.max(...base.perPen[wp].busy),pkS=Math.max(...scn.perPen[wp].busy);
-  $("d-busy").textContent=pkB.toFixed(0)+"% → "+pkS.toFixed(0)+"%";
+  $("d-busy").textContent=fx(pkB,0)+"% → "+fx(pkS,0)+"%";
   $("d-busy-sub").textContent=trf("scn.busySub",{pen:wp});
 
   const mk=(arrB,arrS,poArr,title)=>{
@@ -479,23 +508,23 @@ on("btn-scn","click",()=>{
     const pB=Math.max(...B.busy),pS=Math.max(...S.busy);
     return `<tr><td><b>${pid}</b></td><td class="num">${PENS_CFG[pid].n}</td>
       <td class="num">${en(bwe)}</td><td class="num">${en(bws)}</td>
-      <td class="num" style="color:${dp>=0?'var(--acc)':'var(--warn)'}">${dp>=0?"+":""}${dp.toFixed(1)}%</td>
-      <td class="num">${fB2.toFixed(3)}</td><td class="num">${fS2.toFixed(3)}</td>
-      <td class="num">${pB.toFixed(0)}%</td><td class="num">${pS.toFixed(0)}%</td></tr>`}).join("");
+      <td class="num" style="color:${dp>=0?'var(--acc)':'var(--warn)'}">${dp>=0?"+":""}${fx(dp,1)}%</td>
+      <td class="num">${fx(fB2,3)}</td><td class="num">${fx(fS2,3)}</td>
+      <td class="num">${fx(pB,0)}%</td><td class="num">${fx(pS,0)}%</td></tr>`}).join("");
 
   if(mode==="heat"){
-    $("scn-note").innerHTML=trf("scn.noteHeat",{label,dip:dipP.toFixed(1),
+    $("scn-note").innerHTML=trf("scn.noteHeat",{label,dip:fx(dipP,1),
       age:num(dipAge),dir:dBp<0?(LANG==="fa"?"پایین‌تر از پایه ":"lower than baseline ")
         :(LANG==="fa"?"بالاتر از پایه ":"higher than baseline "),
-      dbw:Math.abs(dBp).toFixed(1)});
+      dbw:fx(Math.abs(dBp),1)});
   }else{
     const ovB=base.summaries.reduce((s,x)=>s+x.overlap,0);
     const ovS=scn.summaries.reduce((s,x)=>s+x.overlap,0);
-    $("scn-note").innerHTML=trf("scn.noteStn",{label,from:pkB.toFixed(0),
-      to:pkS.toFixed(0),ovlB:fa(ovB),ovlS:fa(ovS)});
+    $("scn-note").innerHTML=trf("scn.noteStn",{label,from:fx(pkB,0),
+      to:fx(pkS,0),ovlB:fa(ovB),ovlS:fa(ovS)});
   }
   $("scn-res").style.display="block";
-  requestAnimationFrame(()=>requestAnimationFrame(()=>repaintView("v-scn")));
+  requestAnimationFrame(()=>repaintView("v-scn"));
   toast(tr("dyn.scnDone"));
 });
 
@@ -504,7 +533,7 @@ on("btn-scn","click",()=>{
    ===================================================================== */
 let rzT=null;
 window.addEventListener("resize",()=>{clearTimeout(rzT);
-  rzT=setTimeout(()=>repaintView(CUR_VIEW),140)});
+  clearTimeout(rzT); rzT=setTimeout(()=>{ if(document.visibilityState==="visible") repaintView(CUR_VIEW); },160)});
 document.addEventListener("DOMContentLoaded",()=>{
   scnFill();
   setTimeout(()=>{runDashboard();setTimeout(()=>tourStart(false),700)},40);
@@ -808,7 +837,7 @@ function updateClockUI(force){
   if(!force&&h===FM_clockUI)return;FM_clockUI=h;
   $("fm-day").textContent=(LANG==="fa"?"روز ":"Day ")+num(curAge());
   $("fm-hour").textContent=String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
-  $("fm-pg").style.width=((FM.di+FM.clock/86400)/fmCycle()*100).toFixed(1)+"%";
+  $("fm-pg").style.width=fx((FM.di+FM.clock/86400)/fmCycle()*100,1)+"%";
   const dark=h<L_ON||h>=L_OFF;
   $("fm-veil").classList.toggle("on",dark);
   $("fm-light").classList.toggle("off",dark);
@@ -829,7 +858,7 @@ function updateFarmDay(initial){
   for(const c of FM.chicks)c.el.style.fontSize=chickSize(c)+"px";
   /* env line */
   const temp=day.reduce((s,x)=>s+x.temp,0)/day.length,hum=day.reduce((s,x)=>s+x.hum,0)/day.length;
-  $("fm-env").textContent=`🌡 ${temp.toFixed(1)}°C · 💧 ${hum.toFixed(0)}%`;
+  $("fm-env").textContent=`🌡 ${fx(temp,1)}°C · 💧 ${fx(hum,0)}%`;
   /* history for charts */
   const H=FM.hist;
   if(initial){H.ages=[];for(const k in H.t)delete H.t[k]}
@@ -888,12 +917,12 @@ function renderInspector(){
       [tr("exp.treat"),`<span class="tchip" style="--c:${trObj.color}">${trTreat(lastS.treat)}</span>`],
       [tr("exp.penId"),`<b>${lastS.pen}</b>`],
       [tr("bird.sex"),lastS.sex==="m"?tr("sex.m"):tr("sex.f")],
-      [tr("bird.cv"),"±"+(lastS.cv*100).toFixed(1)+"%"],
+      [tr("bird.cv"),"±"+fx(lastS.cv*100,1)+"%"],
       [tr("bird.status"),dead?'<span class="tag bd">'+tr("bird.dead")+'</span>'
                             :'<span class="tag ok">'+tr("bird.alive")+'</span>'],
-      [tr("bird.bwNow"),`<b>${en(Math.round(lastS.bw))}</b> g <small class="${dev>=0?"acc":"org"}">(${dev>=0?"+":""}${dev.toFixed(1)}% ${tr("insp.vsPO")})</small>`],
+      [tr("bird.bwNow"),`<b>${en(Math.round(lastS.bw))}</b> g <small class="${dev>=0?"acc":"org"}">(${dev>=0?"+":""}${fx(dev,1)}% ${tr("insp.vsPO")})</small>`],
       [tr("bird.fiTotal"),`<b>${en(Math.round(lastS.fi))}</b> g`],
-      [tr("bio.fcr"),`<b>${fcrB.toFixed(2)}</b>`]];
+      [tr("bio.fcr"),`<b>${fx(fcrB,2)}</b>`]];
     chart("c-insp",{labels:snaps.map(x=>"d"+x.age),min:0,
       series:[{y:snaps.map(x=>x.bw),c:trObj.color,fill:true,name:"BW"},
               {y:snaps.map(x=>poSex(x.age)),c:"#8b96ad",dash:true,w:1.4,name:"PO"}],
@@ -908,11 +937,11 @@ function renderInspector(){
     const pp=FM.run.perPen[FM.sel];
     const dev=100*(s.meanBW-poBW("ash",s.age))/poBW("ash",s.age);
     rows=[[tr("insp.treat"),`<span class="tchip" style="--c:${TREATMENTS[s.treat].color}">${trTreat(s.treat)}</span>`],
-      [tr("insp.meanBw"),`<b>${en(Math.round(s.meanBW))}</b> g <small class="${dev>=0?"acc":"org"}">(${dev>=0?"+":""}${dev.toFixed(1)}% ${tr("insp.vsPO")})</small>`],
+      [tr("insp.meanBw"),`<b>${en(Math.round(s.meanBW))}</b> g <small class="${dev>=0?"acc":"org"}">(${dev>=0?"+":""}${fx(dev,1)}% ${tr("insp.vsPO")})</small>`],
       [tr("insp.fiToday"),`<b>${en(Math.round(s.fiPerBird))}</b> g`],
       [tr("insp.visitsToday"),num(s.visits)+` (${num(Math.round(s.visits/s.alive))}${tr("insp.perBird")})`],
       [tr("sim.busy"),`<b>${num(Math.round(s.busyPct))}%</b>`],
-      [tr("insp.bin"),`${s.binEnd.toFixed(2)} kg`],
+      [tr("insp.bin"),`${fx(s.binEnd,2)} kg`],
       [tr("insp.refills"),num(pp.refills.reduce((a,b)=>a+b,0))],
       [tr("insp.ovl"),num(pp.ovl.reduce((a,b)=>a+b,0))],
       [tr("insp.mort"),num(FM.run.deaths.filter(d=>d.pen===FM.sel).length)]];
@@ -925,7 +954,7 @@ function renderInspector(){
     const bwAvg=day.reduce((s,x)=>s+x.meanBW,0)/day.length;
     const dev=100*(bwAvg-poBW("ash",15+diSafe))/poBW("ash",15+diSafe);
     rows=[[tr("insp.pensAlive"),`<b>${num(day.length)}</b> / <b>${num(alive)}</b> · ${num(tot)}`],
-      [tr("insp.farmBw"),`<b>${en(Math.round(bwAvg))}</b> g <small class="${dev>=0?"acc":"org"}">(${dev>=0?"+":""}${dev.toFixed(1)}% ${tr("insp.vsPO")})</small>`],
+      [tr("insp.farmBw"),`<b>${en(Math.round(bwAvg))}</b> g <small class="${dev>=0?"acc":"org"}">(${dev>=0?"+":""}${fx(dev,1)}% ${tr("insp.vsPO")})</small>`],
       [tr("insp.farmFiToday"),`<b>${en(Math.round(day.reduce((s,x)=>s+x.dayFI,0)/1000))}</b> kg`],
       [tr("insp.totalVisits"),num(day.reduce((s,x)=>s+x.visits,0))],
       [tr("insp.todayRefills"),num(day.reduce((s,x)=>s+x.refills,0))],
@@ -1081,7 +1110,8 @@ function setTheme(t){
   try{localStorage.setItem("rossim_theme",t)}catch(e){}
   document.documentElement.setAttribute("data-theme",t==="light"?"light":"dark");
   refreshChartTheme();applyThemeButtons();
-  requestAnimationFrame(()=>requestAnimationFrame(()=>repaintView(CUR_VIEW)))}
+  requestAnimationFrame(()=>repaintView(CUR_VIEW));
+}
 /* ---------------- header drawer (tablet & below) ---------------- */
 function drawerOpen(){return document.querySelector(".hctl")?.classList.contains("open")}
 function openDrawer(){
@@ -1153,7 +1183,7 @@ function bindSettingsDropdown(){
   /* help button in dropdown */
   on("btn-help-dd","click",()=>{showHelp();closeSettingsDropdown()});
   /* reset button in dropdown */
-  on("btn-reset-dd","click",()=>{resetCycle();closeSettingsDropdown()});}
+  on("btn-reset-dd","click",()=>{ if(window.MDialog){ MDialog.confirm({title:"\u0628\u0627\u0632\u0646\u0634\u0627\u0646\u06cc \u06a9\u0627\u0645\u0644 \u062f\u0627\u062f\u0647\u200c\u0647\u0627", message:"\u0622\u06cc\u0627 \u0627\u0632 \u0628\u0627\u0632\u0646\u0634\u0627\u0646\u06cc \u06a9\u0627\u0645\u0644 \u0627\u0637\u0645\u06cc\u0646\u0627\u0646 \u062f\u0627\u0631\u06cc\u062f\u061f\u000a\u000a\u062a\u0645\u0627\u0645 \u062f\u0627\u062f\u0647\u200c\u0647\u0627\u06cc \u062f\u0627\u0634\u0628\u0648\u0631\u062f \u0627\u0639\u062a\u0628\u0627\u0631\u0633\u0646\u062c\u06cc\u060c \u0637\u0631\u062d \u0622\u0632\u0645\u0627\u06cc\u0634\u060c \u0646\u0642\u0634\u0647 \u0641\u0627\u0631\u0645\u060c \u0634\u0628\u06cc\u0647\u200c\u0633\u0627\u0632\u06cc \u0632\u0646\u062f\u0647 \u0648 \u0633\u0646\u0627\u0631\u06cc\u0648\u0647\u0627 \u067e\u0627\u06a9 \u062e\u0648\u0627\u0647\u062f \u0634\u062f\u002e", icon:"danger", danger:true, confirmText:"\u0628\u0627\u0632\u0646\u0634\u0627\u0646\u06cc", cancelText:"\u0627\u0646\u0635\u0631\u0627\u0641"}).then(function(ok){ if(!ok) return; resetCycle();closeSettingsDropdown(); }); } else { var ok=confirm("\u0622\u06cc\u0627 \u0627\u0632 \u0628\u0627\u0632\u0646\u0634\u0627\u0646\u06cc \u06a9\u0627\u0645\u0644 \u0627\u0637\u0645\u06cc\u0646\u0627\u0646 \u062f\u0627\u0631\u06cc\u062f\u061f"); if(!ok) return; resetCycle();closeSettingsDropdown(); } });}
 
 /* sync dropdown pills with header pills */
 function syncSettingsInfo(){
@@ -1198,16 +1228,16 @@ function runBioStats(){
     const ci=BioStat.ci95(a);
     html+=`<tr><td><span class="tchip" style="--c:${TREATMENTS[k].color}">${trTreat(k)}</span></td>
       <td class="num">${a.length}</td>
-      <td class="num">${m.toFixed(2)} ± ${sd.toFixed(2)}</td>
-      <td class="num">${e.toFixed(3)}</td>
-      <td class="num">[${ci[0].toFixed(2)}, ${ci[1].toFixed(2)}]</td></tr>`}
+      <td class="num">${fx(m,2)} ± ${fx(sd,2)}</td>
+      <td class="num">${fx(e,3)}</td>
+      <td class="num">[${fx(ci[0],2)}, ${fx(ci[1],2)}]</td></tr>`}
   html+="</tbody></table></div>";
   /* anova */
   const av=BioStat.anova(keys.map(k=>groups[k]));
   if(av){
     html+=`<div class="note" style="margin-top:11px"><b>${tr("bio.anovaTitle")}:</b> `+
-      trf("bio.anovaLine",{dfB:av.dfB,dfW:av.dfW,F:av.F.toFixed(2),
-        p:av.p<.001?av.p.toExponential(1):av.p.toFixed(4),eta2:av.eta2.toFixed(3)})+
+      trf("bio.anovaLine",{dfB:av.dfB,dfW:av.dfW,F:fx(av.F,2),
+        p:av.p<.001?av.p.toExponential(1):fx(av.p,4),eta2:fx(av.eta2,3)})+
       ` <span class="starp">${BioStat.stars(av.p)}</span></div>`}
   /* pairwise welch + holm (only when >=2 groups with >=2 obs) */
   const pk=keys.filter(k=>groups[k].length>=2);
@@ -1227,7 +1257,7 @@ function runBioStats(){
         const pr=pairs.find(p=>(p.i===ki&&p.j===kj)||(p.i===kj&&p.j===ki));
         if(!pr){html+="<td>·</td>";continue}
         const star="<span class='starp'>"+BioStat.stars(pr.p)+"</span>";
-        html+=`<td>${pr.p<.001?"<0.001":pr.p.toFixed(3)} ${star}</td>`}
+        html+=`<td>${pr.p<.001?"<0.001":fx(pr.p,3)} ${star}</td>`}
       html+="</tr>"}
     html+="</tbody></table>"}
   html+=`<div class="methtext" style="margin-top:9px">${tr("bio.method")}</div>`;
@@ -1236,18 +1266,26 @@ on("btn-bio-run","click",runBioStats);
 function renderBioIfReady(){if($("bio-out").innerHTML)runBioStats()}
 
 /* =====================================================================
-   GUIDED TOUR — first-run animated walkthrough
+   GUIDED TOUR — comprehensive 13-step 90-sec walkthrough (v2)
    ===================================================================== */
 const TOUR_STEPS=[
-  {sel:null,title:"tour.welcomeT",text:"tour.welcomeP"},
-  {sel:"#mainnav",title:"tour.navT",text:"tour.navP"},
-  {sel:".hgroup:nth-of-type(1)",title:"tour.strainT",text:"tour.strainP"},
-  {sel:".hgroup:nth-of-type(3)",title:"tour.langT",text:"tour.langP"},
-  {sel:"#btn-reset",title:"tour.resetT",text:"tour.resetP"},
-  {sel:null,done:true,title:"tour.doneT",text:"tour.doneP"}];
+  {sel:null, icon:"fa-graduation-cap", title:"tour.welcomeT", text:"tour.welcomeP"},
+  {sel:"#auth-area", icon:"fa-lock", title:"tour.authT", text:"tour.authP", view:"v-landing"},
+  {sel:".strain-select", icon:"fa-dna", title:"tour.strainT", text:"tour.strainP"},
+  {sel:".hsettings", icon:"fa-gear", title:"tour.settingsT", text:"tour.settingsP"},
+  {sel:"#mainnav", icon:"fa-compass", title:"tour.navT", text:"tour.navP"},
+  {sel:"#v-dash", view:"v-dash", icon:"fa-chart-line", title:"tour.dashT", text:"tour.dashP"},
+  {sel:"#v-exp", view:"v-exp", icon:"fa-vial", title:"tour.expT", text:"tour.expP"},
+  {sel:"#v-farm", view:"v-farm", icon:"fa-map", title:"tour.farmT", text:"tour.farmP"},
+  {sel:"#v-sim", view:"v-sim", icon:"fa-satellite-dish", title:"tour.simT", text:"tour.simP"},
+  {sel:"#v-scn", view:"v-scn", icon:"fa-flask", title:"tour.scnT", text:"tour.scnP"},
+  {sel:"#v-dev", view:"v-dev", icon:"fa-microchip", title:"tour.devT", text:"tour.devP"},
+  {sel:"#v-sci", view:"v-sci", icon:"fa-book-open", title:"tour.sciT", text:"tour.sciP"},
+  {sel:null, icon:"fa-box-open", title:"tour.expT2", text:"tour.expP2"},
+  {sel:null, done:true, icon:"fa-flag-checkered", title:"tour.doneT", text:"tour.doneP"}
+];
 let TOUR={i:0,active:false,pending:false};
-function prefersReduced(){return window.matchMedia &&
-  matchMedia("(prefers-reduced-motion: reduce)").matches}
+function prefersReduced(){return window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches}
 function tourClearSpot(){
   document.querySelectorAll(".tour-spot").forEach(e=>e.classList.remove("tour-spot"));
   const sh=$("tour-shade");if(sh)sh.classList.remove("on");
@@ -1255,63 +1293,125 @@ function tourClearSpot(){
 function tourPlaceTip(rect){
   const tip=$("tour-tip");if(!tip)return;
   tip.style.display="block";
-  const tw=tip.offsetWidth||320,th=tip.offsetHeight||160;
+  const tw=tip.offsetWidth||420,th=tip.offsetHeight||180;
   let x,y;
-  if(!rect){x=(innerWidth-tw)/2;y=(innerHeight-th)/2}
+  if(!rect){x=clamp((innerWidth-tw)/2,10,innerWidth-tw-10);y=clamp((innerHeight-th)/2,10,innerHeight-th-10)}
   else{
     x=clamp(rect.left+rect.width/2-tw/2,10,innerWidth-tw-10);
-    y=rect.bottom+12;
-    if(y+th>innerHeight-10)y=Math.max(10,rect.top-th-12)}
+    y=rect.bottom+14;
+    if(y+th>innerHeight-14) y=Math.max(10, rect.top-th-14);
+    if(y<10) y=10;
+  }
   tip.style.left=x+"px";tip.style.top=y+"px"}
+function tourSwitchView(view){
+  if(!view) return false;
+  const tab=document.querySelector(`.tab[data-v="${view}"]`);
+  const sec=document.getElementById(view);
+  if(!tab||!sec) return false;
+  // honor auth gate: if needs-auth and view is gated, stay on landing and skip highlight
+  const needsAuth=document.body.classList.contains("needs-auth");
+  const isGated=needsAuth && !["v-landing","v-about"].includes(view);
+  if(isGated) return false;
+  document.querySelectorAll(".tab").forEach(b=>{b.classList.remove("on");b.setAttribute("aria-selected","false")});
+  document.querySelectorAll("section.view").forEach(s=>s.classList.remove("on"));
+  tab.classList.add("on");tab.setAttribute("aria-selected","true");
+  sec.classList.add("on");
+  try{ CUR_VIEW=view; if(typeof repaintView==="function") repaintView(view); }catch(e){}
+  return true;
+}
 function tourShow(i){
   if(i>=TOUR_STEPS.length){tourEnd(true);return}
   if(i<0)i=0;
   TOUR.i=i;tourClearSpot();
   const st=TOUR_STEPS[i];
+  const pct=Math.round(((i+1)/TOUR_STEPS.length)*100);
+  const bar=$("tt-bar"); if(bar) bar.style.width=pct+"%";
   $("tt-step").textContent=(i+1)+"/"+TOUR_STEPS.length;
   $("tt-title").textContent=tr(st.title);
   $("tt-text").textContent=tr(st.text);
-  $("tt-next").textContent=st.done?tr("tour.finish"):("› "+tr("tour.next"));
-  $("tt-prev").style.visibility=i===0?"hidden":"visible";
-  $("tt-skip").textContent=tr("tour.skip");
+  const iconEl=$("tt-icon");
+  if(iconEl) iconEl.innerHTML=`<i class="fa-solid ${st.icon||"fa-circle-info"}"></i>`;
+  const nextBtn=$("tt-next");
+  if(nextBtn){
+    const lbl=st.done?tr("tour.finish"):tr("tour.next");
+    nextBtn.innerHTML=st.done? `<span>${lbl}</span>` : `<span>${lbl}</span> ›`;
+  }
+  const prevBtn=$("tt-prev");
+  if(prevBtn){ prevBtn.style.visibility=i===0?"hidden":"visible"; prevBtn.innerHTML=`‹ <span>${tr("tour.prev")}</span>`; }
+  const skipBtn=$("tt-skip"); if(skipBtn) skipBtn.textContent=tr("tour.skip");
   const dots=$("tt-dots");
-  dots.innerHTML=TOUR_STEPS.map((_,k)=>`<i class="${k===i?"on":""}"></i>`).join("");
+  if(dots){
+    dots.innerHTML=TOUR_STEPS.map((_,k)=>`<i class="${k===i?"on":""}" data-k="${k}" title="${k+1}"></i>`).join("");
+    dots.querySelectorAll("i").forEach(el=> el.addEventListener("click",()=> tourShow(parseInt(el.dataset.k,10))));
+  }
   const shade=$("tour-shade");if(shade)shade.classList.add("on");
+  // switch view first if step has view
+  if(st.view) tourSwitchView(st.view);
   if(st.sel){
     const el=document.querySelector(st.sel);
     if(el){
-      el.scrollIntoView({block:"center",behavior:prefersReduced()?"auto":"smooth"});
+      // ensure visible
+      try{ el.scrollIntoView({block:"center",behavior:prefersReduced()?"auto":"smooth"});}catch(e){}
       setTimeout(()=>{
         el.classList.add("tour-spot");
         const r=el.getBoundingClientRect();
-        tourPlaceTip({left:r.left,top:r.top,bottom:r.bottom,width:r.width});
-        TOUR.pending=false},prefersReduced()?0:380);
-      TOUR.pending=true;return}}
-  tourPlaceTip(null)}
+        // if element is hidden (display none), center tip
+        if(r.width===0 && r.height===0) tourPlaceTip(null);
+        else tourPlaceTip({left:r.left,top:r.top,bottom:r.bottom,width:r.width});
+        TOUR.pending=false;
+      },prefersReduced()?0:420);
+      TOUR.pending=true;return
+    }
+  }
+  tourPlaceTip(null)
+}
 function tourPendingFlush(){
   if(!TOUR.active||!TOUR.pending)return;
   const st=TOUR_STEPS[TOUR.i];if(!st||!st.sel)return;
   const el=document.querySelector(st.sel);if(!el)return;
   el.classList.add("tour-spot");
-  const r=el.getBoundingClientRect();tourPlaceTip(r);TOUR.pending=false}
+  const r=el.getBoundingClientRect();
+  if(r.width===0) tourPlaceTip(null);
+  else tourPlaceTip({left:r.left,top:r.top,bottom:r.bottom,width:r.width});
+  TOUR.pending=false}
 function tourStart(force){
-  try{if(!force&&localStorage.getItem("rossim_tour")==="done")return}catch(e){}
+  const KEY="broilerlab_tour_v2";
+  try{
+    if(!force && localStorage.getItem(KEY)==="done") return;
+  }catch(e){}
   TOUR.active=true;TOUR.i=0;TOUR.pending=false;
   document.body.classList.add("tour-active");
+  // close settings drawer if open
+  try{ document.getElementById("settings-dropdown")?.setAttribute("hidden",""); }catch(e){}
   tourShow(0)}
 function tourEnd(finished){
   TOUR.active=false;TOUR.pending=false;
   tourClearSpot();
   document.body.classList.remove("tour-active");
-  try{localStorage.setItem("rossim_tour","done")}catch(e){}
-  if(finished)toast(tr("tour.doneT"))}
+  try{ localStorage.setItem("broilerlab_tour_v2","done"); localStorage.setItem("rossim_tour","done"); }catch(e){}
+  if(finished) try{ toast(tr("tour.doneT")); }catch(e){}
+}
 function bindTour(){
-  on("btn-help","click",()=>{tourClearSpot();tourStart(true)});
+  const start=()=>{tourClearSpot();tourStart(true)};
+  on("btn-help","click",start);
+  on("btn-help-dd","click",start);
   on("tt-next","click",()=>tourShow(TOUR.i+1));
   on("tt-prev","click",()=>tourShow(TOUR.i-1));
   on("tt-skip","click",()=>tourEnd(false));
+  const shade=$("tour-shade"); if(shade) shade.addEventListener("click",()=> tourEnd(false));
+  document.addEventListener("keydown",(e)=>{
+    if(!TOUR.active) return;
+    if(e.key==="Escape") { e.preventDefault(); tourEnd(false); }
+    else if(e.key==="ArrowRight" || e.key==="ArrowLeft"){
+      // respect RTL: ArrowRight = next in LTR, prev in RTL? Keep simple: Right=next
+      e.preventDefault();
+      if(e.key==="ArrowRight") tourShow(TOUR.i+1);
+      else tourShow(TOUR.i-1);
+    }
+  });
   window.addEventListener("resize",tourPendingFlush);
-  /* tour is guidance-only: page stays fully interactive while it runs */}
+  window.addEventListener("rossim:lang",()=>{ if(TOUR.active) tourShow(TOUR.i); });
+}
 
 /* =====================================================================
    EXPORT CENTER — user-selectable parameters
@@ -1474,7 +1574,7 @@ async function exGenerate(){
           design:[10,10,14,24],po:[6,10,10,12,10,11]}[sh.id];
         sheets.push({name:tr(sh.lk).slice(0,28),rows:data,widths})}
       if(!sheets.length){toast(tr("ex.none"));return}
-      dl(`BroilerLab_${CUR_STRAIN_KEY}_${EX.ctx.kind}_v1.xlsx`,
+      dl(`Ghoghnous_${CUR_STRAIN_KEY}_${EX.ctx.kind}_v1.xlsx`,
         xlsxBuild(sheets),XLSX_MIME);
       toast(tr("dyn.xlsxDone"));
     }else{
@@ -1492,7 +1592,7 @@ async function exGenerate(){
       const guard=v=>{const st=String(v);
         return /^[=+@]|^-[^0-9.]/.test(st)?"'"+st:st};
       const csv=head+"\n"+data.map(r=>r.map(c=>guard(c)).join(",")).join("\n");
-      dl(`BroilerLab_${CUR_STRAIN_KEY}_${sh.id}.csv`,
+      dl(`Ghoghnous_${CUR_STRAIN_KEY}_${sh.id}.csv`,
         "\ufeff"+csv,"text/csv;charset=utf-8");
       toast(trf("dyn.records",{n:num(data.length)}))}
   }catch(e){console.error(e);toast("export error")}
@@ -1554,10 +1654,10 @@ function runMethodologyValidation(){
       tb.innerHTML+=`<tr>
         <td><b>${r.label}</b></td><td class="num">d${r.maxDay}</td>
         <td class="num">${en(r.bw42)}</td><td class="num">${en(r.po42)}</td>
-        <td class="num" style="color:${r.dev42>=0?"var(--acc)":"var(--warn)"}">${r.dev42>=0?"+":""}${r.dev42.toFixed(1)}%</td>
-        <td class="num">${r.fcr.toFixed(3)}</td><td class="num">${r.poFcr.toFixed(3)}</td>
+        <td class="num" style="color:${r.dev42>=0?"var(--acc)":"var(--warn)"}">${r.dev42>=0?"+":""}${fx(r.dev42,1)}%</td>
+        <td class="num">${fx(r.fcr,3)}</td><td class="num">${fx(r.poFcr,3)}</td>
         <td class="num">${en(r.visits)}</td>
-        <td class="num"><span class="tag ${Math.abs(r.dev42)<2?"ok":"wn"}">${r.mae.toFixed(2)}%</span></td></tr>`}
+        <td class="num"><span class="tag ${Math.abs(r.dev42)<2?"ok":"wn"}">${fx(r.mae,2)}%</span></td></tr>`}
     lbl.textContent="✅";
     setStrain(CUR_STRAIN_KEY); // restore
   },30)}
@@ -1599,6 +1699,24 @@ function resetAll(){
   var bo=$("bio-out");if(bo)bo.innerHTML="";
   var sr=$("scn-res");if(sr)sr.style.display="none";
   RESET_CHARTS.forEach(clearChart);
+  // --- full zero: clear persisted experiment / cycles ---
+  try{ localStorage.removeItem("rossim_exp"); }catch(e){}
+  try{ localStorage.removeItem("rossim_cols"); }catch(e){}
+  // backend: delete all cycles for current user (zero dashboard/exp/farm/sim)
+  try{
+    if(window.apiAuth){
+      window.apiAuth("/api/cycles").then(function(list){
+        var arr=Array.isArray(list)?list:(list.cycles||list.items||[]);
+        if(!arr||!arr.length) return;
+        var dels=arr.map(function(c){ var id=c.id||c.cycle_id; return window.apiAuth("/api/cycles/"+id,{method:"DELETE"}).catch(function(){}); });
+        return Promise.all(dels);
+      }).catch(function(){});
+    }
+  }catch(e){}
+  // clear workspace stats display
+  ["ws-n-cycles","ws-n-scenarios","ws-n-device"].forEach(function(id){ var e=$(id); if(e) e.textContent="0"; });
+  // also clear device panel if present
+  try{ if(window.clearDevicePanel) window.clearDevicePanel(); }catch(e){}
   runDashboard();repaintView(CUR_VIEW);
   toast(tr("dyn.resetDone"));
 }
@@ -1609,7 +1727,7 @@ function bindReset(){
     if(resetArmed){
       resetArmed=0;clearTimeout(resetTimer);
       btn.classList.remove("armed");btn.textContent="\u267b\ufe0f";
-      resetAll();
+      if(window.MDialog){ MDialog.confirm({title:"\u0628\u0627\u0632\u0646\u0634\u0627\u0646\u06cc \u06a9\u0627\u0645\u0644 \u062f\u0627\u062f\u0647\u200c\u0647\u0627", message:"\u0622\u06cc\u0627 \u0627\u0632 \u0628\u0627\u0632\u0646\u0634\u0627\u0646\u06cc \u06a9\u0627\u0645\u0644 \u0627\u0637\u0645\u06cc\u0646\u0627\u0646 \u062f\u0627\u0631\u06cc\u062f\u061f\u000a\u000a\u062a\u0645\u0627\u0645 \u062f\u0627\u062f\u0647\u200c\u0647\u0627\u06cc \u062f\u0627\u0634\u0628\u0648\u0631\u062f \u0627\u0639\u062a\u0628\u0627\u0631\u0633\u0646\u062c\u06cc\u060c \u0637\u0631\u062d \u0622\u0632\u0645\u0627\u06cc\u0634\u060c \u0646\u0642\u0634\u0647 \u0641\u0627\u0631\u0645\u060c \u0634\u0628\u06cc\u0647\u200c\u0633\u0627\u0632\u06cc \u0632\u0646\u062f\u0647 \u0648 \u0633\u0646\u0627\u0631\u06cc\u0648\u0647\u0627 \u0628\u0631\u0627\u06cc \u062d\u0633\u0627\u0628 \u0634\u0645\u0627 \u0628\u0647\u200c\u0637\u0648\u0631 \u06a9\u0627\u0645\u0644 \u067e\u0627\u06a9 \u062e\u0648\u0627\u0647\u062f \u0634\u062f \u0648 \u0642\u0627\u0628\u0644 \u0628\u0627\u0632\u06af\u0634\u062a \u0646\u06cc\u0633\u062a\u002e\u000a\u0622\u06cc\u0627 \u0627\u062f\u0627\u0645\u0647 \u0645\u06cc\u200c\u062f\u0647\u064a\u062f\u061f", icon:"danger", danger:true, confirmText:"\u0628\u0627\u0632\u0646\u0634\u0627\u0646\u06cc", cancelText:"\u0627\u0646\u0635\u0631\u0627\u0641"}).then(function(ok){ if(!ok){ toast("\u0644\u063a\u0648 \u0634\u062f"); return; } resetAll(); }); } else { var ok=confirm("\u0622\u06cc\u0627 \u0627\u0632 \u0628\u0627\u0632\u0646\u0634\u0627\u0646\u06cc \u06a9\u0627\u0645\u0644 \u0627\u0637\u0645\u06cc\u0646\u0627\u0646 \u062f\u0627\u0631\u06cc\u062f\u061f"); if(!ok){ toast("\u0644\u063a\u0648 \u0634\u062f"); return; } resetAll(); }
     }else{
       resetArmed=1;btn.classList.add("armed");btn.textContent="\u2757";
       toast(tr("dyn.resetArmed"));
@@ -1636,10 +1754,44 @@ document.addEventListener("DOMContentLoaded",()=>{
   markTabs();
   document.documentElement.setAttribute("data-theme",THEME==="light"?"light":"dark");
   refreshChartTheme();
+  startClock();
   $("fm-lbl").textContent=tr("dyn.ready");
   if($("fm-empty"))$("fm-empty").style.display="";
-  setTimeout(runDashboard,40);
+  if(window.requestIdleCallback) requestIdleCallback(runDashboard, {timeout:500}); else setTimeout(runDashboard,40);
   if(document.fonts&&document.fonts.ready)
     document.fonts.ready.then(()=>setTimeout(()=>repaintView(CUR_VIEW),80));
   /* sync settings info after dashboard runs */
   setTimeout(syncSettingsInfo,120);});
+
+/* ===== Live clock in topbar (Shamsi date + HH:MM:SS) ===== */
+function startClock(){
+  var elD=$("tc-date"), elT=$("tc-time");
+  if(!elD||!elT) return;
+  function pad(n){return n<10?"0"+n:""+n;}
+  function toLocaleDigits(s){
+    if(typeof LANG!=="undefined" && LANG==="fa"){
+      var FA=["۰","۱","۲","۳","۴","۵","۶","۷","۸","۹"];
+      return s.replace(/[0-9]/g, function(c){ return FA[+c]; });
+    }
+    return s;
+  }
+  function tick(){
+    var now=new Date();
+    try {
+      if(window.Shamsi && typeof window.Shamsi.toShamsi==="function"){
+        elD.textContent=window.Shamsi.toShamsi(now,{longMonth:false});
+      } else {
+        elD.textContent=now.toLocaleDateString(LANG==="fa"?"fa-IR":"en-US",
+          {year:"numeric",month:"2-digit",day:"2-digit"});
+      }
+    } catch(e){
+      elD.textContent=now.toLocaleDateString("fa-IR",{year:"numeric",month:"2-digit",day:"2-digit"});
+    }
+    var timeStr=pad(now.getHours())+":"+pad(now.getMinutes())+":"+pad(now.getSeconds());
+    elT.textContent=toLocaleDigits(timeStr);
+  }
+  tick();
+  setInterval(tick,1000);
+  // refresh on language change: i18n setLang already repaints, but force tick
+  window.addEventListener("rossim:lang", tick);
+}
