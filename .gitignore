@@ -5,3 +5,6 @@ output/sensor_data.csv
 node_modules/
 __pycache__/
 .DS_Store
+
+# local runtime overrides (URLs/keys) — never commit
+config.local.js

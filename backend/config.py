@@ -2,7 +2,7 @@
 BroilerLab Device Backend — configuration
 PostgreSQL connection + runtime settings.
 """
-import os
+import os, secrets
 
 # PostgreSQL connection (running on port 5434 in dev to avoid clashing
 # with the other local cluster on 5432)
@@ -10,7 +10,7 @@ DB_HOST = os.getenv("BROILER_DB_HOST", "127.0.0.1")
 DB_PORT = int(os.getenv("BROILER_DB_PORT", "5434"))
 DB_NAME = os.getenv("BROILER_DB_NAME", "broilerlab")
 DB_USER = os.getenv("BROILER_DB_USER", "broiler")
-DB_PASS = os.getenv("BROILER_DB_PASS", "broiler_dev")
+DB_PASS = os.getenv("BROILER_DB_PASS", "")  # never commit real passwords — set BROILER_DB_PASS
 
 # Full-URL override first (Vercel Postgres / Neon style), then discrete vars.
 DATABASE_URL = (
@@ -39,6 +39,7 @@ BIN_CAPACITY_KG = 25.0
 VISIT_QUEUE_TIMEOUT_S = 90.0  # co-feeding give-up threshold
 
 # ---- Auth / JWT ----
-JWT_SECRET = __import__("os").getenv("BROILER_JWT_SECRET", "dev-only-change-me-in-production-32chars!")  # set env in prod
+# No usable default in the repo: empty forces env var; dev-only fallback random per-boot.
+JWT_SECRET = os.getenv("BROILER_JWT_SECRET") or ("dev-" + secrets.token_hex(16))
 JWT_ALG = "HS256"
 JWT_EXPIRE_MIN = int(__import__("os").getenv("BROILER_JWT_EXPIRE_MIN", "1440"))  # 24h

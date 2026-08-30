@@ -7,7 +7,7 @@
 ```bash
 # Backend (FastAPI + PostgreSQL 5434)
 cd backend
-BROILER_DB_PORT=5434 BROILER_DB_PASS=broiler_dev .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8755
+BROILER_DB_PORT=5434 BROILER_DB_PASS=«پسورد دیتابیس — از env» .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8755
 
 # Frontend
 python3 webapp_server.py  # http://127.0.0.1:8080
