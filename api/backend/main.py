@@ -18,7 +18,10 @@ from models import init_db, SessionLocal, Cycle, Visit, DeviceLog, User
 from processor import get_processor
 import hub
 import auth as authmod
-WEBAPP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "webapp")
+_ROOTS = [os.path.dirname(os.path.dirname(os.path.abspath(__file__))),  # repo/dev root
+          os.path.dirname(os.path.abspath(__file__))]                    # vendored api/ layout
+WEBAPP_DIR = next((os.path.join(r, "webapp") for r in _ROOTS if os.path.isdir(os.path.join(r, "webapp"))),
+                  os.path.join(_ROOTS[0], "webapp"))
 _db_state = {"ok": False, "error": None}
 
 @asynccontextmanager
@@ -40,7 +43,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 @app.get("/")
 def index():
     return FileResponse(os.path.join(WEBAPP_DIR, "index.html"), headers={"Cache-Control":"no-cache"})
-_STATIC_FILES = ("app.js", "device-panel.js", "auth.js", "i18n.js", "engine.js", "strains.js","stats.js", "xlsx.js", "shamsi.js", "dialog.js","favicon.png", "logo_32.png", "logo_128.png","logo_180.png", "logo_192.png", "logo_256.png", "logo_512.png","fa/all.min.css","fa/fa-solid-900.woff2", "fa/fa-solid-900.ttf","fa/fa-regular-400.woff2", "fa/fa-regular-400.ttf","fa/fa-brands-400.woff2", "fa/fa-brands-400.ttf",)
+_STATIC_FILES = ("app.js", "device-panel.js", "auth.js", "i18n.js", "engine.js", "strains.js","stats.js", "xlsx.js", "shamsi.js", "dialog.js", "router.js", "config.js","favicon.png", "logo_32.png", "logo_128.png","logo_180.png", "logo_192.png", "logo_256.png", "logo_512.png","fa/all.min.css","fa/fa-solid-900.woff2", "fa/fa-solid-900.ttf","fa/fa-regular-400.woff2", "fa/fa-regular-400.ttf","fa/fa-brands-400.woff2", "fa/fa-brands-400.ttf",)
 for _f in _STATIC_FILES:
     _path = os.path.join(WEBAPP_DIR, _f)
     if os.path.exists(_path):
