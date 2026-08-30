@@ -7,13 +7,13 @@ fa:{
 "bio.title":"آزمایشگاه آمار زیستی","bio.sub":"واحد نمونه = پن · Welch t / ANOVA یک‌راهه / η² / Holm",
 "bio.metric":"متغیر پاسخ","bio.bw":"وزن پایان دوره (g)","bio.fi":"کل مصرف هر پرنده (g)",
 "bio.fcr":"ضریب تبدیل خوراک دوره","bio.mort":"تلفات (%)",
-"app.title":"ققنوس — سامانه هوشمند پرورش و اصلاح نژاد",
+"app.title":"آرین — سامانه هوشمند پرورش و اصلاح نژاد","brand.name":"آرین",
 "app.tag":"سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی",
 "app.uni":"گروه علوم دامی، دانشگاه تربیت مدرس",
 "hdr.strain":"سویه","hdr.lang":"زبان","hdr.mae":"میانگین قدرمطلق خطا","hdr.theme":"پوسته",
 "nav.products":"محصولات و خدمات","nav.about":"درباره ما","hdr.help":"آموزش سریع",
 "tour.welcomeT":"🎓 خوش آمدید — آموزش سریع ۹۰ ثانیه‌ای",
-"tour.welcomeP":"ققنوس یک سامانه یکپارچه هوشمند اصلاح نژادی و مدیریت پرورش جوجه‌های گوشتی است که برای هر کاربر، داده‌ها را به‌صورت کاملا اختصاصی و جداگانه ذخیره می‌کند. در کمتر از دو دقیقه با کلیت سامانه آشنا می‌شوید و در هر زمان می‌توانید از بخش تنظیمات، گزینه آموزش سریع را دوباره ببینید.",
+"tour.welcomeP":"آرین یک سامانه یکپارچه هوشمند اصلاح نژادی و مدیریت پرورش جوجه‌های گوشتی است که برای هر کاربر، داده‌ها را به‌صورت کاملا اختصاصی و جداگانه ذخیره می‌کند. در کمتر از دو دقیقه با کلیت سامانه آشنا می‌شوید و در هر زمان می‌توانید از بخش تنظیمات، گزینه آموزش سریع را دوباره ببینید.",
 "tour.authT":"🔒 ورود و ایزوله‌سازی",
 "tour.authP":"صفحه اصلی و صفحه درباره ما برای همه بازدیدکنندگان قابل مشاهده است. هفت بخش تخصصی دیگر پس از ورود به حساب کاربری فعال می‌شود و تمام اطلاعات دوره پرورش و گزارش‌های دستگاه تنها در حساب کاربری شما ذخیره خواهد شد.",
 "tour.strainT":"🧬 انتخاب سویه",
@@ -51,7 +51,7 @@ fa:{
 "btn.resetCycle":"بازنشانی داده‌های دوره","dyn.resetArmed":"⚠️ دوباره کلیک کنید تا همه داده‌های دوره پاک شود","dyn.resetDone":"♻️ همه داده‌های دوره بازنشانی شد",
 "btn.defaults":"بازگشت به پیش‌فرض","dyn.designReset":"↺ طرح آزمایش به قالب پیش‌فرض بازگشت",
 "dyn.visitOk":"وعده ثبت شد","dyn.readFail":"خطای خوانش RFID","hdr.rows":"رکورد/دوره",
-"nav.dash":"داشبورد اعتبارسنجی","nav.exp":"طرح آزمایش","nav.farm":"نقشه فارم پویا",
+"nav.feedGroup":"سیستم پایش مصرف خوراک","nf.title":"صفحه پیدا نشد","nf.p":"آدرسی که وارد کرده‌اید وجود ندارد یا جابه‌جا شده است.","nf.home":"صفحه اصلی","feed.h":"سیستم پایش مصرف خوراک","feed.p":"پایش لحظه‌ای مصرف خوراک هر پرنده با حسگرهای RFID و لودسل دوگانه — از طراحی آزمایش تا اعتبارسنجی و تحلیل سناریو، تمام داده‌ها به‌صورت ایزوله در حساب شما","feed.badge":"پایش ۲۴ ساعته · داده ایزوله","feed.hero.t":"یکپارچه از مزرعه تا تحلیل","feed.hero.p":"هفت ماژول تخصصی در یک گردش کار پیوسته: اعتبارسنجی، طراحی، نقشه زنده، شبیه‌سازی، سناریو، سخت‌افزار و روش‌شناسی","feed.kpi.acc":"دقت اعتبارسنجی","feed.kpi.acc.v":"۱–۲٪","feed.kpi.acc.s":"MAE وزن در برابر کاتالوگ","feed.kpi.live":"پوشش زمانی","feed.kpi.live.v":"۲۴ ساعته","feed.kpi.live.s":"رکورد ۳-ردیفه هر وعده","feed.kpi.iso":"ایزوله کاربر","feed.kpi.iso.v":"۱۰۰٪","feed.kpi.iso.s":"هر حساب، داده اختصاصی","feed.kpi.through":"ظرفیت","feed.kpi.through.v":"۱۰k+","feed.kpi.through.s":"رکورد در هر دوره","feed.steps.t":"گردش کار","feed.steps.s1.t":"۱. طراحی","feed.steps.s1.p":"پن‌ها، تیمارها، تراکم","feed.steps.s2.t":"۲. شبیه‌سازی","feed.steps.s2.p":"موتور Weibull + صف ۹۰ثانیه","feed.steps.s3.t":"۳. پایش زنده","feed.steps.s3.p":"RFID + دو لودسل","feed.steps.s4.t":"۴. اعتبارسنجی","feed.steps.s4.p":"منحنی رشد vs کاتالوگ","feed.steps.s5.t":"۵. سناریو","feed.steps.s5.p":"تنش گرمایی / ایستگاه دوم","feed.grid.t":"هفت ماژول — یک سامانه","feed.card.dash.t":"داشبورد اعتبارسنجی","feed.card.dash.p":"مقایسه روزبه‌روز با کاتالوگ رسمی سویه، FCR پنجره‌ای و باند نر-ماده","feed.card.exp.t":"طرح آزمایش","feed.card.exp.p":"تعریف پن، تعداد، تیمار و تکرار — مبنای فارم و آمار","feed.card.farm.t":"نقشه فارم پویا","feed.card.farm.p":"پخش زمانی با پرندگان متحرک، اشغال پن و انتخاب پرنده","feed.card.sim.t":"شبیه‌سازی زنده","feed.card.sim.p":"جریان لحظه‌ای RFID/وزن، نمودار زنده و خروجی","feed.card.scn.t":"سناریوها","feed.card.scn.p":"مقایسه جفت‌شده با seed یکسان — اثر تیمار","feed.card.dev.t":"دستگاه و داده","feed.card.dev.p":"معماری سنسور، منطق صف و schema ۱۲-ستونه","feed.card.met.t":"روش‌شناسی","feed.card.met.p":"زنجیره مدل، معادلات و محدودیت‌های شفاف","feed.cta.t":"آماده پایش هستید؟","feed.cta.p":"طرح خود را بسازید یا شبیه‌سازی زنده را آغاز کنید — داده‌ها به‌صورت خودکار ذخیره می‌شود.","feed.btn.sim":"شروع شبیه‌سازی زنده","feed.btn.exp":"طراحی آزمایش","feed.go":"ورود به بخش","nav.landing":"صفحه اصلی","nav.dash":"داشبورد اعتبارسنجی","nav.exp":"طرح آزمایش","nav.farm":"نقشه فارم پویا",
 "nav.sim":"شبیه‌سازی زنده","nav.scn":"سناریوها","nav.dev":"دستگاه و داده","nav.sci":"مبانی علمی",
 "farm.tags":"تگ‌ها","hdr.settings":"تنظیمات","bird.tag":"تگ پرنده","bird.sex":"جنس",
 "sex.m":"نر","sex.f":"ماده","bird.cv":"انحراف ژنتیکی","bird.status":"وضعیت",
@@ -79,7 +79,7 @@ fa:{
 "ch.liveGrowth":"رشد زنده vs کاتالوگ","ch.liveCum":"مصرف تجمعی vs هدف",
 "ch.farmGrowth":"رشد به تفکیک تیمار (±SE)","ch.farmFi":"مصرف روزانه به تفکیک تیمار",
 "nav.met":"روش‌شناسی","met.abstractT":"چکیده",
-"met.abstract":"ققنوس یک شبیه‌ساز گسسته-رویداد از ایستگاه پایش مصرف خوراک طیور است که داده‌های سطح دستگاه (RFID + دو لودسل) را با وضوح سه‌ردیفی به‌ازای هر وعده تولید می‌کند. موتور وعده‌محور آن روی کاتالوگ‌های عملکردی رسمی چهار سویه صنعتی قفل شده و فیزیک سنسورها مطابق ادبیات داوری‌شده کالیبره شده است. اعتبارسنجی در برابر جداول مرجع MAE وزن ۱–۲٪ نشان می‌دهد.",
+"met.abstract":"آرین یک شبیه‌ساز گسسته-رویداد از ایستگاه پایش مصرف خوراک طیور است که داده‌های سطح دستگاه (RFID + دو لودسل) را با وضوح سه‌ردیفی به‌ازای هر وعده تولید می‌کند. موتور وعده‌محور آن روی کاتالوگ‌های عملکردی رسمی چهار سویه صنعتی قفل شده و فیزیک سنسورها مطابق ادبیات داوری‌شده کالیبره شده است. اعتبارسنجی در برابر جداول مرجع MAE وزن ۱–۲٪ نشان می‌دهد.",
 "met.pipeline":"خط تولید داده",
 "met.p1":"کاتالوگ سویه","met.p1s":"BW/FI روزانه نر و ماده",
 "met.p2":"مدل فردی","met.p2s":"CV≈۵٪ + AR(1) + بلوک‌بندی",
@@ -192,11 +192,11 @@ fa:{
 "lim.5":"⑤ ضرایب تیمارها و سناریوی تنش گرمایی کالیبره‌شده‌اند و معادل استخراج مستقیم از منبع نیستند.",
 "lim.6":"⑥ آمار استنباطی روی «پن» به‌عنوان واحد نمونه است؛ n کم = توان کم.",
 "about.title":"درباره و مالکیت",
-"about.body":"ققنوس نسخه ۱٫۰٫۰ — ساخته و نگهداری‌شده توسط <b>Arsalan Rezazadeh</b>. شبیه‌ساز آکادمیک دستگاه RFID + دو لودسل برای سویه‌های گوشتی صنعتی با کاتالوگ‌های رسمی Aviagen / Cobb-Vantress / Hubbard، موتور وعده‌محور و آزمایشگاه آمار زیستی. اجرای کاملاً آفلاین، بدون سرور، seed تکرارپذیر.",
+"about.body":"آرین نسخه ۱٫۰٫۰ — ساخته و نگهداری‌شده توسط <b>Arsalan Rezazadeh</b>. شبیه‌ساز آکادمیک دستگاه RFID + دو لودسل برای سویه‌های گوشتی صنعتی با کاتالوگ‌های رسمی Aviagen / Cobb-Vantress / Hubbard، موتور وعده‌محور و آزمایشگاه آمار زیستی. اجرای کاملاً آفلاین، بدون سرور، seed تکرارپذیر.",
 "landing.badge":"سامانه هوشمند پایش مصرف خوراک و سیستم‌های کنترل محیطی",
 "landing.typed":"سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی",
 "landing.register":"ثبت‌نام رایگان","landing.login":"ورود به پنل","landing.guest":"مشاهده معرفی",
-"landing.stat.trials":"طرح‌های آزمایشی","landing.stat.lab":"آزمایشگاه مجازی و تخصصی",
+"landing.stat.24h":"۲۴ ساعته","landing.stat.trials":"طرح‌های آزمایشی","landing.stat.lab":"آزمایشگاه مجازی و تخصصی",
 "landing.stat.live":"داده زنده دستگاه","landing.stat.user":"داده‌های کاربرمحور",
 "landing.card.dash.t":"داشبورد اعتبارسنجی","landing.card.dash.p":"مقایسه لحظه‌ای نتایج شبیه‌سازی با عملکرد استاندارد سویه، همراه با نمودار رشد و ضریب تبدیل خوراک اختصاصی هر کاربر.",
 "landing.card.exp.t":"طرح آزمایش","landing.card.exp.p":"تعریف دوره‌های پرورشی، گروه‌های تیمار و تکرارهای آزمایشی — هر دوره به‌صورت کامل و ایزوله در حساب کاربری شما ثبت می‌شود.",
@@ -207,7 +207,7 @@ fa:{
 "landing.foot.p":"برای دسترسی به داشبورد، آزمایش‌ها و داده‌های دستگاه، وارد حساب کاربری خود شوید. داده‌ها و شبیه‌سازی‌ها کاملاً اختصاصی و بر اساس عملکرد شما ذخیره می‌شوند.",
 "landing.foot.btn":"ورود و شروع",
 "landing.live.b":"داده زنده · ۲۴ ساعته","landing.live.s":"داده‌های کاربرمحور و ایمن","landing.iso":"ایزوله",
-"ws.title":"محیط کاربری ققنوس","ws.subtitle":"وارد شده — داده‌های شما کاملاً اختصاصی و ایزوله است",
+"ws.title":"محیط کاربری آرین","ws.subtitle":"وارد شده — داده‌های شما کاملاً اختصاصی و ایزوله است",
 "ws.badge.user":"کاربر","ws.badge.admin":"مدیر","ws.badge.active":"فعال • کاربرمحور",
 "ws.stat.cycles":"دوره‌ها","ws.stat.scenarios":"سناریوها","ws.stat.device":"رکورد دستگاه","ws.stat.live":"داده زنده",
 "ws.card.dash.t":"داشبورد اعتبارسنجی","ws.card.dash.p":"مقایسه شبیه‌سازی با داده واقعی و نمودار رشد",
@@ -219,7 +219,7 @@ fa:{
 "ws.card.sci.t":"مبانی علمی","ws.card.sci.p":"مدل‌های رشد و مصرف خوراک",
 "ws.card.met.t":"روش‌شناسی","ws.card.met.p":"روش اندازه‌گیری و اعتبارسنجی",
 "ws.go":"ورود به بخش","ws.btn.dash":"رفتن به داشبورد","ws.btn.logout":"خروج از حساب","ws.btn.home":"بازگشت به صفحه اصلی",
-"prod.hero.t":"محصولات و خدمات ققنوس","prod.hero.p":"سامانه‌های هوشمند پرورش و اصلاح نژاد طیور گوشتی — از ثبت دقیق داده در واحد آزمایشی تا کنترل خودکار شرایط محیطی سالن؛ طراحی‌شده برای مراکز تحقیقاتی، واحدهای مادر و فارم‌های تجاری.",
+"prod.hero.t":"محصولات و خدمات آرین","prod.hero.p":"سامانه‌های هوشمند پرورش و اصلاح نژاد طیور گوشتی — از ثبت دقیق داده در واحد آزمایشی تا کنترل خودکار شرایط محیطی سالن؛ طراحی‌شده برای مراکز تحقیقاتی، واحدهای مادر و فارم‌های تجاری.",
 "prod.p1.tag":"محصول ۱","prod.p1.t":"سیستم پایش مصرف خوراک","prod.p1.d":"ثبت خودکار بازدید هر پرنده از ایستگاه تغذیه با شناسایی الکترونیکی و توزین هم‌زمان؛ محاسبه دقیق مصرف خوراک فردی، وزن‌کشی پیوسته و تشخیص هوشمند وعده‌های تغذیه‌ای — بدون دخالت انسانی و بدون استرس گله.",
 "prod.p1.f1":"شناسایی الکترونیکی هر پرنده با بال‌تگ و ثبت لحظه‌ای ورود و خروج","prod.p1.f2":"حسگرهای وزن‌کشی با هموارسازی نویز و دقت در حد گرم","prod.p1.f3":"محاسبه خودکار مصرف خوراک فردی، شمارش بازدید و بستن وعده","prod.p1.f4":"مدیریت دوره‌های پرورشی با داده‌های کاملاً اختصاصی هر کاربر","prod.p1.f5":"ثبت و ذخیره‌سازی خودکار داده‌ها و استریم زنده به داشبورد",
 "prod.p1.status":"فعال · داده زنده ۲۴ ساعته","prod.p2.tag":"محصول ۲","prod.p2.t":"سیستم هوشمند کنترل محیطی","prod.p2.d":"پایش و کنترل خودکار دما، رطوبت و تهویه سالن بر اساس استانداردهای رسمی پرورش؛ تنظیم هوشمند شرایط محیطی در هر سن، کاهش تنش گرمایی و بهبود ضریب تبدیل خوراک — همه‌چیز از یک داشبورد واحد.",
@@ -288,17 +288,17 @@ fa:{
 "scn.noteHeat":"🌡️ {label} — بیشینه افت وزن <b>{dip}٪</b> در روز {age}؛ وزن نهایی {dir}<b>{dbw}٪</b>. مصرف حین موج تا ~۲۵٪ کاهش می‌یابد و پس از تنش بازیابی جبرانی جزئی دیده می‌شود (FCR پنجره‌ای ممکن است تغییر کمی کند).",
 "scn.noteStn":"🏗️ {label} — اشغال پیک بدترین پن از <b>\u2066{from}%\u2069</b> به <b>\u2066{to}%\u2069</b> رسید؛ تغذیه‌های همزمان کل گله: {ovlB} → <b>\u2066{ovlS}\u2069</b>. یافته REPORT.md بازتولید شد.",
 "scn.fcrSub":"با بازیابی جبرانی پس از تنش، تغییر جزئی است",
-"scn.busySub":"بدترین پن: \u2066{pen}\u2069"
+"scn.busySub":"بدترین پن: \u2066{pen}\u2069","hdr.clockTitle":"تاریخ و ساعت کنونی","hdr.strainAria":"سویه","hdr.settingsAria":"تنظیمات","ws.aria":"محیط کاربری","ws.prefix":"محیط کاربری — ","ws.isolated":" — داده‌های شما کاملاً اختصاصی و ایزوله است","ws.role.admin":"مدیر","dev.stat.visits":"بازدید","dev.stat.birds":"پرندگان یکتا","dev.stat.rows":"ردیف دستگاه","dev.stat.intake":"مصرف کل (g)","dev.stat.avgw":"میانگین وزن اولیه (g)","dev.stat.miss":"شناسه ازدست‌رفته","dev.live":"زنده","dev.reg.bird":"پرنده","dev.reg.weight":"وزن اولیه","dev.reg.date":"تاریخ","dev.reg.time":"ساعت","dev.reg.sensor":"سنسور","dev.reg.tag":"تگ / کد مرغ","form.codeLabel":"کد دوره (مثلاً F01)","form.nameLabel":"نام دوره","form.strainAria":"سویه","day.prefix":"روز ","bird.unknown":"؟؟؟","btn.pause":"⏸ توقف موقت","bw.base":"پایه: ","bw.lower":"پایین‌تر از پایه ","bw.higher":"بالاتر از پایه ","footer.brand":"آرین v1.0.0","footer.copyright":"© 2026 Arsalan Rezazadeh","sci.effectTitle":"اثر تیمارها"
 },
 en:{
 "bio.title":"Biostatistics laboratory","bio.sub":"unit = pen · Welch t / one-way ANOVA / η² / Holm",
 "bio.metric":"Response variable","bio.bw":"Final weight (g)","bio.fi":"Total intake per bird (g)",
 "bio.fcr":"Window FCR","bio.mort":"Mortality (%)",
-"app.title":"Ghoghnous — Intelligent Poultry Breeding & Rearing Platform",
+"app.title":"Arian — Intelligent Poultry Breeding & Rearing Platform","brand.name":"Arian",
 "app.tag":"Intelligent Breeding & Rearing Platform",
 "app.uni":"Animal Science Dept., Tarbiat Modares University",
 "hdr.strain":"Strain","hdr.rows":"records/cycle",
-"nav.dash":"Validation dashboard","nav.exp":"Trial designer","nav.farm":"Live farm map",
+"nav.feedGroup":"Feed Intake Monitoring","nf.title":"Page not found","nf.p":"The address you entered does not exist or has moved.","nf.home":"Home","feed.h":"Feed Intake Monitoring System","feed.p":"Real-time per-bird feed intake with RFID + dual load-cell — from trial design to validation and scenario analysis, all data isolated per account","feed.badge":"24/7 monitoring · isolated data","feed.hero.t":"From farm to insight — one flow","feed.hero.p":"Seven specialist modules in one continuous workflow: validation, design, live map, live stream, scenarios, hardware and methodology","feed.kpi.acc":"Validation accuracy","feed.kpi.acc.v":"1–2%","feed.kpi.acc.s":"Weight MAE vs catalog","feed.kpi.live":"Coverage","feed.kpi.live.v":"24/7","feed.kpi.live.s":"3 rows per visit","feed.kpi.iso":"User isolation","feed.kpi.iso.v":"100%","feed.kpi.iso.s":"Per-account data","feed.kpi.through":"Throughput","feed.kpi.through.v":"10k+","feed.kpi.through.s":"Records per cycle","feed.steps.t":"Workflow","feed.steps.s1.t":"1. Design","feed.steps.s1.p":"Pens, treatments, density","feed.steps.s2.t":"2. Simulate","feed.steps.s2.p":"Weibull engine + 90s queue","feed.steps.s3.t":"3. Monitor","feed.steps.s3.p":"RFID + dual load-cell","feed.steps.s4.t":"4. Validate","feed.steps.s4.p":"Growth vs catalog","feed.steps.s5.t":"5. Scenario","feed.steps.s5.p":"Heat stress / 2nd station","feed.grid.t":"Seven modules — one system","feed.card.dash.t":"Validation dashboard","feed.card.dash.p":"Day-by-day vs official catalog, window FCR and male–female band","feed.card.exp.t":"Trial designer","feed.card.exp.p":"Define pens, heads, treatments and replicates — basis for farm and stats","feed.card.farm.t":"Live farm map","feed.card.farm.p":"Time-play with moving birds, pen occupancy and bird picker","feed.card.sim.t":"Live stream","feed.card.sim.p":"Live RFID/weight flow, live charts and exports","feed.card.scn.t":"Scenarios","feed.card.scn.p":"Paired comparison with identical seed — treatment effect","feed.card.dev.t":"Device & data","feed.card.dev.p":"Sensor architecture, queue logic and 12-col schema","feed.card.met.t":"Methodology","feed.card.met.p":"Model chain, equations and transparent limits","feed.cta.t":"Ready to monitor?","feed.cta.p":"Build your trial or start the live stream — data is saved automatically.","feed.btn.sim":"Start live stream","feed.btn.exp":"Design trial","feed.go":"Open","nav.landing":"Home","nav.dash":"Validation dashboard","nav.exp":"Trial designer","nav.farm":"Live farm map",
 "nav.sim":"Live device stream","nav.scn":"Scenario lab","nav.dev":"Device & schema","nav.sci":"Scientific basis",
 "btn.defaults":"Defaults","btn.resetCycle":"Reset cycle data",
 "dyn.designReset":"↺ Trial design restored to defaults","dyn.readFail":"RFID read failure",
@@ -306,7 +306,7 @@ en:{
 "dyn.visitOk":"Visit logged","hdr.lang":"Language","hdr.mae":"MAE","hdr.theme":"Theme",
 "nav.products":"Products & Services","nav.about":"About us","hdr.help":"Quick tour",
 "tour.welcomeT":"🎓 Welcome — 90-second guided tour",
-"tour.welcomeP":"Ghoghnous is an intelligent broiler growth and feed intake simulator. Each account keeps its own fully isolated data. In less than two minutes you will learn the whole workflow, and you can always reopen this guide from Settings.",
+"tour.welcomeP":"Arian is an intelligent broiler growth and feed intake simulator. Each account keeps its own fully isolated data. In less than two minutes you will learn the whole workflow, and you can always reopen this guide from Settings.",
 "tour.authT":"🔒 Sign in and data isolation",
 "tour.authP":"The landing page and About page are open to all visitors. The other seven specialist sections become available after you sign in, and every rearing cycle and device report is stored exclusively in your own account.",
 "tour.strainT":"🧬 Choosing the strain",
@@ -368,7 +368,7 @@ en:{
 "ch.liveGrowth":"Live growth vs catalog","ch.liveCum":"Cumulative intake vs target",
 "ch.farmGrowth":"Growth by treatment (±SE)","ch.farmFi":"Daily intake by treatment",
 "nav.met":"Methodology","met.abstractT":"Abstract",
-"met.abstract":"Ghoghnous is a discrete-event simulator of a poultry feeding-monitoring station that produces device-level data (RFID + dual load-cell) at three-row resolution per visit. Its visit-based engine is locked onto official performance catalogs of four industrial strains, and sensor physics are calibrated against peer-reviewed literature. Validation against reference tables shows weight MAE of 1\u20132%.",
+"met.abstract":"Arian is a discrete-event simulator of a poultry feeding-monitoring station that produces device-level data (RFID + dual load-cell) at three-row resolution per visit. Its visit-based engine is locked onto official performance catalogs of four industrial strains, and sensor physics are calibrated against peer-reviewed literature. Validation against reference tables shows weight MAE of 1\u20132%.",
 "met.pipeline":"Data pipeline",
 "met.p1":"Strain catalog","met.p1s":"Daily BW/FI male & female",
 "met.p2":"Individual model","met.p2s":"CV\u22485% + AR(1) + blocking",
@@ -480,11 +480,11 @@ en:{
 "lim.5":"⑤ Treatment and heat coefficients are calibrated, not extracted directly from sources.",
 "lim.6":"⑥ Inference uses the pen as the sampling unit; small n = low power.",
 "about.title":"About & ownership",
-"about.body":"ققنوس v1.0.0 — designed and maintained by <b>Arsalan Rezazadeh</b>. An academic simulator of an RFID + dual load-cell feeding station for industrial broiler strains using official Aviagen / Cobb-Vantress / Hubbard catalogs, a visit-based engine and a biostatistics laboratory. Fully offline, server-less, reproducible seed.",
+"about.body":"Arian v1.0.0 — designed and maintained by <b>Arsalan Rezazadeh</b>. An academic simulator of an RFID + dual load-cell feeding station for industrial broiler strains using official Aviagen / Cobb-Vantress / Hubbard catalogs, a visit-based engine and a biostatistics laboratory. Fully offline, server-less, reproducible seed.",
 "landing.badge":"Intelligent feed-intake & environmental control platform",
 "landing.typed":"Integrated intelligent breeding & broiler rearing management platform",
 "landing.register":"Free sign-up","landing.login":"Sign in","landing.guest":"See overview",
-"landing.stat.trials":"Trial designs","landing.stat.lab":"Virtual labs",
+"landing.stat.24h":"24/7","landing.stat.trials":"Trial designs","landing.stat.lab":"Virtual labs",
 "landing.stat.live":"Live device data","landing.stat.user":"User-isolated data",
 "landing.card.dash.t":"Validation dashboard","landing.card.dash.p":"Live comparison of simulation vs. breeder catalog with growth curves and feed-conversion per user.",
 "landing.card.exp.t":"Trial designer","landing.card.exp.p":"Define rearing cycles, treatment groups and replicates — each cycle fully isolated in your account.",
@@ -495,7 +495,7 @@ en:{
 "landing.foot.p":"Sign in to access dashboards, trials and device data. All data and simulations are fully isolated per account.",
 "landing.foot.btn":"Sign in & start",
 "landing.live.b":"Live data · 24h","landing.live.s":"User-isolated & secure","landing.iso":"Isolated",
-"ws.title":"Ghoghnous workspace","ws.subtitle":"Signed in — your data is fully isolated",
+"ws.title":"Arian workspace","ws.subtitle":"Signed in — your data is fully isolated",
 "ws.badge.user":"User","ws.badge.admin":"Admin","ws.badge.active":"Active · User-isolated",
 "ws.stat.cycles":"Cycles","ws.stat.scenarios":"Scenarios","ws.stat.device":"Device rows","ws.stat.live":"Live data",
 "ws.card.dash.t":"Validation dashboard","ws.card.dash.p":"Simulation vs. real data and growth chart",
@@ -507,7 +507,7 @@ en:{
 "ws.card.sci.t":"Scientific basis","ws.card.sci.p":"Growth & feed-intake models",
 "ws.card.met.t":"Methodology","ws.card.met.p":"Measurement & validation methods",
 "ws.go":"Open","ws.btn.dash":"Go to dashboard","ws.btn.logout":"Sign out","ws.btn.home":"Back to home",
-"prod.hero.t":"Ghoghnous — Products & Services","prod.hero.p":"Intelligent broiler breeding & rearing platforms — from precise pen-level data capture to automated house environment control; built for research centres, breeder units and commercial farms.",
+"prod.hero.t":"Arian — Products & Services","prod.hero.p":"Intelligent broiler breeding & rearing platforms — from precise pen-level data capture to automated house environment control; built for research centres, breeder units and commercial farms.",
 "prod.p1.tag":"Product 1","prod.p1.t":"Feed Intake Monitoring System","prod.p1.d":"Automatic recording of each bird visit at the feeder with electronic ID and simultaneous weighing; precise individual intake, continuous weighing and intelligent meal detection — without human intervention and without flock stress.",
 "prod.p1.f1":"Electronic ID per bird with wing tag and instant entry/exit logging","prod.p1.f2":"Weighing sensors with noise smoothing and gram-level accuracy","prod.p1.f3":"Automatic individual intake, visit count and meal closure","prod.p1.f4":"Rearing-cycle management with fully user-isolated data","prod.p1.f5":"Automatic data logging and live stream to the dashboard",
 "prod.p1.status":"Active · 24h live data","prod.p2.tag":"Product 2","prod.p2.t":"Intelligent Environmental Control System","prod.p2.d":"Automated monitoring and control of house temperature, humidity and ventilation to official breeder standards; intelligent environment per age, reduced heat stress and improved feed conversion — all from a single dashboard.",
@@ -576,7 +576,7 @@ en:{
 "scn.noteHeat":"🌡️ {label} — maximum weight dip <b>{dip}%</b> on day {age}; final weight {dir}<b>{dbw}%</b>. Intake falls up to ~25% during the wave with partial compensatory recovery afterwards (window FCR may change little).",
 "scn.noteStn":"🏗️ {label} — worst-pen peak occupancy moved from <b>{from}%</b> to <b>{to}%</b>; whole-flock co-feedings: {ovlB} → <b>{ovlS}</b>. Reproduces the REPORT.md design finding.",
 "scn.fcrSub":"small change due to post-stress compensation",
-"scn.busySub":"worst pen: {pen}"
+"scn.busySub":"worst pen: {pen}","hdr.clockTitle":"Current date & time","hdr.strainAria":"Strain","hdr.settingsAria":"Settings","ws.aria":"Workspace","ws.prefix":"Workspace — ","ws.isolated":" — your data is fully isolated","ws.role.admin":"Admin","dev.stat.visits":"Visits","dev.stat.birds":"Unique birds","dev.stat.rows":"Device rows","dev.stat.intake":"Total intake (g)","dev.stat.avgw":"Mean initial weight (g)","dev.stat.miss":"Lost IDs","dev.live":"Live","dev.reg.bird":"Bird","dev.reg.weight":"Initial weight","dev.reg.date":"Date","dev.reg.time":"Time","dev.reg.sensor":"Sensor","dev.reg.tag":"Tag / Bird ID","form.codeLabel":"Cycle code (e.g. F01)","form.nameLabel":"Cycle name","form.strainAria":"Strain","day.prefix":"Day ","bird.unknown":"???","btn.pause":"⏸ Pause","bw.base":"base: ","bw.lower":"lower than baseline ","bw.higher":"higher than baseline ","footer.brand":"Arian v1.0.0","footer.copyright":"© 2026 Arsalan Rezazadeh","sci.effectTitle":"Treatment effects"
 }
 };
 let LANG="fa";
@@ -598,15 +598,88 @@ function lnum(v,d=0){
   }
   return s;
 }
+/* centralized locale-aware formatters — single source for numbers/dates/times */
+function formatNumber(v,d=0){ return num(v,d) }
+function formatDate(input, opts){
+  // opts: {longMonth:boolean, withTime:boolean}
+  opts=opts||{};
+  try{
+    if(LANG==="fa" && window.Shamsi && typeof window.Shamsi.toShamsi==="function"){
+      return window.Shamsi.toShamsi(input, opts);
+    }
+    var dt=(input instanceof Date)?input:new Date(input);
+    if(isNaN(dt)) return String(input);
+    if(opts.longMonth){
+      return new Intl.DateTimeFormat(LANG==="fa"?"fa-IR":"en-US",{year:"numeric",month:"long",day:"numeric"}).format(dt);
+    }
+    return new Intl.DateTimeFormat(LANG==="fa"?"fa-IR":"en-US",{year:"numeric",month:"2-digit",day:"2-digit"}).format(dt);
+  }catch(e){ return String(input) }
+}
+function formatTime(input){
+  try{
+    var dt=(input instanceof Date)?input:new Date(input);
+    if(isNaN(dt)) dt=new Date();
+    var s=String(dt.getHours()).padStart(2,"0")+":"+String(dt.getMinutes()).padStart(2,"0");
+    if(dt.getSeconds) s+=":"+String(dt.getSeconds()).padStart(2,"0");
+    if(LANG==="fa"){
+      var FA=["۰","۱","۲","۳","۴","۵","۶","۷","۸","۹"];
+      return s.replace(/[0-9]/g,function(c){return FA[+c]});
+    }
+    return s;
+  }catch(e){ return "" }
+}
+function formatDateTime(input, opts){
+  opts=opts||{};
+  var d=formatDate(input, opts);
+  var t=formatTime(input);
+  return d+" "+t;
+}
+function formatRelativeTime(value, unit){
+  // value: numeric, unit: "second"|"minute"|"hour"|"day"|"week"|"month"|"year"
+  try{
+    var loc=LANG==="fa"?"fa-IR":"en-US";
+    if(typeof Intl.RelativeTimeFormat==="function"){
+      var rtf=new Intl.RelativeTimeFormat(loc,{numeric:"auto", style:"long"});
+      return rtf.format(value, unit);
+    }
+  }catch(e){}
+  // fallback simple
+  if(LANG==="fa"){
+    var map={second:"ثانیه",minute:"دقیقه",hour:"ساعت",day:"روز",week:"هفته",month:"ماه",year:"سال"};
+    var u=map[unit]||unit;
+    if(value===0) return "همین الان";
+    if(value<0) return Math.abs(value)+" "+u+" پیش";
+    return value+" "+u+" بعد";
+  } else {
+    if(value===0) return "now";
+    if(value<0) return Math.abs(value)+" "+unit+(Math.abs(value)!==1?"s":"")+" ago";
+    return "in "+value+" "+unit+(value!==1?"s":"");
+  }
+}
+function formatCurrency(v,currency){
+  currency=currency||"IRR";
+  try{
+    var loc=LANG==="fa"?"fa-IR":"en-US";
+    return new Intl.NumberFormat(loc,{style:"currency",currency:currency, minimumFractionDigits:0, maximumFractionDigits:0}).format(v);
+  }catch(e){ return num(v,0)+" "+currency }
+}
+function formatPercent(v,d){ return lnum(v,d)+"%" }
+// expose globally for app components
+try{ window.formatNumber=formatNumber; window.formatDate=formatDate; window.formatTime=formatTime; window.formatDateTime=formatDateTime; window.formatRelativeTime=formatRelativeTime; window.formatCurrency=formatCurrency; window.formatPercent=formatPercent; }catch(e){}
+
 function applyLang(){
   document.documentElement.lang=LANG;
   document.documentElement.dir=LANG==="fa"?"rtl":"ltr";
-  document.querySelectorAll("[data-i18n]").forEach(el=>{el.textContent=tr(el.dataset.i18n)});
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    if(el.id==="landing-typed")return; // owned by typing effect module (restarts on rossim:lang)
+    el.textContent=tr(el.dataset.i18n)});
   document.querySelectorAll("[data-i18n-html]").forEach(el=>{el.innerHTML=tr(el.dataset.i18nHtml)});
   document.querySelectorAll("[data-title-i18n]").forEach(el=>{
     el.title=tr(el.dataset.titleI18n);
     el.setAttribute("aria-label",tr(el.dataset.titleI18n))});
-  const t=document.querySelector("title");if(t)t.textContent=tr("app.title");
+  document.querySelectorAll("[data-alt-i18n]").forEach(el=>{el.alt=tr(el.dataset.altI18n)});
+  if(window.Router&&window.Router.syncTitle){window.Router.syncTitle();}
+  else{const t=document.querySelector("title");if(t)t.textContent=tr("app.title");}
   $("lang-fa").classList.toggle("on",LANG==="fa");
   $("lang-en").classList.toggle("on",LANG==="en");
   $("lang-fa-dd").classList.toggle("on",LANG==="fa");
@@ -617,6 +690,9 @@ function setLang(l){if(LANG===l)return;LANG=l;
   try{window.dispatchEvent(new CustomEvent("rossim:lang",{detail:l}))}catch(e){}
   applyLang();
   try{
+    if(typeof updateLandingCTA==="function")try{updateLandingCTA()}catch(e){}
+    if(typeof renderAuthArea==="function")try{renderAuthArea()}catch(e){}
+    if(typeof renderWorkspace==="function")try{renderWorkspace()}catch(e){}
     if(typeof expRender==="function")expRender();
     if(typeof DASH!=="undefined"&&DASH)runDashboard();
     if(typeof FM!=="undefined"&&FM&&!FM.stale){
@@ -637,3 +713,9 @@ function setLang(l){if(LANG===l)return;LANG=l;
       const bs=document.getElementById("btn-scn");if(bs)bs.click()}
   }catch(e){}
   requestAnimationFrame(()=>requestAnimationFrame(()=>repaintView(CUR_VIEW)))}
+// initial apply on load — ensure html lang/dir and translations match stored LANG
+try{
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded", function(){ try{applyLang()}catch(e){} });
+  } else { try{applyLang()}catch(e){} }
+}catch(e){}

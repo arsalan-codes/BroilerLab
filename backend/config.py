@@ -12,9 +12,15 @@ DB_NAME = os.getenv("BROILER_DB_NAME", "broilerlab")
 DB_USER = os.getenv("BROILER_DB_USER", "broiler")
 DB_PASS = os.getenv("BROILER_DB_PASS", "broiler_dev")
 
+# Full-URL override first (Vercel Postgres / Neon style), then discrete vars.
 DATABASE_URL = (
-    f"postgresql+psycopg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    os.getenv("BROILER_DATABASE_URL")
+    or os.getenv("POSTGRES_URL")
+    or f"postgresql+psycopg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
+# Provider URLs come as postgres:// — SQLAlchemy+psycopg needs postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 # MQTT — device publishes JSON telemetry to this topic prefix.
 MQTT_BROKER = os.getenv("BROILER_MQTT_HOST", "127.0.0.1")
@@ -33,6 +39,6 @@ BIN_CAPACITY_KG = 25.0
 VISIT_QUEUE_TIMEOUT_S = 90.0  # co-feeding give-up threshold
 
 # ---- Auth / JWT ----
-JWT_SECRET = __import__("os").getenv("BROILER_JWT_SECRET", "dev-only-change-me-in-production-32chars!")
+JWT_SECRET = __import__("os").getenv("BROILER_JWT_SECRET", "dev-only-change-me-in-production-32chars!")  # set env in prod
 JWT_ALG = "HS256"
 JWT_EXPIRE_MIN = int(__import__("os").getenv("BROILER_JWT_EXPIRE_MIN", "1440"))  # 24h

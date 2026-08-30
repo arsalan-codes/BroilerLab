@@ -50,7 +50,7 @@
       if (r.status === 401) {
         if (getToken()) { clearAuth(); renderAuthArea(); }
         setGated(true);
-        var cur2=document.querySelector("section.view.on"); var isPub2=cur2 && (cur2.id==="v-landing" || cur2.id==="v-about");
+        var cur2=document.querySelector("section.view.on"); var isPub2=cur2 && ((window.Router&&window.Router.isPublic(cur2.id)) || cur2.id==="v-landing" || cur2.id==="v-about");
         if(!isPub2) showAuthModal("login", {gated:true});
         var msg = "401 Unauthorized";
         return r.json().catch(function(){return {};}).then(function(j){ throw new Error(j.detail || msg); });
@@ -80,9 +80,9 @@
         + '</div>'
         + '<div class="auth-dropdown" id="auth-dropdown" hidden role="menu">'
         + '<div class="auth-dropdown-head"><b>'+display+'</b><span>'+esc(user.email)+'</span></div>'
-        + '<button class=\"auth-dropdown-item\" id=\"btn-workspace\" role=\"menuitem\"><i class=\"fa-solid fa-table-columns\"></i> مدیریت محیط کاربری</button>'
-        + '<button class=\"auth-dropdown-item\" id=\"btn-change-pass\" role=\"menuitem\"><i class=\"fa-solid fa-key\"></i> تغییر رمز</button>'
-        + '<button class=\"auth-dropdown-item danger\" id=\"btn-logout\" role=\"menuitem\"><i class=\"fa-solid fa-right-from-bracket\"></i> خروج از حساب</button>'
+        + '<button class=\"auth-dropdown-item\" id=\"btn-workspace\" role=\"menuitem\"><i class=\"fa-solid fa-table-columns\"></i> '+(window.tr?window.tr("auth.workspace"):"مدیریت محیط کاربری")+'</button>'
+        + '<button class=\"auth-dropdown-item\" id=\"btn-change-pass\" role=\"menuitem\"><i class=\"fa-solid fa-key\"></i> '+(window.tr?window.tr("auth.changePass"):"تغییر رمز")+'</button>'
+        + '<button class=\"auth-dropdown-item danger\" id=\"btn-logout\" role=\"menuitem\"><i class=\"fa-solid fa-right-from-bracket\"></i> '+(window.tr?window.tr("auth.logout"):"خروج از حساب")+'</button>'
         + '</div>';
       var btn = document.getElementById("auth-user-btn");
       var dd = document.getElementById("auth-dropdown");
@@ -92,7 +92,7 @@
       }
       updateLandingCTA();
       var lo = document.getElementById("btn-logout");
-      if (lo) lo.addEventListener("click", function(){ clearAuth(); renderAuthArea(); setGated(true); var land=document.querySelector('.tab[data-v="v-landing"]'); if(land) land.click(); else { document.querySelectorAll("section.view").forEach(s=>s.classList.remove("on")); var l=document.getElementById("v-landing"); if(l) l.classList.add("on"); } if(window.toast) toast(window.tr?window.tr("auth.loggedOut"):"خارج شدید"); });
+      if (lo) lo.addEventListener("click", function(){ clearAuth(); renderAuthArea(); setGated(true); if(window.Router){ window.Router.go("v-landing"); } else { var land=document.querySelector('.tab[data-v="v-landing"]'); if(land) land.click(); } if(window.toast) toast(window.tr?window.tr("auth.loggedOut"):"خارج شدید"); });
       var cp = document.getElementById("btn-change-pass");
       var wsb=document.getElementById("btn-workspace"); if(wsb) wsb.addEventListener("click", function(){ dd.hidden=true; openWorkspace(); });
       if (cp) cp.addEventListener("click", function(){ dd.hidden=true; showChangePassModal(); });
@@ -116,7 +116,7 @@
     var html = '<div class="auth-modal-backdrop" id="auth-modal" hidden role="dialog" aria-modal="true" aria-label="Authentication">'
       + '<div class="auth-modal">'
       + '<button class="auth-modal-close" id="auth-modal-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>'
-      + '<div class="auth-modal-head"><img src="logo_32.png" alt="" width="28" height="28"><div><b>ققنوس</b><span>'+(window.tr?window.tr("auth.loginTitle"):"ورود به پنل کاربری")+'</span></div></div>'
+      + '<div class="auth-modal-head"><img src="logo_32.png" alt="" width="28" height="28"><div><b>'+(window.tr?window.tr("brand.name"):"آرین")+'</b><span>'+(window.tr?window.tr("auth.loginTitle"):"ورود به پنل کاربری")+'</span></div></div>'
       + '<div class="auth-tabs" role="tablist"><button class="auth-tab on" data-tab="login" role="tab" aria-selected="true">'+(window.tr?window.tr("auth.loginTab"):"ورود")+'</button><button class="auth-tab" data-tab="register" role="tab">'+(window.tr?window.tr("auth.registerTab"):"ثبت‌نام")+'</button></div>'
       + '<form id="auth-form-login" class="auth-form on">'
       + '<label>'+(window.tr?window.tr("auth.identLabel"):"ایمیل یا نام کاربری")+'<input id="login-ident" type="text" autocomplete="username" placeholder="you@example.com" required></label>'
@@ -184,7 +184,7 @@
     var btn=e.target.querySelector("button[type=submit]"); if(btn) btn.disabled=true;
     fetch(API+"/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:ident,password:pass})})
       .then(function(r){ if(!r.ok) return r.json().then(function(j){throw new Error(j.detail|| (window.tr?window.tr("auth.changeFail"):"خطا"));}); return r.json(); })
-      .then(function(j){ setAuth(j.access_token, j.user); renderAuthArea(); updateLandingCTA(); hideAuthModal(true); setGated(false); openWorkspace(); if(window.toast) toast((window.tr?window.tr("auth.welcome"):"خوش آمدید، ")+(j.user.full_name||j.user.email)); })
+      .then(function(j){ setAuth(j.access_token, j.user); renderAuthArea(); updateLandingCTA(); hideAuthModal(true); setGated(false); if(window.Router){ window.Router.redirectAfterLogin(); } else { openWorkspace(); } if(window.toast) toast((window.tr?window.tr("auth.welcome"):"خوش آمدید، ")+(j.user.full_name||j.user.email)); })
       .catch(function(err){ showError("login-error", err.message|| (window.tr?window.tr("auth.errLoginFail"):"ورود ناموفق")); })
       .finally(function(){ if(btn) btn.disabled=false; });
   }
@@ -205,7 +205,7 @@
     if(username) payload.username=username;
     fetch(API+"/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
       .then(function(r){ if(!r.ok) return r.json().then(function(j){throw new Error(j.detail|| (window.tr?window.tr("auth.changeFail"):"خطا"));}); return r.json(); })
-      .then(function(j){ setAuth(j.access_token, j.user); renderAuthArea(); updateLandingCTA(); hideAuthModal(true); setGated(false); openWorkspace(); if(window.toast) toast(window.tr?"Sign-up successful — "+window.tr("auth.welcome").trim(): "ثبت‌نام موفق — خوش آمدید"); })
+      .then(function(j){ setAuth(j.access_token, j.user); renderAuthArea(); updateLandingCTA(); hideAuthModal(true); setGated(false); if(window.Router){ window.Router.redirectAfterLogin(); } else { openWorkspace(); } if(window.toast) toast(window.tr?"Sign-up successful — "+window.tr("auth.welcome").trim(): "ثبت‌نام موفق — خوش آمدید"); })
       .catch(function(err){ showError("reg-error", err.message|| (window.tr?window.tr("auth.errRegisterFail"):"ثبت‌نام ناموفق")); })
       .finally(function(){ if(btn) btn.disabled=false; });
   }
@@ -215,7 +215,7 @@
         if(!vals) return;
         apiAuth("/api/auth/change-password",{method:"POST",body:JSON.stringify({old_password:vals.old,new_password:vals.nw})})
           .then(function(){ if(window.MDialog) MDialog.alert({title:window.tr?window.tr("dialog.confirm"):"موفق", message:window.tr?window.tr("auth.changeOk"):"رمز با موفقیت تغییر کرد.", icon:"success"}); else alert(window.tr?window.tr("auth.alertOk"):"رمز با موفقیت تغییر کرد"); })
-          .catch(function(e){ if(window.MDialog) MDialog.alert({title:window.tr?window.tr("dialog.confirm"):"خطا", message:e.message|| (window.tr?window.tr("auth.changeFail"):"خطا در تغییر رمز"), icon:"danger"}); else alert("خطا: "+e.message); });
+          .catch(function(e){ if(window.MDialog) MDialog.alert({title:window.tr?window.tr("dialog.confirm"):"خطا", message:e.message|| (window.tr?window.tr("auth.changeFail"):"خطا در تغییر رمز"), icon:"danger"}); else alert((window.tr?window.tr("dev.backendError"):"خطا: ")+e.message); });
       });
       return;
     }
@@ -226,7 +226,7 @@
     if(newp.length<6) return alert(window.tr?window.tr("auth.alertShort"):"رمز کوتاه است");
     apiAuth("/api/auth/change-password",{method:"POST",body:JSON.stringify({old_password:oldp,new_password:newp})})
       .then(function(){ alert(window.tr?window.tr("auth.alertOk"):"رمز با موفقیت تغییر کرد"); })
-      .catch(function(e){ alert("خطا: "+e.message); });
+      .catch(function(e){ alert((window.tr?window.tr("dev.backendError"):"خطا: ")+e.message); });
   }
 
   // expose
@@ -243,20 +243,21 @@
     if(ll){
       if(authed){
         ll.innerHTML='<i class="fa-solid fa-table-columns"></i> '+(window.tr?window.tr('auth.workspace'):'مدیریت محیط کاربری');
-        ll.title='رفتن به محیط کاربری';
+        ll.title=(window.tr?window.tr('ws.btn.dash'):'رفتن به محیط کاربری');
       } else {
         ll.innerHTML='<i class="fa-solid fa-right-to-bracket"></i> '+(window.tr?window.tr('landing.login'):'ورود به پنل');
         ll.title='';
       }
     }
     if(le){
-      if(authed){ le.innerHTML='<i class="fa-solid fa-table-columns"></i> مدیریت محیط کاربری'; }
-      else { le.innerHTML='<i class="fa-solid fa-arrow-left"></i> ورود و شروع'; }
+      if(authed){ le.innerHTML='<i class="fa-solid fa-table-columns"></i> '+(window.tr?window.tr('auth.workspace'):'مدیریت محیط کاربری'); }
+      else { le.innerHTML='<i class="fa-solid fa-arrow-left"></i> '+(window.tr?window.tr('landing.foot.btn'):'ورود و شروع'); }
     }
     if(lr){ lr.style.display = authed ? 'none' : ''; lr.setAttribute('aria-hidden', authed ? 'true' : 'false'); }
   }
   function openWorkspace(){
     setGated(false);
+    if(window.Router){ window.Router.go("v-workspace"); return; }
     document.querySelectorAll("section.view").forEach(function(s){ s.classList.remove("on"); });
     var ws=document.getElementById("v-workspace"); if(ws) ws.classList.add("on");
     document.querySelectorAll(".tab").forEach(function(tb){ tb.classList.toggle("on", tb.dataset.v==="v-workspace"); });
@@ -266,9 +267,9 @@
   function renderWorkspace(){
     var u=getUser(); if(!u) return;
     var av=document.getElementById("ws-avatar"); if(av) av.textContent=(u.full_name||u.username||u.email||"ق").trim().charAt(0).toUpperCase();
-    var nm=document.getElementById("ws-name"); if(nm) nm.textContent='محیط کاربری — '+(u.full_name||u.username||u.email.split("@")[0]);
-    var em=document.getElementById("ws-email"); if(em) em.textContent=u.email+' — داده‌های شما کاملاً اختصاصی و ایزوله است';
-    var role=document.getElementById("ws-role"); if(role) role.textContent=(u.role==='admin'?'مدیر':'کاربر')+(u.role_code?' • '+u.role_code:'');
+    var nm=document.getElementById("ws-name"); if(nm) nm.textContent=(window.tr?window.tr("ws.prefix"):"محیط کاربری — ")+(u.full_name||u.username||u.email.split("@")[0]);
+    var em=document.getElementById("ws-email"); if(em) em.textContent=u.email+(window.tr?window.tr("ws.isolated"):" — داده‌های شما کاملاً اختصاصی و ایزوله است");
+    var role=document.getElementById("ws-role"); if(role) role.textContent=(u.role==='admin'?(window.tr?window.tr("ws.role.admin"):"مدیر"):(window.tr?window.tr("ws.role.user"):"کاربر"))+(u.role_code?' • '+u.role_code:'');
     try{ apiAuth("/api/cycles").then(function(js){ var arr=Array.isArray(js)?js:(js.cycles||js.items||[]); var el=document.getElementById("ws-n-cycles"); if(el) el.textContent=String(arr.length); }).catch(function(){}); }catch(e){}
     try{ apiAuth("/api/scenarios").then(function(js){ var arr=Array.isArray(js)?js:(js.scenarios||js.items||[]); var el=document.getElementById("ws-n-scenarios"); if(el) el.textContent=String(arr.length); }).catch(function(){}); }catch(e){}
     try{ apiAuth("/api/device/records?limit=1").then(function(js){ var n=(js.total!=null?js.total:(Array.isArray(js)?js.length:0)); var el=document.getElementById("ws-n-device"); if(el) el.textContent=String(n); }).catch(function(){}); }catch(e){}
@@ -276,6 +277,7 @@
   window.openWorkspace=openWorkspace;
   window.renderWorkspace=renderWorkspace;
   window.updateLandingCTA=updateLandingCTA;
+  try{window.addEventListener("rossim:lang", function(){ try{updateLandingCTA()}catch(e){} ; try{renderAuthArea()}catch(e){} })}catch(e){}
   function setGated(on){
     document.body.classList.toggle("needs-auth", !!on);
     // X button visibility is controlled per-modal (opts.gated), not by body state - keep it visible for on-demand login
@@ -319,7 +321,7 @@
     // no token - public landing, no forced modal (login on demand)
     setGated(true); revealBody();
   }
-  function goToDashboard(){ setGated(false); var dash=document.querySelector('.tab[data-v="v-dash"]'); if(dash) dash.click(); else { document.querySelectorAll("section.view").forEach(s=>s.classList.remove("on")); var d=document.getElementById("v-dash"); if(d) d.classList.add("on"); } if(window.toast) toast("خوش آمدید!"); }
+  function goToDashboard(){ setGated(false); if(window.Router){ window.Router.go("v-dash"); } else if(dash){ var dash=document.querySelector('.tab[data-v="v-dash"]'); if(dash) dash.click(); } if(window.toast) toast("خوش آمدید!"); }
   window.goToDashboard=goToDashboard;
   window.showAuthModal=showAuthModal;
 
@@ -338,16 +340,10 @@
     bindLanding();
     document.addEventListener("click", function(e){
       var card=e.target.closest(".ws-card[data-go]");
-      if(card){
-        var v=card.getAttribute("data-go");
-        var tab=document.querySelector('.tab[data-v="'+v+'"]');
-        if(tab) tab.click();
-        else { document.querySelectorAll("section.view").forEach(function(s){s.classList.remove("on")}); var sec=document.getElementById(v); if(sec) sec.classList.add("on"); if(window.scrollTo) window.scrollTo({top:0}); }
-        return;
-      }
-      if(e.target.closest("#ws-go-dash")){ var td=document.querySelector('.tab[data-v="v-dash"]'); if(td) td.click(); return; }
-      if(e.target.closest("#ws-logout")){ clearAuth(); renderAuthArea(); updateLandingCTA(); setGated(true); document.querySelectorAll("section.view").forEach(function(s){s.classList.remove("on")}); var l=document.getElementById("v-landing"); if(l) l.classList.add("on"); if(window.toast) toast(window.tr?window.tr("auth.loggedOut"):"خارج شدید"); return; }
-      if(e.target.closest("#ws-back-landing")){ document.querySelectorAll("section.view").forEach(function(s){s.classList.remove("on")}); var ll=document.getElementById("v-landing"); if(ll) ll.classList.add("on"); document.querySelectorAll(".tab").forEach(function(tb){tb.classList.remove("on")}); var tl=document.querySelector('.tab[data-v="v-landing"]'); if(tl) tl.classList.add("on"); return; }
+      if(card){ if(window.Router){ window.Router.go(card.getAttribute("data-go")); } return; }
+      if(e.target.closest("#ws-go-dash")){ if(window.Router){ window.Router.go("v-dash"); } return; }
+      if(e.target.closest("#ws-logout")){ clearAuth(); renderAuthArea(); updateLandingCTA(); setGated(true); if(window.Router){ window.Router.go("v-landing"); } else { document.querySelectorAll("section.view").forEach(function(s){s.classList.remove("on")}); var l=document.getElementById("v-landing"); if(l) l.classList.add("on"); } if(window.toast) toast(window.tr?window.tr("auth.loggedOut"):"خارج شدید"); return; }
+      if(e.target.closest("#ws-back-landing")){ if(window.Router){ window.Router.go("v-landing"); } return; }
     });
     updateLandingCTA();
     // Also hook successful auth to go dashboard

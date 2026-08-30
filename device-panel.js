@@ -147,7 +147,7 @@
     var row = document.createElement("div");
     row.className = "lf-row";
     var t = (d.timestamp || "");
-    var shamsi = (window.Shamsi && t) ? window.Shamsi.toShamsi(t, { withTime: true }) : t.replace("T", " ").slice(0, 19);
+    var shamsi = (typeof window.formatDateTime==="function" ? window.formatDateTime(t, {withTime:true}) : ((window.Shamsi && t && (typeof LANG==="undefined" || LANG==="fa")) ? window.Shamsi.toShamsi(t, { withTime: true }) : t.replace("T", " ").slice(0, 19)));
     row.innerHTML =
       '<span class="t">' + esc(shamsi) + '</span>  ' +
       '<span class="b">bird:' + esc(d.bird_id || "?") + '</span>  ' +
@@ -172,9 +172,12 @@
     var dt = d.timestamp || d.registered_at || "";
     var datePart = "", timePart = "";
     if (dt) {
-      if (window.Shamsi) {
-        datePart = window.Shamsi.toShamsi(dt);              // 1405/06/05
-        timePart = window.Shamsi.toShamsi(dt, { withTime: true }).split(" ").pop(); // 15:55
+      if (typeof window.formatDate==="function") {
+        datePart = window.formatDate(dt);
+        timePart = window.formatTime(dt);
+      } else if (window.Shamsi && (typeof LANG==="undefined" || LANG==="fa")) {
+        datePart = window.Shamsi.toShamsi(dt);
+        timePart = window.Shamsi.toShamsi(dt, { withTime: true }).split(" ").pop();
       } else {
         var m = dt.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/);
         if (m) { datePart = m[1]; timePart = m[2]; }
@@ -212,7 +215,10 @@
         row.className = "reg-row";
         var datePart = r.registered_at || "";
         var timePart = "";
-        if (window.Shamsi && datePart) {
+        if (typeof window.formatDate==="function" && datePart) {
+          datePart = window.formatDate(r.registered_at);
+          timePart = window.formatTime(r.registered_at);
+        } else if (window.Shamsi && datePart && (typeof LANG==="undefined" || LANG==="fa")) {
           datePart = window.Shamsi.toShamsi(datePart);
           timePart = window.Shamsi.toShamsi(r.registered_at, { withTime: true }).split(" ").pop();
         } else {

@@ -3,7 +3,7 @@
 ## Current Objective
 شبیه‌ساز آکادمیک چندسویه‌ای دستگاه پایش مصرف خوراک (RFID بال + دو لودسل) با کاتالوگ‌های رسمی Aviagen/Cobb-Vantress/Hubbard، طراح آزمایش کاربرمحور، نقشه فارم انیمیشنی، آزمایشگاه آمار زیستی و رابط دوزبانه FA/EN — متعلق به Arsalan Rezazadeh.
 
-Last Updated: 2026-08-30 — v1.3.0 (ققنوس)
+Last Updated: 2026-08-30 — v1.5.20 (ققنوس)
 
 ## Active Checklist
 - [x] استخراج جدول‌های رسمی Performance Objectives از PDF Aviagen (as-hatched/nr/male/female d0–70)
@@ -44,9 +44,9 @@ Last Updated: 2026-08-30 — v1.3.0 (ققنوس)
 - [x] دیتابیس: PostgreSQL 5434 — 4 جدول + FK CASCADE (cycles.user_id, visits.cycle_id, device_logs.cycle_id) + isolation per-user verified (admin vs user 404) + fail-closed 401
 - [x] صفحه «محصولات و خدمات» عمومی (v-products): ۲ محصول — سیستم پایش مصرف خوراک + سیستم هوشمند کنترل محیطی با مشخصات، ویژگی‌ها، دکمه دمو و تم داینامیک
 - [x] حذف حساب پیش‌فرض (admin@broilerlab.local/admin123): دیتابیس پاک شد، seed بک‌اند non-op، متن/placeholder مودال ورود تمیز شد — ثبت‌نام آزاد
-- [x] استانداردسازی تایپوگرافی ریسپانسیو کل سایت (v1.2.1): body clamp(13-14.5px)، هیرو clamp fluid (حذف پرش 34→26→22)، تیتر نماها clamp، کف خوانایی 10.5px (۱۲ مورد زیر 10px اصلاح)، هدف لمسی 42-44px در pointer:coarse، جدول‌ها 11px موبایل، ws موبایل
+- [x] استانداردسازی تایپوگرافی ریسپانسیو کل سایت (v1.5.2): body clamp(13-14.5px)، هیرو clamp fluid (حذف پرش 34→26→22)، تیتر نماها clamp، کف خوانایی 10.5px (۱۲ مورد زیر 10px اصلاح)، هدف لمسی 42-44px در pointer:coarse، جدول‌ها 11px موبایل، ws موبایل
 - [x] پاکسازی: حذف .bakها + dead CSS landing-desc-box + ورژن 1.1.0→1.2.0 + DB_PORT default 5434 + webp cache + .gitignore + README
-- [x] بازبینی کامل دوزبانه (v1.3.0): افزودن ~60 کلید جدید i18n — لندینگ/هیرو/stats/کارت‌ها/فوت/محیط کاربری/محصولات/auth/device-panel/dialog/toast؛ HTML تمام هاردکدها → data-i18n؛ JS تمام رشته‌ها → window.tr؛ اعتبارسنجی 343 کلید HTML + 57 کلید JS بدون missing
+- [x] بازبینی کامل دوزبانه (v1.5.20): افزودن ~60 کلید جدید i18n — لندینگ/هیرو/stats/کارت‌ها/فوت/محیط کاربری/محصولات/auth/device-panel/dialog/toast؛ HTML تمام هاردکدها → data-i18n؛ JS تمام رشته‌ها → window.tr؛ اعتبارسنجی 343 کلید HTML + 57 کلید JS بدون missing
 
 ## Blocked — Waiting on Project Manager
 - (هیچ)

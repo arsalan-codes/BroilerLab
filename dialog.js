@@ -1,4 +1,4 @@
-/* Ghoghnous — Material Dialog (confirm / alert / prompt) — theme-aware */
+/* Arian — Material Dialog (confirm / alert / prompt) — theme-aware */
 (function(){
   "use strict";
   var dlg = null, iconEl, titleEl, msgEl, inputEl, input2El, errEl, cancelBtn, confirmBtn;

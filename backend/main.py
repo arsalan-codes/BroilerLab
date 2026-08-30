@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
     init_db()
     authmod.ensure_admin_seed()
     yield
-app = FastAPI(title="BroilerLab Device Backend", version="1.3.0", lifespan=lifespan)
+app = FastAPI(title="BroilerLab Device Backend", version="1.5.2", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=400)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 @app.get("/")
@@ -207,3 +207,7 @@ def _iso(dt):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host=API_HOST, port=API_PORT, ws="websockets")
+
+
+# Vercel serverless ASGI entrypoint
+app.handler = app  # vercel.json builds use 'api/main.py:app'

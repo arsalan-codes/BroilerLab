@@ -2,6 +2,13 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<script>
+/* ===== Deployment config (single source) =====
+   API_BASE: production backend base URL (no trailing slash).
+   Empty string "" = same-origin (e.g. backend proxied at /api on same host).
+   For local dev leave the default; it falls back to 127.0.0.1:8755 in auth.js. */
+window.BROILER_API = "http://127.0.0.1:8755";
+</script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -14,7 +21,7 @@
   // when authed, leave visible so dashboard shows instantly with no flash
 }catch(e){}} )();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title data-i18n="app.title">ققنوس — سامانه هوشمند پرورش و اصلاح نژاد</title>
+<title data-i18n="app.title">آرین — سامانه هوشمند پرورش و اصلاح نژاد</title>
 <meta name="author" content="Arsalan Rezazadeh">
 <meta name="description" content="Academic broiler feeding-station simulator — Ross 308 / Cobb 500 / Arbor Acres Plus / Hubbard EP · RFID + dual load-cell · biostatistics lab">
 <link rel="icon" type="image/png" sizes="32x32" href="logo_32.png">
@@ -542,7 +549,7 @@ html[data-theme=light] .dots i{background:rgba(0,0,0,.14)}
 .pstep span{display:block;font-size:11px;font-weight:650;margin-bottom:3px}
 .pstep small{font-size:10.5px;color:var(--dim);line-height:1.5;display:block}
 .pstep.accent{border-color:rgba(25,195,154,.4);background:rgba(25,195,154,.05)}
-html[dir=rtl] .parrow{transform:scaleX(-1)}
+html[dir=rtl] .parrow{transition:transform .2s}
 .parrow{display:flex;align-items:center;font-size:17px;color:var(--dim)}
 .eqs{display:flex;flex-direction:column;gap:8px}
 .eq code{display:block;padding:8px 12px;border-radius:8px;font-size:11.5px;
@@ -569,6 +576,80 @@ nav::-webkit-scrollbar{display:none}
 .tab .no{font-size:10.5px;color:var(--dim);letter-spacing:.5px}
 .tab:hover{color:var(--txt)}
 .tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+/* ===== nav group (Feed Monitoring) ===== */
+.nav-group{position:relative;display:inline-flex;align-items:stretch}
+.nav-group-btn{gap:6px}
+.nav-group-btn .nav-chevron{font-size:10px;transition:transform .18s;color:var(--mut)}
+.nav-group-btn[aria-expanded="true"] .nav-chevron{transform:rotate(180deg)}
+.nav-group-btn.on{color:var(--acc);border-bottom-color:var(--acc)}
+.nav-dropdown{position:absolute;top:calc(100% + 8px);inset-inline-start:0;min-width:240px;z-index:40;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh-lg);padding:6px;display:flex;flex-direction:column;gap:2px}
+.nav-dropdown[hidden]{display:none !important}
+.nav-dropdown-item{justify-content:flex-start;padding:11px 12px;border-radius:9px;border:none;background:transparent;color:var(--txt);font-family:inherit;font-size:12.5px;font-weight:650;text-align:start;width:100%;cursor:pointer;transition:background .15s,color .15s;border-bottom:none !important;white-space:nowrap}
+.nav-dropdown-item:hover{background:var(--bg2);color:var(--acc)}
+.nav-dropdown-item.on{background:rgba(25,195,154,.12);color:var(--acc);border-bottom-color:transparent !important}
+@media(max-width:992px){.nav-dropdown{position:absolute;inset-inline-start:0;right:auto;min-width:220px}}
+html[data-theme=light] .nav-dropdown{background:#fff;border-color:#e2e8f0}
+html[data-theme=light] .nav-dropdown-item:hover{background:#f1f5f9}
+/* ===== Feed overview (v-feed) ===== */
+#v-feed{display:none}
+#v-feed.on{display:block;animation:fade .3s ease}
+.feed-hero{position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--line);background:radial-gradient(700px 400px at 75% -10%, rgba(25,195,154,.14), transparent 60%),radial-gradient(600px 380px at 5% 110%, rgba(59,130,246,.10), transparent 60%),linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)), var(--card);padding:26px;display:grid;grid-template-columns:1.15fr .85fr;gap:22px;align-items:center}
+.feed-hero-bg{position:absolute;inset:0;background:linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px);background-size:28px 28px;mask:radial-gradient(600px 350px at 55% 40%, black 40%, transparent 75%);-webkit-mask:radial-gradient(600px 350px at 55% 40%, black 40%, transparent 75%);pointer-events:none;opacity:.45}
+.feed-hero-inner{position:relative;z-index:1;display:flex;flex-direction:column;gap:14px;min-width:0}
+.feed-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:rgba(25,195,154,.11);border:1px solid rgba(25,195,154,.22);color:var(--acc);font-size:11.5px;font-weight:750;width:fit-content}
+.feed-hero h2{font-size:clamp(22px,3.2vw,30px);font-weight:900;line-height:1.18;letter-spacing:-.02em;margin:0}
+.feed-hero h2 span{color:var(--acc)}
+.feed-hero p{font-size:12.8px;color:var(--mut);line-height:1.85;margin:0}
+.feed-hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.feed-visual{position:relative;z-index:1;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:linear-gradient(135deg, #0f1a2e 0%, #0b1220 100%);min-height:210px;display:grid;place-items:center;padding:16px;box-shadow:0 12px 32px rgba(0,0,0,.22)}
+.feed-vis-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.feed-vis-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;backdrop-filter:blur(8px)}
+.feed-vis-card b{font-size:12px;font-weight:800;color:#fff}
+.feed-vis-card span{font-size:11px;color:rgba(255,255,255,.70);line-height:1.6}
+.feed-vis-card i{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:rgba(25,195,154,.18);color:#5eead4;font-size:15px;margin-bottom:2px}
+.feed-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.feed-kpi{padding:14px 12px;border-radius:14px;background:var(--card);border:1px solid var(--line);text-align:center;box-shadow:var(--sh-sm);transition:border-color .15s, transform .15s}
+.feed-kpi:hover{border-color:rgba(25,195,154,.28);transform:translateY(-1px)}
+.feed-kpi b{display:block;font-size:clamp(18px,2.2vw,22px);font-weight:900;color:var(--acc);line-height:1}
+.feed-kpi span.kpi-l{display:block;font-size:11px;font-weight:750;color:var(--txt);margin-top:6px}
+.feed-kpi span.kpi-s{display:block;font-size:11px;color:var(--mut);margin-top:2px;line-height:1.4}
+.feed-section{margin-top:22px}
+.feed-section h3{font-size:14px;font-weight:900;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.feed-section h3 i{color:var(--acc)}
+.feed-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.feed-step{padding:14px 12px;border-radius:14px;background:var(--card);border:1px solid var(--line);text-align:center;position:relative}
+.feed-step b{display:block;font-size:12.5px;font-weight:800;margin-bottom:4px}
+.feed-step p{font-size:11px;color:var(--mut);line-height:1.6;margin:0}
+.feed-step .step-no{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-weight:900;font-size:12px;margin:0 auto 8px}
+.feed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.feed-card{padding:16px;border-radius:16px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;gap:10px;transition:transform .18s, box-shadow .18s, border-color .18s;cursor:pointer;text-align:right}
+.feed-card:hover{transform:translateY(-3px);box-shadow:var(--sh-md);border-color:rgba(25,195,154,.30)}
+.feed-card i{width:38px;height:38px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(135deg,rgba(25,195,154,.14),rgba(59,130,246,.11));color:#0f766e;font-size:17px}
+.feed-card h4{font-size:13px;font-weight:900;margin:0}
+.feed-card p{font-size:11.8px;color:var(--mut);line-height:1.75;margin:0;flex:1}
+.feed-card .feed-go{margin-top:auto;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--acc)}
+.feed-card .feed-go i{width:auto;height:auto;background:none;font-size:10px;color:var(--acc)}
+.feed-cta{margin-top:18px;padding:18px;border-radius:16px;background:linear-gradient(135deg,rgba(25,195,154,.10),rgba(59,130,246,.08)),var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.feed-cta h4{font-size:14px;font-weight:900;margin:0 0 4px}
+.feed-cta p{font-size:12px;color:var(--mut);margin:0;line-height:1.7}
+.feed-cta .cta-actions{display:flex;gap:10px;flex-wrap:wrap}
+@media(max-width:900px){.feed-hero{grid-template-columns:1fr}.feed-kpis{grid-template-columns:repeat(2,1fr)}.feed-steps{grid-template-columns:repeat(2,1fr)}.feed-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.feed-kpis{grid-template-columns:1fr 1fr}.feed-steps{grid-template-columns:1fr}.feed-grid{grid-template-columns:1fr}.feed-hero{padding:18px 16px}}
+html[data-theme=dark] .feed-hero{background:radial-gradient(700px 400px at 75% -10%, rgba(25,195,154,.16), transparent 60%),radial-gradient(600px 380px at 5% 110%, rgba(59,130,246,.12), transparent 60%),rgba(17,24,38,.78)}
+html[data-theme=dark] .feed-kpi, html[data-theme=dark] .feed-step, html[data-theme=dark] .feed-card{background:rgba(17,24,38,.78);border-color:rgba(255,255,255,.06)}
+html[data-theme=light] .feed-visual{background:linear-gradient(135deg,#f1f5f9 0%,#e2e8f0 100%);border-color:rgba(0,0,0,.06)}
+html[data-theme=light] .feed-vis-card{background:rgba(255,255,255,.85);border-color:rgba(0,0,0,.06)}
+html[data-theme=light] .feed-vis-card b{color:#0f172a}
+/* ===== 404 (v-404) ===== */
+#v-404{display:none}
+#v-404.on{display:block}
+.nf-wrap{max-width:560px;margin:48px auto;text-align:center;padding:40px 24px;border-radius:22px;background:var(--card);border:1px solid var(--line);box-shadow:var(--sh-sm)}
+.nf-code{font-size:clamp(56px,8vw,84px);font-weight:900;line-height:1;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-.02em}
+.nf-wrap h2{font-size:clamp(18px,2.4vw,24px);font-weight:900;margin:12px 0 8px}
+.nf-wrap p{font-size:13px;color:var(--mut);line-height:1.9;margin:0 0 20px}
+.nf-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+html[data-theme=dark] .nf-wrap{background:rgba(17,24,38,.78);border-color:rgba(255,255,255,.06)}
+html[data-theme=light] .feed-vis-card span{color:#475569}
 section.view{display:none}
 section.view.on{display:block;animation:fade .3s ease}
 @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
@@ -1103,7 +1184,7 @@ html[data-theme=light] .m-dialog{box-shadow:0 24px 64px rgba(15,23,42,.18),0 1px
 
 
 /* gate: when not authed, hide app and show only brand + login */
-body.needs-auth #v-workspace, body.needs-auth #v-dash, body.needs-auth #v-exp, body.needs-auth #v-farm, body.needs-auth #v-sim, body.needs-auth #v-scn, body.needs-auth #v-dev, body.needs-auth #v-sci, body.needs-auth #v-met{display:none !important}
+body.needs-auth #v-workspace, body.needs-auth #v-feed, body.needs-auth #v-dash, body.needs-auth #v-exp, body.needs-auth #v-farm, body.needs-auth #v-sim, body.needs-auth #v-scn, body.needs-auth #v-dev, body.needs-auth #v-sci, body.needs-auth #v-met{display:none !important}
 body.needs-auth .tab[data-v]:not([data-v="v-landing"]):not([data-v="v-about"]):not([data-v="v-products"]){opacity:.55}
 body.needs-auth .topbar{backdrop-filter:none}
 body.needs-auth .auth-modal-backdrop{background:rgba(255,255,255,.06);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
@@ -1226,6 +1307,16 @@ html[data-theme=light] .landing-visual-float .lvf-txt span{color:var(--mut)}
 .tab{will-change: transform}
 canvas{will-change: contents}
 
+
+/* ===== RTL/LTR directional icons & logical fix (auto locale) ===== */
+[dir="rtl"] .fa-arrow-left{transform:scaleX(-1)}
+[dir="rtl"] .fa-arrow-right{transform:scaleX(-1)}
+[dir="rtl"] .parrow{transition:transform .2s}
+[dir="ltr"] .parrow{transform:none}
+/* ensure logical handling for dropdowns already uses inset-inline */
+[dir="rtl"] .strain-select__list{left:0;right:0}
+[dir="ltr"] .strain-select__list{left:0;right:0}
+
 </style>
 </head>
 <body>
@@ -1234,13 +1325,13 @@ canvas{will-change: contents}
 <!-- ================= TOPBAR ================= -->
 <div class="topbar"><div class="topbar-in">
   <a class="brand" href="#">
-    <span class="mark"><img src="logo_128.png" width="52" height="52" alt="ققنوس" style="object-fit:contain;display:block;border:none"></span>
-    <span><b>ققنوس</b><span data-i18n="app.tag">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی</span>
+    <span class="mark"><img src="logo_128.png" width="52" height="52" alt="آرین" data-alt-i18n="brand.name" style="object-fit:contain;display:block;border:none"></span>
+    <span><b data-i18n="brand.name">آرین</b><span data-i18n="app.tag">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی</span>
 <span class="uni" data-i18n="app.uni">گروه علوم دامی، دانشگاه تربیت مدرس</span></span>
   </a>
   <div class="hspace"></div>
   <div class="hctl">
-    <div class="topclock" id="topclock" aria-live="off" title="تاریخ و ساعت کنونی">
+    <div class="topclock" id="topclock" aria-live="off" data-title-i18n="hdr.clockTitle" title="تاریخ و ساعت کنونی">
       <span class="tc-date" id="tc-date">—</span>
       <span class="tc-sep">·</span>
       <span class="tc-time" id="tc-time">—</span>
@@ -1276,7 +1367,7 @@ canvas{will-change: contents}
     <!-- Settings button + dropdown (desktop) -->
     <div class="hsettings" role="group" aria-label="Settings">
       <button id="btn-settings" class="icon-btn" aria-label="Settings" aria-expanded="false" aria-haspopup="true" data-title-i18n="hdr.settings" title="تنظیمات"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
-      <div id="settings-dropdown" class="settings-dropdown" role="menu" aria-label="تنظیمات" hidden>
+      <div id="settings-dropdown" class="settings-dropdown" role="menu" data-title-i18n="hdr.settingsAria" aria-label="تنظیمات" hidden>
         <div class="settings-section">
           <div class="settings-row">
             <span class="settings-label" data-i18n="hdr.theme">پوسته</span>
@@ -1294,7 +1385,7 @@ canvas{will-change: contents}
           </div>
           <div class="settings-row">
             <span class="settings-label" data-i18n="hdr.strain">سویه</span>
-            <div class="strain-select" role="combobox" aria-label="سویه" aria-expanded="false" aria-controls="strain-list" tabindex="0">
+            <div class="strain-select" role="combobox" data-title-i18n="hdr.strainAria" aria-label="سویه" aria-expanded="false" aria-controls="strain-list" tabindex="0">
               <div class="strain-select__current" id="strain-current">
                 <span class="strain-select__value" id="strain-value">—</span>
                 <span class="strain-select__icon" aria-hidden="true">
@@ -1335,15 +1426,20 @@ canvas{will-change: contents}
 <div id="backdrop"></div>
 
 <nav id="mainnav">
-  <button class="tab on" data-v="v-landing" id="tab-landing"><span>صفحه اصلی</span></button>
-  <button class="tab" data-v="v-dash"><span data-i18n="nav.dash">داشبورد اعتبارسنجی</span></button>
-  <button class="tab" data-v="v-exp"><span data-i18n="nav.exp">طرح آزمایش</span></button>
-  <button class="tab" data-v="v-farm"><span data-i18n="nav.farm">نقشه فارم پویا</span></button>
-  <button class="tab" data-v="v-sim"><span data-i18n="nav.sim">شبیه‌سازی زنده</span></button>
-  <button class="tab" data-v="v-scn"><span data-i18n="nav.scn">سناریوها</span></button>
-  <button class="tab" data-v="v-dev"><span data-i18n="nav.dev">دستگاه و داده</span></button>
+  <button class="tab on" data-v="v-landing" id="tab-landing"><span data-i18n="nav.landing">صفحه اصلی</span></button>
+  <div class="nav-group" id="nav-group-feed">
+    <button class="tab nav-group-btn" id="nav-feed-btn" data-v="v-feed" aria-expanded="false" aria-haspopup="true"><span data-i18n="nav.feedGroup">سیستم پایش مصرف خوراک</span> <i class="fa-solid fa-chevron-down nav-chevron" aria-hidden="true"></i></button>
+    <div class="nav-dropdown" id="nav-feed-dropdown" hidden role="menu">
+      <button class="nav-dropdown-item tab" data-v="v-dash" role="menuitem"><span data-i18n="nav.dash">داشبورد اعتبارسنجی</span></button>
+      <button class="nav-dropdown-item tab" data-v="v-exp" role="menuitem"><span data-i18n="nav.exp">طرح آزمایش</span></button>
+      <button class="nav-dropdown-item tab" data-v="v-farm" role="menuitem"><span data-i18n="nav.farm">نقشه فارم پویا</span></button>
+      <button class="nav-dropdown-item tab" data-v="v-sim" role="menuitem"><span data-i18n="nav.sim">شبیه‌سازی زنده</span></button>
+      <button class="nav-dropdown-item tab" data-v="v-scn" role="menuitem"><span data-i18n="nav.scn">سناریوها</span></button>
+      <button class="nav-dropdown-item tab" data-v="v-dev" role="menuitem"><span data-i18n="nav.dev">دستگاه و داده</span></button>
+      <button class="nav-dropdown-item tab" data-v="v-met" role="menuitem"><span data-i18n="nav.met">روش‌شناسی</span></button>
+    </div>
+  </div>
   <button class="tab" data-v="v-sci"><span data-i18n="nav.sci">مبانی علمی</span></button>
-  <button class="tab" data-v="v-met"><span data-i18n="nav.met">روش‌شناسی</span></button>
   <button class="tab" data-v="v-products"><span data-i18n="nav.products">محصولات و خدمات</span></button>
   <button class="tab" data-v="v-about"><span data-i18n="nav.about">درباره ما</span></button>
 </nav>
@@ -1357,7 +1453,7 @@ canvas{will-change: contents}
     <div class="landing-hero-bg"></div>
     <div class="landing-hero-inner">
       <div class="landing-badge"><i class="fa-solid fa-flask"></i> <span data-i18n="landing.badge">سامانه هوشمند پایش مصرف خوراک و سیستم‌های کنترل محیطی</span></div>
-      <h1 class="landing-title">ققنوس <span id="landing-typed" data-text="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی" aria-label="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی"></span></h1>
+      <h1 class="landing-title"><span data-i18n="brand.name">آرین</span> <span id="landing-typed" data-i18n="landing.typed" data-text="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی" aria-label="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی<span class="typed-cursor" aria-hidden="true"></span></span></h1>
       <div class="landing-cta">
         <button class="btn primary lg" id="landing-login"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="landing.login">ورود به پنل</span></button>
         <button class="btn ghost lg" id="landing-register" data-i18n="landing.register">ثبت‌نام رایگان</button>
@@ -1366,7 +1462,7 @@ canvas{will-change: contents}
       <div class="landing-stats">
         <div class="ls"><b data-i18n="landing.stat.trials">طرح‌های آزمایشی</b></div>
         <div class="ls"><b data-i18n="landing.stat.lab">آزمایشگاه مجازی و تخصصی</b></div>
-        <div class="ls"><b>۲۴ ساعته</b><span data-i18n="landing.stat.live">داده زنده دستگاه</span></div>
+        <div class="ls"><b data-i18n="landing.stat.24h">۲۴ ساعته</b><span data-i18n="landing.stat.live">داده زنده دستگاه</span></div>
         <div class="ls"><b data-i18n="landing.stat.user">کاربرمحور</b><span data-i18n="landing.stat.live">داده زنده دستگاه</span></div>
       </div>
     </div>
@@ -1374,7 +1470,7 @@ canvas{will-change: contents}
       <div class="landing-visual-glow"></div>
       <picture>
         <source srcset="assets/landing-hero.webp" type="image/webp">
-        <img src="assets/landing-hero-900.jpg" alt="ققنوس - سامانه هوشمند پرورش" loading="eager" decoding="async" width="900" height="620">
+        <img src="assets/landing-hero-900.jpg" alt="آرین - سامانه هوشمند پرورش" data-alt-i18n="brand.name" loading="eager" decoding="async" width="900" height="620">
       </picture>
       <div class="landing-visual-float">
         <div class="lvf-left">
@@ -1399,12 +1495,12 @@ canvas{will-change: contents}
   </div>
 </section>
 
-<section class="view" id="v-workspace" aria-label="محیط کاربری">
+<section class="view" id="v-workspace" data-title-i18n="ws.aria" aria-label="محیط کاربری">
   <div class="ws-wrap">
     <div class="ws-head" id="ws-head">
       <div class="ws-avatar" id="ws-avatar">ق</div>
       <div class="ws-head-main">
-        <b id="ws-name" data-i18n="ws.title">محیط کاربری ققنوس</b>
+        <b id="ws-name" data-i18n="ws.title">محیط کاربری آرین</b>
         <span id="ws-email" data-i18n="ws.subtitle">وارد شده — داده‌های شما کاملاً اختصاصی و ایزوله است</span>
       </div>
       <div class="ws-badges">
@@ -1432,6 +1528,84 @@ canvas{will-change: contents}
       <button class="btn primary" id="ws-go-dash"><i class="fa-solid fa-gauge"></i> <span data-i18n="ws.btn.dash">رفتن به داشبورد</span></button>
       <button class="btn ghost" id="ws-logout"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="ws.btn.logout">خروج از حساب</span></button>
       <button class="btn ghost" id="ws-back-landing"><i class="fa-solid fa-house"></i> <span data-i18n="ws.btn.home">بازگشت به صفحه اصلی</span></button>
+    </div>
+  </div>
+</section>
+<section class="view" id="v-404" aria-label="Not found">
+  <div class="nf-wrap">
+    <div class="nf-code">404</div>
+    <h2 data-i18n="nf.title">صفحه پیدا نشد</h2>
+    <p data-i18n="nf.p">آدرسی که وارد کرده‌اید وجود ندارد یا جابه‌جا شده است.</p>
+    <div class="nf-actions">
+      <button class="btn primary" data-goto="v-landing"><i class="fa-solid fa-house"></i> <span data-i18n="nf.home">صفحه اصلی</span></button>
+      <button class="btn ghost" data-goto="v-about"><i class="fa-solid fa-circle-info"></i> <span data-i18n="nav.about">درباره ما</span></button>
+    </div>
+  </div>
+</section>
+<section class="view" id="v-feed" aria-label="Feed Monitoring">
+  <div class="view-head">
+    <span class="eyebrow">FEED MONITORING · <span data-i18n="nav.feedGroup">سیستم پایش مصرف خوراک</span></span>
+    <h2 data-i18n="feed.h">سیستم پایش مصرف خوراک</h2>
+    <p data-i18n="feed.p">پایش لحظه‌ای مصرف خوراک هر پرنده با حسگرهای RFID و لودسل دوگانه — از طراحی آزمایش تا اعتبارسنجی و تحلیل سناریو، تمام داده‌ها به‌صورت ایزوله در حساب شما</p>
+  </div>
+
+  <div class="feed-hero">
+    <div class="feed-hero-bg"></div>
+    <div class="feed-hero-inner">
+      <div class="feed-badge"><i class="fa-solid fa-satellite-dish"></i> <span data-i18n="feed.badge">پایش ۲۴ ساعته · داده ایزوله</span></div>
+      <h2><span data-i18n="feed.hero.t">یکپارچه از مزرعه تا تحلیل</span></h2>
+      <p data-i18n="feed.hero.p">هفت ماژول تخصصی در یک گردش کار پیوسته: اعتبارسنجی، طراحی، نقشه زنده، شبیه‌سازی، سناریو، سخت‌افزار و روش‌شناسی</p>
+      <div class="feed-hero-cta">
+        <button class="btn primary" data-goto="v-sim"><i class="fa-solid fa-play"></i> <span data-i18n="feed.btn.sim">شروع شبیه‌سازی زنده</span></button>
+        <button class="btn ghost" data-goto="v-exp"><i class="fa-solid fa-vial"></i> <span data-i18n="feed.btn.exp">طراحی آزمایش</span></button>
+      </div>
+    </div>
+    <div class="feed-visual" aria-hidden="true">
+      <div class="feed-vis-grid">
+        <div class="feed-vis-card"><i class="fa-solid fa-chart-line"></i><b data-i18n="nav.dash">داشبورد اعتبارسنجی</b><span>MAE ۱–۲٪ · FCR</span></div>
+        <div class="feed-vis-card"><i class="fa-solid fa-map"></i><b data-i18n="nav.farm">نقشه فارم پویا</b><span>پخش زمانی · اشغال</span></div>
+        <div class="feed-vis-card"><i class="fa-solid fa-satellite-dish"></i><b data-i18n="nav.sim">شبیه‌سازی زنده</b><span>RFID + لودسل</span></div>
+        <div class="feed-vis-card"><i class="fa-solid fa-microchip"></i><b data-i18n="nav.dev">دستگاه و داده</b><span>۱۲ ستون · ۳ ردیف/وعده</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="feed-kpis">
+    <div class="feed-kpi"><b data-i18n="feed.kpi.acc.v">۱–۲٪</b><span class="kpi-l" data-i18n="feed.kpi.acc">دقت اعتبارسنجی</span><span class="kpi-s" data-i18n="feed.kpi.acc.s">MAE وزن در برابر کاتالوگ</span></div>
+    <div class="feed-kpi"><b data-i18n="feed.kpi.live.v">۲۴ ساعته</b><span class="kpi-l" data-i18n="feed.kpi.live">پوشش زمانی</span><span class="kpi-s" data-i18n="feed.kpi.live.s">رکورد ۳-ردیفه هر وعده</span></div>
+    <div class="feed-kpi"><b data-i18n="feed.kpi.iso.v">۱۰۰٪</b><span class="kpi-l" data-i18n="feed.kpi.iso">ایزوله کاربر</span><span class="kpi-s" data-i18n="feed.kpi.iso.s">هر حساب، داده اختصاصی</span></div>
+    <div class="feed-kpi"><b data-i18n="feed.kpi.through.v">۱۰k+</b><span class="kpi-l" data-i18n="feed.kpi.through">ظرفیت</span><span class="kpi-s" data-i18n="feed.kpi.through.s">رکورد در هر دوره</span></div>
+  </div>
+
+  <div class="feed-section">
+    <h3><i class="fa-solid fa-diagram-project"></i> <span data-i18n="feed.steps.t">گردش کار</span></h3>
+    <div class="feed-steps">
+      <div class="feed-step"><div class="step-no">۱</div><b data-i18n="feed.steps.s1.t">۱. طراحی</b><p data-i18n="feed.steps.s1.p">پن‌ها، تیمارها، تراکم</p></div>
+      <div class="feed-step"><div class="step-no">۲</div><b data-i18n="feed.steps.s2.t">۲. شبیه‌سازی</b><p data-i18n="feed.steps.s2.p">موتور Weibull + صف ۹۰ثانیه</p></div>
+      <div class="feed-step"><div class="step-no">۳</div><b data-i18n="feed.steps.s3.t">۳. پایش زنده</b><p data-i18n="feed.steps.s3.p">RFID + دو لودسل</p></div>
+      <div class="feed-step"><div class="step-no">۴</div><b data-i18n="feed.steps.s4.t">۴. اعتبارسنجی</b><p data-i18n="feed.steps.s4.p">منحنی رشد vs کاتالوگ</p></div>
+      <div class="feed-step"><div class="step-no">۵</div><b data-i18n="feed.steps.s5.t">۵. سناریو</b><p data-i18n="feed.steps.s5.p">تنش گرمایی / ایستگاه دوم</p></div>
+    </div>
+  </div>
+
+  <div class="feed-section">
+    <h3><i class="fa-solid fa-layer-group"></i> <span data-i18n="feed.grid.t">هفت ماژول — یک سامانه</span></h3>
+    <div class="feed-grid">
+      <div class="feed-card" data-goto="v-dash"><i class="fa-solid fa-chart-line"></i><h4 data-i18n="feed.card.dash.t">داشبورد اعتبارسنجی</h4><p data-i18n="feed.card.dash.p">مقایسه روزبه‌روز با کاتالوگ رسمی سویه، FCR پنجره‌ای و باند نر-ماده</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-exp"><i class="fa-solid fa-vial"></i><h4 data-i18n="feed.card.exp.t">طرح آزمایش</h4><p data-i18n="feed.card.exp.p">تعریف پن، تعداد، تیمار و تکرار — مبنای فارم و آمار</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-farm"><i class="fa-solid fa-map"></i><h4 data-i18n="feed.card.farm.t">نقشه فارم پویا</h4><p data-i18n="feed.card.farm.p">پخش زمانی با پرندگان متحرک، اشغال پن و انتخاب پرنده</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-sim"><i class="fa-solid fa-satellite-dish"></i><h4 data-i18n="feed.card.sim.t">شبیه‌سازی زنده</h4><p data-i18n="feed.card.sim.p">جریان لحظه‌ای RFID/وزن، نمودار زنده و خروجی</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-scn"><i class="fa-solid fa-layer-group"></i><h4 data-i18n="feed.card.scn.t">سناریوها</h4><p data-i18n="feed.card.scn.p">مقایسه جفت‌شده با seed یکسان — اثر تیمار</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-dev"><i class="fa-solid fa-microchip"></i><h4 data-i18n="feed.card.dev.t">دستگاه و داده</h4><p data-i18n="feed.card.dev.p">معماری سنسور، منطق صف و schema ۱۲-ستونه</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-met"><i class="fa-solid fa-flask-vial"></i><h4 data-i18n="feed.card.met.t">روش‌شناسی</h4><p data-i18n="feed.card.met.p">زنجیره مدل، معادلات و محدودیت‌های شفاف</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+    </div>
+  </div>
+
+  <div class="feed-cta">
+    <div><h4 data-i18n="feed.cta.t">آماده پایش هستید؟</h4><p data-i18n="feed.cta.p">طرح خود را بسازید یا شبیه‌سازی زنده را آغاز کنید — داده‌ها به‌صورت خودکار ذخیره می‌شود.</p></div>
+    <div class="cta-actions">
+      <button class="btn primary" data-goto="v-sim"><i class="fa-solid fa-play"></i> <span data-i18n="feed.btn.sim">شروع شبیه‌سازی زنده</span></button>
+      <button class="btn ghost" data-goto="v-exp"><i class="fa-solid fa-vial"></i> <span data-i18n="feed.btn.exp">طراحی آزمایش</span></button>
     </div>
   </div>
 </section>
@@ -1558,7 +1732,7 @@ canvas{will-change: contents}
         <tbody id="exp-rows"></tbody></table>
     </div>
     <div class="note" style="margin-top:12px" data-i18n-html="exp.effectsNote">
-      <b>اثر تیمارها</b> (ضرایب کالیبره جهت‌دار): شاهد = مسیر کاتالوگ · پروبیوتیک ≈ +۱٪ مصرف/+۱٫۵٪ وزن · افزاینده رشد ≈ +۲٪/+۲٫۵٪ · واکسن افت موقت ~۱۰٪ d۱۹–۲۲ · کم‌پروتئین +۴٪ مصرف/−۲٫۵٪ وزن · تنش حرارتی موج +۵°C در d۳۲–۳۸.</div>
+      <b data-i18n="sci.effectTitle">اثر تیمارها</b> (ضرایب کالیبره جهت‌دار): شاهد = مسیر کاتالوگ · پروبیوتیک ≈ +۱٪ مصرف/+۱٫۵٪ وزن · افزاینده رشد ≈ +۲٪/+۲٫۵٪ · واکسن افت موقت ~۱۰٪ d۱۹–۲۲ · کم‌پروتئین +۴٪ مصرف/−۲٫۵٪ وزن · تنش حرارتی موج +۵°C در d۳۲–۳۸.</div>
     <div class="note wn" data-i18n-html="exp.blockNote">🎲 بند‌بندی تصادفی فعال است: پرنده i-امِ همه پن‌ها هم‌ویژگی ساخته می‌شود تا اختلاف پن‌ها اثر واقعی تیمار باشد؛ برای توان آماری، هر تیمار ≥۳ تکرار (پن) بدهید.</div>
     <div class="controls" style="margin-top:14px">
       <button class="btn" id="btn-exp-farm" data-i18n="btn.buildFarm">🗺️ ساخت نقشه فارم و اجرای دوره</button>
@@ -1836,16 +2010,16 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
       <form class="cy-form" id="cy-form" autocomplete="off">
         <div class="field">
           <input id="cy-code" class="field__input" type="text" placeholder=" " maxlength="12" />
-          <label class="field__label" for="cy-code">کد دوره (مثلاً F01)</label>
+          <label class="field__label" for="cy-code" data-i18n="form.codeLabel">کد دوره (مثلاً F01)</label>
           <span class="field__bar"></span>
         </div>
         <div class="field field--grow">
           <input id="cy-label" class="field__input" type="text" placeholder=" " />
-          <label class="field__label" for="cy-label">نام دوره</label>
+          <label class="field__label" for="cy-label" data-i18n="form.nameLabel">نام دوره</label>
           <span class="field__bar"></span>
         </div>
         <div class="field field--select">
-          <div class="strain-select" id="cy-strain" role="combobox" aria-label="سویه" aria-expanded="false" aria-controls="cy-strain-list" tabindex="0">
+          <div class="strain-select" id="cy-strain" role="combobox" data-title-i18n="hdr.strainAria" aria-label="سویه" aria-expanded="false" aria-controls="cy-strain-list" tabindex="0">
             <div class="strain-select__current" id="cy-strain-current">
               <span class="strain-select__value" id="cy-strain-value">Ross 308</span>
               <span class="strain-select__icon" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span>
@@ -1878,12 +2052,12 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   <div class="card dev-stats" style="margin-top:14px">
     <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-chart-simple" aria-hidden="true"></i></span><span data-i18n="dev.stats">آمار دوره انتخاب‌شده</span></h3>
     <div id="cy-stats" class="ministats" data-skip-i18n-scan>
-      <div class="mstat"><span class="mv" id="st-visits">—</span><span class="ml">بازدید</span></div>
-      <div class="mstat"><span class="mv" id="st-birds">—</span><span class="ml">پرندگان یکتا</span></div>
-      <div class="mstat"><span class="mv" id="st-rows">—</span><span class="ml">ردیف دستگاه</span></div>
-      <div class="mstat"><span class="mv" id="st-intake">—</span><span class="ml">مصرف کل (g)</span></div>
-      <div class="mstat"><span class="mv" id="st-avgw">—</span><span class="ml">میانگین وزن اولیه (g)</span></div>
-      <div class="mstat"><span class="mv" id="st-miss">—</span><span class="ml">RFID ازدست‌رفته</span></div>
+      <div class="mstat"><span class="mv" id="st-visits">—</span><span class="ml" data-i18n="dev.stat.visits">بازدید</span></div>
+      <div class="mstat"><span class="mv" id="st-birds">—</span><span class="ml" data-i18n="dev.stat.birds">پرندگان یکتا</span></div>
+      <div class="mstat"><span class="mv" id="st-rows">—</span><span class="ml" data-i18n="dev.stat.rows">ردیف دستگاه</span></div>
+      <div class="mstat"><span class="mv" id="st-intake">—</span><span class="ml" data-i18n="dev.stat.intake">مصرف کل (g)</span></div>
+      <div class="mstat"><span class="mv" id="st-avgw">—</span><span class="ml" data-i18n="dev.stat.avgw">میانگین وزن اولیه (g)</span></div>
+      <div class="mstat"><span class="mv" id="st-miss">—</span><span class="ml" data-i18n="dev.stat.miss">RFID ازدست‌رفته</span></div>
     </div>
   </div>
 
@@ -1891,15 +2065,15 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   <div class="card dev-regs" style="margin-top:14px">
     <h3 class="dev-card__title">
       <span class="ic"><i class="fa-solid fa-tag" aria-hidden="true"></i></span><span data-i18n="dev.regs">ثبت‌های لحظه‌ای ورود پرنده</span>
-      <span class="dev-regs__live"><i class="fa-solid fa-circle" aria-hidden="true"></i> <span>زنده</span></span>
+      <span class="dev-regs__live"><i class="fa-solid fa-circle" aria-hidden="true"></i> <span data-i18n="dev.live">زنده</span></span>
     </h3>
     <div class="reg-table" data-skip-i18n-scan>
       <div class="reg-thead">
-        <span class="reg-cell reg-cell--tag">تگ / کد مرغ</span>
-        <span class="reg-cell reg-cell--w">وزن اولیه</span>
-        <span class="reg-cell reg-cell--date">تاریخ</span>
-        <span class="reg-cell reg-cell--time">ساعت</span>
-        <span class="reg-cell reg-cell--sensor">سنسور</span>
+        <span class="reg-cell reg-cell--tag" data-i18n="dev.reg.tag">تگ / کد مرغ</span>
+        <span class="reg-cell reg-cell--w" data-i18n="dev.reg.weight">وزن اولیه</span>
+        <span class="reg-cell reg-cell--date" data-i18n="dev.reg.date">تاریخ</span>
+        <span class="reg-cell reg-cell--time" data-i18n="dev.reg.time">ساعت</span>
+        <span class="reg-cell reg-cell--sensor" data-i18n="dev.reg.sensor">سنسور</span>
         <span class="reg-cell reg-cell--rssi">RSSI</span>
       </div>
       <div id="reg-body" class="reg-body"></div>
@@ -1974,7 +2148,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   <div class="card" style="margin-top:13px">
     <h3><span class="ic">👤</span><span data-i18n="about.title">درباره و مالکیت</span></h3>
     <div class="srcs" style="line-height:2.2">
-      <p data-i18n-html="about.body">ققنوس نسخه ۳٫۰ — ساخته و نگهداری‌شده توسط <b>Arsalan Rezazadeh</b>. شبیه‌ساز آکادمیک دستگاه RFID + دو لودسل برای سویه‌های گوشتی صنعتی با کاتالوگ‌های رسمی Aviagen/Cobb-Vantress/Hubbard، موتور وعده‌محور و آزمایشگاه آمار زیستی. اجرای کاملاً آفلاین، بدون سرور، seed تکرارپذیر.</p>
+      <p data-i18n-html="about.body">آرین نسخه ۳٫۰ — ساخته و نگهداری‌شده توسط <b>Arsalan Rezazadeh</b>. شبیه‌ساز آکادمیک دستگاه RFID + دو لودسل برای سویه‌های گوشتی صنعتی با کاتالوگ‌های رسمی Aviagen/Cobb-Vantress/Hubbard، موتور وعده‌محور و آزمایشگاه آمار زیستی. اجرای کاملاً آفلاین، بدون سرور، seed تکرارپذیر.</p>
     </div>
   </div>
 </section>
@@ -1985,7 +2159,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   <div class="card">
     <h3><span class="ic">📝</span><span data-i18n="met.abstractT">چکیده</span></h3>
     <p class="abstract" style="font-size:12.5px;color:var(--mut);line-height:2.2" data-i18n-html="met.abstract">
-      ققنوس یک شبیه‌ساز گسسته-رویداد از ایستگاه پایش مصرف خوراک طیور است که داده‌های سطح دستگاه
+      آرین یک شبیه‌ساز گسسته-رویداد از ایستگاه پایش مصرف خوراک طیور است که داده‌های سطح دستگاه
       (RFID + دو لودسل) را با وضوح سه‌ردیفی به‌ازای هر وعده تولید می‌کند. موتور وعده‌محور آن روی
       کاتالوگ‌های عملکردی رسمی چهار سویه صنعتی قفل شده و فیزیک سنسورها مطابق ادبیات داوری‌شده کالیبره شده است.
       اعتبارسنجی در برابر جداول مرجع MAE وزن ۱–۲٪ نشان می‌دهد.</p>
@@ -2088,7 +2262,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <!-- ================= VIEW: ABOUT ================= -->
 <section class="view" id="v-products" aria-label="Products and Services">
   <div class="prod-hero">
-    <h2 data-i18n="prod.hero.t">محصولات و خدمات ققنوس</h2>
+    <h2 data-i18n="prod.hero.t">محصولات و خدمات آرین</h2>
     <p data-i18n="prod.hero.p">سامانه‌های هوشمند پرورش و اصلاح نژاد طیور گوشتی — از ثبت دقیق داده در واحد آزمایشی تا کنترل خودکار شرایط محیطی سالن؛ طراحی‌شده برای مراکز تحقیقاتی، واحدهای مادر و فارم‌های تجاری.</p>
   </div>
   <div class="prod-grid">
@@ -2141,9 +2315,9 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
     <h3><span class="ic">🏛️</span><span data-i18n="about.uniT">دانشگاه تربیت مدرس — گروه علوم دامی</span></h3>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:15px">
       <div style="width:64px;height:64px;border-radius:14px;display:grid;place-items:center;
-        border:2px solid rgba(25,195,154,.38);border-radius:16px;box-shadow:0 0 16px rgba(25,195,154,.2)"><img src="logo_128.png" width="56" height="56" style="object-fit:contain;display:block" alt="ققنوس"></div>
+        border:2px solid rgba(25,195,154,.38);border-radius:16px;box-shadow:0 0 16px rgba(25,195,154,.2)"><img src="logo_128.png" width="56" height="56" style="object-fit:contain;display:block" alt="آرین" data-alt-i18n="brand.name"></div>
       <div>
-        <b style="font-size:17px">ققنوس v1.0.0</b><br>
+        <b style="font-size:17px" data-i18n="footer.brand">آرین v1.0.0</b><br>
         <small class="dm" data-i18n="about.subTitle">شبیه‌ساز آکادمیک دستگاه پایش مصرف خوراک طیور گوشتی</small>
       </div>
     </div>
@@ -2168,7 +2342,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 </main>
 
 <footer>
-  <div><b style="color:var(--mut)">ققنوس v1.0.0</b> — © 2026 Arsalan Rezazadeh</div>
+  <div><b style="color:var(--mut)" data-i18n="footer.brand">آرین v1.0.0</b> — © 2026 Arsalan Rezazadeh</div>
   <div class="own">
     <a href="https://github.com/arsalan-codes" target="_blank" rel="noopener">🐙 github.com/<b>arsalan-codes</b></a>
     <a href="https://www.linkedin.com/in/arsalan-rezazadeh/" target="_blank" rel="noopener">💼 linkedin.com/in/<b>arsalan-rezazadeh</b></a>
@@ -2181,16 +2355,18 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js" defer></script>
-<script src="engine.js" defer></script>
-<script src="xlsx.js" defer></script>
-<script src="stats.js" defer></script>
-<script src="i18n.js" defer></script>
-<script src="shamsi.js" defer></script>
-<script src="auth.js" defer></script>
-<script src="device-panel.js" defer></script>
-<script src="dialog.js" defer></script>
-<script src="app.js" defer></script>
+<script src="strains.js?v=1.5.2" defer></script>
+<script src="engine.js?v=1.5.2" defer></script>
+<script src="xlsx.js?v=1.5.2" defer></script>
+<script src="stats.js?v=1.5.2" defer></script>
+<script src="i18n.js?v=1.5.2" defer></script>
+<script src="shamsi.js?v=1.5.2" defer></script>
+<script src="auth.js?v=1.5.2" defer></script>
+<script src="device-panel.js?v=1.5.2" defer></script>
+<script src="dialog.js?v=1.5.2" defer></script>
+<script src="router.js?v=1.5.2" defer></script>
+<script src="config.js?v=1.5.2"></script>
+<script src="app.js?v=1.5.2" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
@@ -2238,34 +2414,55 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 (function(){
   var el=document.getElementById('landing-typed');
   if(!el) return;
-  var full=el.getAttribute('data-text')||'';
-  var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(reduce){ el.textContent=full; return; }
-  el.textContent='';
-  var cursor=document.createElement('span');
-  cursor.className='typed-cursor';
-  cursor.setAttribute('aria-hidden','true');
-  el.appendChild(cursor);
-  var i=0;
-  var speed=45;
-  function type(){
-    if(i<full.length){
-      var ch=full.charAt(i);
-      el.insertBefore(document.createTextNode(ch), cursor);
-      i++;
-      var d=speed + (ch===' '||ch==='،' ? 18 : 0);
-      setTimeout(type, d);
-    } else {
-      setTimeout(function(){
-        // clear and restart loop
-        el.textContent='';
-        el.appendChild(cursor);
-        i=0;
-        setTimeout(type, 400);
-      }, 2600);
-    }
+  var timer=null, token=0;
+  function fullText(){
+    return (window.tr?window.tr('landing.typed'):null)||el.getAttribute('data-text')||'';
   }
-  setTimeout(type, 400);
+  function stop(){ if(timer){clearTimeout(timer);timer=null;} token++; }
+  function render(full, cursor){
+    el.textContent='';
+    el.appendChild(cursor);
+    return cursor;
+  }
+  function makeCursor(){
+    var c=document.createElement('span');
+    c.className='typed-cursor';
+    c.setAttribute('aria-hidden','true');
+    return c;
+  }
+  function run(){
+    stop();
+    var my=++token;
+    var full=fullText();
+    var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduce){ el.textContent=full; return; }
+    var cursor=makeCursor();
+    el.textContent='';
+    el.appendChild(cursor);
+    var i=0, speed=45;
+    (function type(){
+      if(my!==token) return;                 // superseded by a newer run (lang switch)
+      if(i<full.length){
+        var ch=full.charAt(i);
+        el.insertBefore(document.createTextNode(ch), cursor);
+        i++;
+        timer=setTimeout(type, speed + (ch===' '||ch==='،'||ch===',' ? 18 : 0));
+      } else {
+        timer=setTimeout(function(){
+          if(my!==token) return;
+          el.textContent='';
+          el.appendChild(cursor);
+          i=0;
+          timer=setTimeout(type, 400);
+        }, 2600);
+      }
+    })();
+  }
+  // language switch (FA/EN) retypes with the new string
+  window.addEventListener('rossim:lang', run);
+  // i18n.js (defer) fires applyLang on load; start typing after it settles
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(run,60); });
+  else setTimeout(run,60);
 })();
 </script>
 <!-- Material Dialog -->
