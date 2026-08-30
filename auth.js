@@ -6,6 +6,7 @@
 (function () {
   "use strict";
   var API = (window.BROILER_API || "http://127.0.0.1:8755").replace(/\/+$/, "");
+  function apiBase(){ return ((window.BROILER_API||"").replace(/\/+$/,"")) || API; }
   var TOKEN_KEY = "broiler_token";
   var USER_KEY = "broiler_user";
 
@@ -46,7 +47,7 @@
   function apiAuth(path, opts) {
     opts = opts || {};
     var headers = Object.assign({ "Content-Type": "application/json" }, authHeaders(), opts.headers || {});
-    return fetch(API + path, Object.assign({}, opts, { headers: headers })).then(function (r) {
+    return fetch(apiBase() + path, Object.assign({}, opts, { headers: headers })).then(function (r) {
       if (r.status === 401) {
         if (getToken()) { clearAuth(); renderAuthArea(); }
         setGated(true);
@@ -182,7 +183,7 @@
     if(!ident||!pass) return showError("login-error",window.tr?window.tr("auth.errIdentPass"):"ایمیل و رمز الزامی است");
     showError("login-error","");
     var btn=e.target.querySelector("button[type=submit]"); if(btn) btn.disabled=true;
-    fetch(API+"/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:ident,password:pass})})
+    fetch(apiBase()+"/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:ident,password:pass})})
       .then(function(r){ if(!r.ok) return r.json().then(function(j){throw new Error(j.detail|| (window.tr?window.tr("auth.changeFail"):"خطا"));}); return r.json(); })
       .then(function(j){ setAuth(j.access_token, j.user); renderAuthArea(); updateLandingCTA(); hideAuthModal(true); setGated(false); if(window.Router){ window.Router.redirectAfterLogin(); } else { openWorkspace(); } if(window.toast) toast((window.tr?window.tr("auth.welcome"):"خوش آمدید، ")+(j.user.full_name||j.user.email)); })
       .catch(function(err){ showError("login-error", err.message|| (window.tr?window.tr("auth.errLoginFail"):"ورود ناموفق")); })
@@ -203,7 +204,7 @@
     var payload={email:email,password:pass};
     if(name) payload.full_name=name;
     if(username) payload.username=username;
-    fetch(API+"/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+    fetch(apiBase()+"/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
       .then(function(r){ if(!r.ok) return r.json().then(function(j){throw new Error(j.detail|| (window.tr?window.tr("auth.changeFail"):"خطا"));}); return r.json(); })
       .then(function(j){ setAuth(j.access_token, j.user); renderAuthArea(); updateLandingCTA(); hideAuthModal(true); setGated(false); if(window.Router){ window.Router.redirectAfterLogin(); } else { openWorkspace(); } if(window.toast) toast(window.tr?"Sign-up successful — "+window.tr("auth.welcome").trim(): "ثبت‌نام موفق — خوش آمدید"); })
       .catch(function(err){ showError("reg-error", err.message|| (window.tr?window.tr("auth.errRegisterFail"):"ثبت‌نام ناموفق")); })
@@ -294,7 +295,7 @@
       setGated(false);
 
       // validate silently in background (refresh user data, catch expiry)
-      fetch(API+"/api/auth/me",{headers:{"Authorization":"Bearer "+tok}})
+      fetch(apiBase()+"/api/auth/me",{headers:{"Authorization":"Bearer "+tok}})
         .then(function(r){ if(!r.ok) throw new Error(); return r.json(); })
         .then(function(u){ setAuth(tok,u); renderAuthArea(); })
         .catch(function(){
@@ -305,7 +306,7 @@
     }
     if(tok && validLocal){
       setGated(false);
-      fetch(API+"/api/auth/me",{headers:{"Authorization":"Bearer "+tok}})
+      fetch(apiBase()+"/api/auth/me",{headers:{"Authorization":"Bearer "+tok}})
         .then(function(r){ if(!r.ok) throw new Error(); return r.json(); })
         .then(function(u){ setAuth(tok,u); renderAuthArea(); })
         .catch(function(){ clearAuth(); renderAuthArea(); setGated(true); ensureModal(); showAuthModal("login", {gated:true}); revealBody(); });

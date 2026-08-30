@@ -27,7 +27,7 @@
     var authH = (window.Auth && window.Auth.authHeaders) ? window.Auth.authHeaders() : (window.BROILER_TOKEN ? { "Authorization": "Bearer " + window.BROILER_TOKEN } : {});
     // also try localStorage directly
     if (!authH.Authorization) { try { var tk = localStorage.getItem("broiler_token"); if (tk) authH.Authorization = "Bearer " + tk; } catch(e){} }
-    return fetch(API + path, Object.assign({
+    return fetch(((window.BROILER_API||"").replace(/\/+$/,"")||API) + path, Object.assign({
       headers: Object.assign({ "Content-Type": "application/json" }, authH)
     }, opts)).then(function (r) {
       if (r.status === 401) {
