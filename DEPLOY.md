@@ -60,17 +60,11 @@ postgresql://USER:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/neondb?sslm
 window.ARIAN_PROD_API = "https://broilerlab.vercel.app";
 ```
 
-3. این فایل در `.gitignore` است و به‌صورت محلی صفحات را تغذیه می‌کند؛
-   برای Pages باید همین فایل (بدون مقادیر حساس) کامیت شود چون مرورگرِ
-   بازدیدکننده به آن نیاز دارد. آدرس Vercel محرمانه نیست (عمومی است)،
-   پس کامیتش مشکلی ندارد:
+3. همین فایل با placeholder خالی در ریپو track شده است (آدرس Vercel عمومی
+   است و محرمانه نیست)؛ کافی است مقدار را بگذارید و commit/push کنید.
 
-```bash
-git add -f config.local.js
-```
-
-   (اگر ترجیح می‌دهید کامیت نشود، به‌جای آن خط زیر را قبل از `config.js`
-   در `index.html` به‌صورت inline اضافه کنید و همان را نگه دارید.)
+> اگر روزی مقدار محرمانه‌ای در آن گذاشتید، اول `.gitignore` را فعال کنید و
+> `git rm --cached config.local.js` بزنید تا از تاریخچه خارج شود.
 
 ## گام ۴ — فعال‌سازی GitHub Pages
 
