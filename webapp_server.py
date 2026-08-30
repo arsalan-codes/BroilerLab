@@ -18,9 +18,13 @@ class GzipHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         accept = self.headers.get("Accept-Encoding","")
         wants_gzip = "gzip" in accept
-        fpath = self.translate_path(unquote(self.path.split("?")[0]))
-        if fpath.endswith("/"):
+        clean = unquote(self.path.split("?")[0])
+        fpath = self.translate_path(clean)
+        # SPA fallback: clean "/" and unknown extension-less paths serve the app shell
+        if os.path.isdir(fpath):
             fpath = os.path.join(fpath, "index.html")
+        elif not os.path.isfile(fpath) and "." not in os.path.basename(clean):
+            fpath = os.path.join(WEBAPP_DIR, "index.html")
         if os.path.isfile(fpath) and fpath.endswith((".js",".css",".html",".json")) and wants_gzip and os.path.getsize(fpath)>400:
             try:
                 with open(fpath,"rb") as f: data=f.read()
