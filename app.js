@@ -167,35 +167,7 @@ function markTabs(){document.querySelectorAll(".tab").forEach(b=>{
   b.setAttribute("aria-selected",b.classList.contains("on")?"true":"false")})}
 /* Tab clicks are delegated to Router (router.js) via the global [data-v] click
    delegation — the guard, active-state sync, history and titles live there. */
-// ===== nav-group dropdown (Feed Monitoring) =====
-try{
-  var _feedBtn=document.getElementById("nav-feed-btn");
-  var _feedDrop=document.getElementById("nav-feed-dropdown");
-  var _feedGroup=document.getElementById("nav-group-feed");
-  if(_feedBtn && _feedDrop){
-    _feedBtn.addEventListener("click", function(e){
-      var open=_feedBtn.getAttribute("aria-expanded")==="true";
-      _feedBtn.setAttribute("aria-expanded", open?"false":"true");
-      _feedDrop.hidden=open;
-      e.stopPropagation();
-    });
-    _feedBtn.addEventListener("keydown", function(e){
-      if(e.key==="Enter"||e.key===" "){ e.preventDefault(); _feedBtn.click(); }
-      if(e.key==="Escape"){ _feedBtn.setAttribute("aria-expanded","false"); _feedDrop.hidden=true; }
-    });
-    document.addEventListener("click", function(e){
-      if(!e.target.closest("#nav-group-feed")){
-        _feedBtn.setAttribute("aria-expanded","false");
-        _feedDrop.hidden=true;
-      }
-    });
-    // close dropdown when a child tab is selected (handler already toggles parent .on, but close here as backup)
-    _feedDrop.querySelectorAll("[data-v]").forEach(function(b){
-      b.addEventListener("click", function(){ _feedBtn.setAttribute("aria-expanded","false"); _feedDrop.hidden=true; });
-    });
-    document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ _feedBtn.setAttribute("aria-expanded","false"); _feedDrop.hidden=true; }});
-  }
-}catch(e){}
+/* nav-group dropdown JS removed — parent tab navigates to #/feed; module links live on the feed page */
 
 /* =====================================================================
    DASHBOARD — full validation run (all 6 pens, seed 308)
