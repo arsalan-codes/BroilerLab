@@ -18,9 +18,12 @@ DATABASE_URL = (
     or os.getenv("POSTGRES_URL")
     or f"postgresql+psycopg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
-# Provider URLs come as postgres:// — SQLAlchemy+psycopg needs postgresql://
+# Provider URLs come as postgres:// or postgresql:// — SQLAlchemy+psycopg3
+# needs the explicit +psycopg driver dialect (psycopg2 is NOT installed).
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
 # MQTT — device publishes JSON telemetry to this topic prefix.
 MQTT_BROKER = os.getenv("BROILER_MQTT_HOST", "127.0.0.1")
