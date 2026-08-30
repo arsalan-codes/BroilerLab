@@ -3,7 +3,7 @@
   "functions": {
     "api/index.py": {
       "maxDuration": 30,
-      "includeFiles": ["../backend/**", "../webapp/**"]
+      "includeFiles": "../backend/**;../webapp/**"
     }
   },
   "rewrites": [
