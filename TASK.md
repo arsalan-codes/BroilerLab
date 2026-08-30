@@ -3,7 +3,7 @@
 ## Current Objective
 شبیه‌ساز آکادمیک چندسویه‌ای دستگاه پایش مصرف خوراک (RFID بال + دو لودسل) با کاتالوگ‌های رسمی Aviagen/Cobb-Vantress/Hubbard، طراح آزمایش کاربرمحور، نقشه فارم انیمیشنی، آزمایشگاه آمار زیستی و رابط دوزبانه FA/EN — متعلق به Arsalan Rezazadeh.
 
-Last Updated: 2026-08-23
+Last Updated: 2026-08-30 — v1.3.0 (ققنوس)
 
 ## Active Checklist
 - [x] استخراج جدول‌های رسمی Performance Objectives از PDF Aviagen (as-hatched/nr/male/female d0–70)
@@ -30,9 +30,27 @@ Last Updated: 2026-08-23
 - [x] رفع رندر literal `<br>` در i18n (data-i18n-html)
 - [x] تنظیمات دسکتاپ (dropdown) + همبرگر موبایل + تب‌های وسط‌چین + سلکتور سویه مدرن
 
+
+- [x] ری‌برند BroilerLab → ققنوس (Ghoghnous) — هدر/لندینگ/عنوان/تگلاین یکپارچه `سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی` (شناسه فنی broilerlab_* حفظ شد)
+- [x] هیرو مدرن: mesh سه‌لایه + grid32px + glow emerald/blue + کارت rotate -0.35° + floating `داده زنده · ۲۴ ساعته` پالس + webp 60KB + grid 1.15/.85
+- [x] تایپ لوپ عنوان هیرو: 45ms + pause 2600ms + cursor blink + prefers-reduced-motion fallback
+- [x] پنل محیط کاربری `#v-workspace` (ws-head/ws-stats/ws-grid 8 کارت) — گیت‌دار + CTA داینامیک `landing-login → مدیریت محیط کاربری` + hide `landing-register`
+- [x] تم داینامیک محیط کاربری: `var(--card)` + `html[data-theme=dark|light]`
+- [x] انسانی‌سازی i18n: حذف MAE/FCR/RFID/CSV/Pen — جایگزین فارسی رسمی + حذف MQTT
+- [x] دیالوگ متریال مدرن `dialog.js` (MDialog.confirm/alert/prompt2) — جایگزین confirm/prompt بومی (بازنشانی/حذف دوره/تغییر رمز)
+- [x] بازنشانی کامل با تایید دو-مرحله‌ای: arm 3s + MDialog danger + DELETE /api/cycles cascade + localStorage/charts/inpector/bio صفر
+- [x] ریسپانسیو کامل: 320/560/720/900/1020/1040 breakpoints + badge/cta وسط‌چین ≤900/560 + landing-stats 4→2→1 + ws-grid 4→2→1
+- [x] پرفورمنس: GZipMiddleware + webapp_server gzip+cache (js/css 1d, png/webp 7d immutable) + defer 9 اسکریپت + idle paint + content-visibility
+- [x] دیتابیس: PostgreSQL 5434 — 4 جدول + FK CASCADE (cycles.user_id, visits.cycle_id, device_logs.cycle_id) + isolation per-user verified (admin vs user 404) + fail-closed 401
+- [x] صفحه «محصولات و خدمات» عمومی (v-products): ۲ محصول — سیستم پایش مصرف خوراک + سیستم هوشمند کنترل محیطی با مشخصات، ویژگی‌ها، دکمه دمو و تم داینامیک
+- [x] حذف حساب پیش‌فرض (admin@broilerlab.local/admin123): دیتابیس پاک شد، seed بک‌اند non-op، متن/placeholder مودال ورود تمیز شد — ثبت‌نام آزاد
+- [x] استانداردسازی تایپوگرافی ریسپانسیو کل سایت (v1.2.1): body clamp(13-14.5px)، هیرو clamp fluid (حذف پرش 34→26→22)، تیتر نماها clamp، کف خوانایی 10.5px (۱۲ مورد زیر 10px اصلاح)، هدف لمسی 42-44px در pointer:coarse، جدول‌ها 11px موبایل، ws موبایل
+- [x] پاکسازی: حذف .bakها + dead CSS landing-desc-box + ورژن 1.1.0→1.2.0 + DB_PORT default 5434 + webp cache + .gitignore + README
+- [x] بازبینی کامل دوزبانه (v1.3.0): افزودن ~60 کلید جدید i18n — لندینگ/هیرو/stats/کارت‌ها/فوت/محیط کاربری/محصولات/auth/device-panel/dialog/toast؛ HTML تمام هاردکدها → data-i18n؛ JS تمام رشته‌ها → window.tr؛ اعتبارسنجی 343 کلید HTML + 57 کلید JS بدون missing
+
 ## Blocked — Waiting on Project Manager
 - (هیچ)
-- **دیپلوی گیت‌هاب**: پوش به `arsalan-codes/BroilerLab` با SSH با خطای `permission denied (publickey)` مواجه است.
+- **دیپلوی گیت‌هاب**: آماده برای پوش دستی —  `arsalan-codes/BroilerLab` با SSH با خطای `permission denied (publickey)` مواجه است.
   نیاز به یکی از: (A) افزودن کلید عمومی `~/.ssh/id_ed25519.pub` به GitHub SSH keys، یا (B) تغییر remote به HTTPS + token.
 
 ## Latest Status

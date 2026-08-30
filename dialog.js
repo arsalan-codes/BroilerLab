@@ -46,8 +46,8 @@
     msgEl.style.display = opts.message ? '' : 'none';
     setIcon(opts.icon||'info');
     errEl.textContent=''; errEl.classList.remove('on');
-    cancelBtn.textContent = opts.cancelText||'انصراف';
-    confirmBtn.textContent = opts.confirmText||'تایید';
+    cancelBtn.textContent = opts.cancelText|| (window.tr?window.tr('dialog.cancel'):'انصراف');
+    confirmBtn.textContent = opts.confirmText|| (window.tr?window.tr('dialog.confirm'):'تایید');
     confirmBtn.className = 'btn ' + (opts.danger ? 'btn-danger' : 'btn-primary');
     cancelBtn.style.display = opts.hideCancel ? 'none' : '';
     // inputs
@@ -85,13 +85,13 @@
   function onConfirm(){
     if(_mode==='prompt'){
       var v=inputEl.value.trim();
-      if(!v){ errEl.textContent='این فیلد الزامی است'; errEl.classList.add('on'); inputEl.focus(); return; }
+      if(!v){ errEl.textContent=window.tr?window.tr('dialog.required'):'این فیلد الزامی است'; errEl.classList.add('on'); inputEl.focus(); return; }
       close(v);
     } else if(_mode==='prompt2'){
       var v1=inputEl.value, v2=input2El.value;
-      if(!v1){ errEl.textContent='رمز فعلی الزامی است'; errEl.classList.add('on'); inputEl.focus(); return; }
-      if(!v2){ errEl.textContent='رمز جدید الزامی است'; errEl.classList.add('on'); input2El.focus(); return; }
-      if(v2.length<6){ errEl.textContent='رمز جدید حداقل ۶ کاراکتر باشد'; errEl.classList.add('on'); input2El.focus(); return; }
+      if(!v1){ errEl.textContent=window.tr?window.tr('dialog.oldRequired'):'رمز فعلی الزامی است'; errEl.classList.add('on'); inputEl.focus(); return; }
+      if(!v2){ errEl.textContent=window.tr?window.tr('dialog.newRequired'):'رمز جدید الزامی است'; errEl.classList.add('on'); input2El.focus(); return; }
+      if(v2.length<6){ errEl.textContent=window.tr?window.tr('dialog.newShort'):'رمز جدید حداقل ۶ کاراکتر باشد'; errEl.classList.add('on'); input2El.focus(); return; }
       close({old:v1, nw:v2});
     } else {
       close(true);
@@ -99,12 +99,12 @@
   }
 
   window.MDialog = {
-    confirm: function(opts){ return open(Object.assign({mode:'confirm', icon:'warn', cancelText:'انصراف', confirmText:'تایید'}, opts)); },
+    confirm: function(opts){ return open(Object.assign({mode:'confirm', icon:'warn', cancelText:window.tr?window.tr('dialog.cancel'):'انصراف', confirmText:window.tr?window.tr('dialog.confirm'):'تایید'}, opts)); },
     alert: function(opts){
       if(typeof opts==='string') opts={message:opts};
-      return open(Object.assign({mode:'alert', icon: opts.icon||'info', cancelText:'', confirmText:'باشه', hideCancel:true}, opts));
+      return open(Object.assign({mode:'alert', icon: opts.icon||'info', cancelText:'', confirmText:window.tr?window.tr('dialog.ok'):'باشه', hideCancel:true}, opts));
     },
-    prompt: function(opts){ return open(Object.assign({mode:'prompt', icon:'info', cancelText:'انصراف', confirmText:'تایید'}, opts)); },
+    prompt: function(opts){ return open(Object.assign({mode:'prompt', icon:'info', cancelText:window.tr?window.tr('dialog.cancel'):'انصراف', confirmText:window.tr?window.tr('dialog.confirm'):'تایید'}, opts)); },
     prompt2: function(opts){ return open(Object.assign({mode:'prompt2', icon:'info'}, opts)); }
   };
 })();

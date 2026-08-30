@@ -72,7 +72,7 @@
     if (user && token) {
       var initials = (user.full_name || user.username || user.email || "U").trim().charAt(0).toUpperCase();
       var display = esc(user.full_name || user.username || user.email.split("@")[0]);
-      var welcomeName = 'خوش آمدید ' + display;
+      var welcomeName = (window.tr?window.tr('auth.welcome'):'خوش آمدید ')+display;
       area.innerHTML = '<div class="auth-user" id="auth-user-btn" role="button" tabindex="0" aria-haspopup="true" title="'+esc(user.email)+'">'
         + '<span class="auth-avatar">'+esc(initials)+'</span>'
         + '<span class="auth-name">'+welcomeName+'</span>'
@@ -92,7 +92,7 @@
       }
       updateLandingCTA();
       var lo = document.getElementById("btn-logout");
-      if (lo) lo.addEventListener("click", function(){ clearAuth(); renderAuthArea(); setGated(true); var land=document.querySelector('.tab[data-v="v-landing"]'); if(land) land.click(); else { document.querySelectorAll("section.view").forEach(s=>s.classList.remove("on")); var l=document.getElementById("v-landing"); if(l) l.classList.add("on"); } if(window.toast) toast("خارج شدید"); });
+      if (lo) lo.addEventListener("click", function(){ clearAuth(); renderAuthArea(); setGated(true); var land=document.querySelector('.tab[data-v="v-landing"]'); if(land) land.click(); else { document.querySelectorAll("section.view").forEach(s=>s.classList.remove("on")); var l=document.getElementById("v-landing"); if(l) l.classList.add("on"); } if(window.toast) toast(window.tr?window.tr("auth.loggedOut"):"خارج شدید"); });
       var cp = document.getElementById("btn-change-pass");
       var wsb=document.getElementById("btn-workspace"); if(wsb) wsb.addEventListener("click", function(){ dd.hidden=true; openWorkspace(); });
       if (cp) cp.addEventListener("click", function(){ dd.hidden=true; showChangePassModal(); });
@@ -103,7 +103,7 @@
         }, { once: false });
       }, 100);
     } else {
-      area.innerHTML = '<button class="btn btn-primary auth-login-btn" id="btn-open-auth"><i class="fa-solid fa-user"></i> ورود / ثبت‌نام</button>';
+      area.innerHTML = '<button class="btn btn-primary auth-login-btn" id="btn-open-auth"><i class="fa-solid fa-user"></i> '+(window.tr?(window.tr("landing.login")+" / "+window.tr("auth.registerTab")):"ورود / ثبت‌نام")+'</button>';
       var ob = document.getElementById("btn-open-auth");
       if (ob) ob.addEventListener("click", function(){ showAuthModal("login"); });
       updateLandingCTA();
@@ -116,24 +116,24 @@
     var html = '<div class="auth-modal-backdrop" id="auth-modal" hidden role="dialog" aria-modal="true" aria-label="Authentication">'
       + '<div class="auth-modal">'
       + '<button class="auth-modal-close" id="auth-modal-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>'
-      + '<div class="auth-modal-head"><img src="logo_32.png" alt="" width="28" height="28"><div><b>ققنوس</b><span>ورود به پنل کاربری</span></div></div>'
-      + '<div class="auth-tabs" role="tablist"><button class="auth-tab on" data-tab="login" role="tab" aria-selected="true">ورود</button><button class="auth-tab" data-tab="register" role="tab">ثبت‌نام</button></div>'
+      + '<div class="auth-modal-head"><img src="logo_32.png" alt="" width="28" height="28"><div><b>ققنوس</b><span>'+(window.tr?window.tr("auth.loginTitle"):"ورود به پنل کاربری")+'</span></div></div>'
+      + '<div class="auth-tabs" role="tablist"><button class="auth-tab on" data-tab="login" role="tab" aria-selected="true">'+(window.tr?window.tr("auth.loginTab"):"ورود")+'</button><button class="auth-tab" data-tab="register" role="tab">'+(window.tr?window.tr("auth.registerTab"):"ثبت‌نام")+'</button></div>'
       + '<form id="auth-form-login" class="auth-form on">'
-      + '<label>ایمیل یا نام کاربری<input id="login-ident" type="text" autocomplete="username" placeholder="admin@broilerlab.local" required></label>'
-      + '<label>رمز عبور<input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••" required></label>'
+      + '<label>'+(window.tr?window.tr("auth.identLabel"):"ایمیل یا نام کاربری")+'<input id="login-ident" type="text" autocomplete="username" placeholder="you@example.com" required></label>'
+      + '<label>'+(window.tr?window.tr("auth.passLabel"):"رمز عبور")+'<input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••" required></label>'
       + '<div class="auth-error" id="login-error" hidden></div>'
-      + '<button type="submit" class="btn btn-primary auth-submit"><i class="fa-solid fa-right-to-bracket"></i> ورود</button>'
-      + '<div class="auth-hint">حساب ندارید؟ <a href="#" id="hint-to-register">ثبت‌نام کنید</a> — پیش‌فرض: admin@broilerlab.local / admin123</div>'
+      + '<button type="submit" class="btn btn-primary auth-submit"><i class="fa-solid fa-right-to-bracket"></i> '+(window.tr?window.tr("auth.loginBtn"):"ورود")+'</button>'
+      + '<div class="auth-hint">'+(window.tr?window.tr("auth.hintNoAccount"):"حساب ندارید؟")+' <a href="#" id="hint-to-register">'+(window.tr?window.tr("auth.hintRegister"):"ثبت‌نام کنید")+'</a></div>'
       + '</form>'
       + '<form id="auth-form-register" class="auth-form">'
-      + '<label>نام کامل<input id="reg-name" type="text" autocomplete="name" placeholder="نام و نام خانوادگی"></label>'
-      + '<label>ایمیل *<input id="reg-email" type="email" autocomplete="email" placeholder="you@example.com" required></label>'
-      + '<label>نام کاربری<input id="reg-username" type="text" autocomplete="username" placeholder="اختیاری"></label>'
-      + '<label>رمز عبور *<input id="reg-pass" type="password" autocomplete="new-password" placeholder="حداقل ۶ کاراکتر" required></label>'
-      + '<label>تکرار رمز<input id="reg-pass2" type="password" autocomplete="new-password" placeholder="تکرار رمز" required></label>'
+      + '<label>'+(window.tr?window.tr("auth.nameLabel"):"نام کامل")+'<input id="reg-name" type="text" autocomplete="name" placeholder="'+(window.tr?window.tr("auth.nameLabel"):"نام کامل")+'"></label>'
+      + '<label>'+(window.tr?window.tr("auth.emailLabel"):"ایمیل *")+'<input id="reg-email" type="email" autocomplete="email" placeholder="you@example.com" required></label>'
+      + '<label>'+(window.tr?window.tr("auth.usernameLabel"):"نام کاربری")+'<input id="reg-username" type="text" autocomplete="username" placeholder="'+(window.tr?window.tr("auth.usernameLabel"):"نام کاربری")+'"></label>'
+      + '<label>'+(window.tr?window.tr("auth.passLabel2"):"رمز عبور *")+'<input id="reg-pass" type="password" autocomplete="new-password" placeholder="••••••" required></label>'
+      + '<label>'+(window.tr?window.tr("auth.confirmPassLabel"):"تکرار رمز")+'<input id="reg-pass2" type="password" autocomplete="new-password" placeholder="••••••" required></label>'
       + '<div class="auth-error" id="reg-error" hidden></div>'
-      + '<button type="submit" class="btn btn-primary auth-submit"><i class="fa-solid fa-user-plus"></i> ثبت‌نام</button>'
-      + '<div class="auth-hint">حساب دارید؟ <a href="#" id="hint-to-login">وارد شوید</a></div>'
+      + '<button type="submit" class="btn btn-primary auth-submit"><i class="fa-solid fa-user-plus"></i> '+(window.tr?window.tr("auth.registerBtn"):"ثبت‌نام")+'</button>'
+      + '<div class="auth-hint">'+(window.tr?window.tr("auth.hintHasAccount"):"حساب دارید؟")+' <a href="#" id="hint-to-login">'+(window.tr?window.tr("auth.hintLogin"):"وارد شوید")+'</a></div>'
       + '</form>'
       + '</div></div>';
     document.body.insertAdjacentHTML("beforeend", html);
@@ -179,13 +179,13 @@
     e.preventDefault();
     var ident=document.getElementById("login-ident").value.trim();
     var pass=document.getElementById("login-pass").value;
-    if(!ident||!pass) return showError("login-error","ایمیل و رمز الزامی است");
+    if(!ident||!pass) return showError("login-error",window.tr?window.tr("auth.errIdentPass"):"ایمیل و رمز الزامی است");
     showError("login-error","");
     var btn=e.target.querySelector("button[type=submit]"); if(btn) btn.disabled=true;
     fetch(API+"/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:ident,password:pass})})
-      .then(function(r){ if(!r.ok) return r.json().then(function(j){throw new Error(j.detail||"خطا");}); return r.json(); })
-      .then(function(j){ setAuth(j.access_token, j.user); renderAuthArea(); updateLandingCTA(); hideAuthModal(true); setGated(false); openWorkspace(); if(window.toast) toast("خوش آمدید، "+(j.user.full_name||j.user.email)); })
-      .catch(function(err){ showError("login-error", err.message||"ورود ناموفق"); })
+      .then(function(r){ if(!r.ok) return r.json().then(function(j){throw new Error(j.detail|| (window.tr?window.tr("auth.changeFail"):"خطا"));}); return r.json(); })
+      .then(function(j){ setAuth(j.access_token, j.user); renderAuthArea(); updateLandingCTA(); hideAuthModal(true); setGated(false); openWorkspace(); if(window.toast) toast((window.tr?window.tr("auth.welcome"):"خوش آمدید، ")+(j.user.full_name||j.user.email)); })
+      .catch(function(err){ showError("login-error", err.message|| (window.tr?window.tr("auth.errLoginFail"):"ورود ناموفق")); })
       .finally(function(){ if(btn) btn.disabled=false; });
   }
   function onRegister(e){
@@ -195,37 +195,37 @@
     var username=document.getElementById("reg-username").value.trim();
     var pass=document.getElementById("reg-pass").value;
     var pass2=document.getElementById("reg-pass2").value;
-    if(!email||!pass) return showError("reg-error","ایمیل و رمز الزامی است");
-    if(pass.length<6) return showError("reg-error","رمز حداقل ۶ کاراکتر");
-    if(pass!==pass2) return showError("reg-error","تکرار رمز مطابقت ندارد");
+    if(!email||!pass) return showError("reg-error",window.tr?window.tr("auth.errIdentPass"):"ایمیل و رمز الزامی است");
+    if(pass.length<6) return showError("reg-error",window.tr?window.tr("auth.errPassShort"):"رمز حداقل ۶ کاراکتر");
+    if(pass!==pass2) return showError("reg-error",window.tr?window.tr("auth.errPassMismatch"):"تکرار رمز مطابقت ندارد");
     showError("reg-error","");
     var btn=e.target.querySelector("button[type=submit]"); if(btn) btn.disabled=true;
     var payload={email:email,password:pass};
     if(name) payload.full_name=name;
     if(username) payload.username=username;
     fetch(API+"/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
-      .then(function(r){ if(!r.ok) return r.json().then(function(j){throw new Error(j.detail||"خطا");}); return r.json(); })
-      .then(function(j){ setAuth(j.access_token, j.user); renderAuthArea(); updateLandingCTA(); hideAuthModal(true); setGated(false); openWorkspace(); if(window.toast) toast("ثبت‌نام موفق — خوش آمدید"); })
-      .catch(function(err){ showError("reg-error", err.message||"ثبت‌نام ناموفق"); })
+      .then(function(r){ if(!r.ok) return r.json().then(function(j){throw new Error(j.detail|| (window.tr?window.tr("auth.changeFail"):"خطا"));}); return r.json(); })
+      .then(function(j){ setAuth(j.access_token, j.user); renderAuthArea(); updateLandingCTA(); hideAuthModal(true); setGated(false); openWorkspace(); if(window.toast) toast(window.tr?"Sign-up successful — "+window.tr("auth.welcome").trim(): "ثبت‌نام موفق — خوش آمدید"); })
+      .catch(function(err){ showError("reg-error", err.message|| (window.tr?window.tr("auth.errRegisterFail"):"ثبت‌نام ناموفق")); })
       .finally(function(){ if(btn) btn.disabled=false; });
   }
   function showChangePassModal(){
     if(window.MDialog){
-      MDialog.prompt2({title:"تغییر رمز عبور", message:"رمز فعلی و رمز جدید خود را وارد کنید.", placeholder:"رمز فعلی", placeholder2:"رمز جدید (حداقل ۶ کاراکتر)", confirmText:"تغییر رمز", cancelText:"انصراف", icon:"info"}).then(function(vals){
+      MDialog.prompt2({title:window.tr?window.tr("auth.changeTitle"):"تغییر رمز عبور", message:window.tr?window.tr("auth.changeMsg"):"رمز فعلی و رمز جدید خود را وارد کنید.", placeholder:window.tr?window.tr("auth.changePh1"):"رمز فعلی", placeholder2:window.tr?window.tr("auth.changePh2"):"رمز جدید (حداقل ۶ کاراکتر)", confirmText:window.tr?window.tr("auth.changeBtn"):"تغییر رمز", cancelText:window.tr?window.tr("dialog.cancel"):"انصراف", icon:"info"}).then(function(vals){
         if(!vals) return;
         apiAuth("/api/auth/change-password",{method:"POST",body:JSON.stringify({old_password:vals.old,new_password:vals.nw})})
-          .then(function(){ if(window.MDialog) MDialog.alert({title:"موفق", message:"رمز با موفقیت تغییر کرد.", icon:"success"}); else alert("رمز با موفقیت تغییر کرد"); })
-          .catch(function(e){ if(window.MDialog) MDialog.alert({title:"خطا", message:e.message||"خطا در تغییر رمز", icon:"danger"}); else alert("خطا: "+e.message); });
+          .then(function(){ if(window.MDialog) MDialog.alert({title:window.tr?window.tr("dialog.confirm"):"موفق", message:window.tr?window.tr("auth.changeOk"):"رمز با موفقیت تغییر کرد.", icon:"success"}); else alert(window.tr?window.tr("auth.alertOk"):"رمز با موفقیت تغییر کرد"); })
+          .catch(function(e){ if(window.MDialog) MDialog.alert({title:window.tr?window.tr("dialog.confirm"):"خطا", message:e.message|| (window.tr?window.tr("auth.changeFail"):"خطا در تغییر رمز"), icon:"danger"}); else alert("خطا: "+e.message); });
       });
       return;
     }
-    var oldp = prompt("رمز فعلی را وارد کنید:");
+    var oldp = prompt(window.tr?window.tr("auth.promptOld"):"رمز فعلی را وارد کنید:");
     if(oldp===null) return;
-    var newp = prompt("رمز جدید (حداقل ۶ کاراکتر):");
+    var newp = prompt(window.tr?window.tr("auth.promptNew"):"رمز جدید (حداقل ۶ کاراکتر):");
     if(newp===null||!newp) return;
-    if(newp.length<6) return alert("رمز کوتاه است");
+    if(newp.length<6) return alert(window.tr?window.tr("auth.alertShort"):"رمز کوتاه است");
     apiAuth("/api/auth/change-password",{method:"POST",body:JSON.stringify({old_password:oldp,new_password:newp})})
-      .then(function(){ alert("رمز با موفقیت تغییر کرد"); })
+      .then(function(){ alert(window.tr?window.tr("auth.alertOk"):"رمز با موفقیت تغییر کرد"); })
       .catch(function(e){ alert("خطا: "+e.message); });
   }
 
@@ -242,10 +242,10 @@
     var authed = isTokenValid(getToken()) && !!getUser();
     if(ll){
       if(authed){
-        ll.innerHTML='<i class="fa-solid fa-table-columns"></i> مدیریت محیط کاربری';
+        ll.innerHTML='<i class="fa-solid fa-table-columns"></i> '+(window.tr?window.tr('auth.workspace'):'مدیریت محیط کاربری');
         ll.title='رفتن به محیط کاربری';
       } else {
-        ll.innerHTML='<i class="fa-solid fa-right-to-bracket"></i> ورود به پنل';
+        ll.innerHTML='<i class="fa-solid fa-right-to-bracket"></i> '+(window.tr?window.tr('landing.login'):'ورود به پنل');
         ll.title='';
       }
     }
@@ -346,7 +346,7 @@
         return;
       }
       if(e.target.closest("#ws-go-dash")){ var td=document.querySelector('.tab[data-v="v-dash"]'); if(td) td.click(); return; }
-      if(e.target.closest("#ws-logout")){ clearAuth(); renderAuthArea(); updateLandingCTA(); setGated(true); document.querySelectorAll("section.view").forEach(function(s){s.classList.remove("on")}); var l=document.getElementById("v-landing"); if(l) l.classList.add("on"); if(window.toast) toast("خارج شدید"); return; }
+      if(e.target.closest("#ws-logout")){ clearAuth(); renderAuthArea(); updateLandingCTA(); setGated(true); document.querySelectorAll("section.view").forEach(function(s){s.classList.remove("on")}); var l=document.getElementById("v-landing"); if(l) l.classList.add("on"); if(window.toast) toast(window.tr?window.tr("auth.loggedOut"):"خارج شدید"); return; }
       if(e.target.closest("#ws-back-landing")){ document.querySelectorAll("section.view").forEach(function(s){s.classList.remove("on")}); var ll=document.getElementById("v-landing"); if(ll) ll.classList.add("on"); document.querySelectorAll(".tab").forEach(function(tb){tb.classList.remove("on")}); var tl=document.querySelector('.tab[data-v="v-landing"]'); if(tl) tl.classList.add("on"); return; }
     });
     updateLandingCTA();

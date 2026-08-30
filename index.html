@@ -49,7 +49,7 @@ document.documentElement.setAttribute("data-theme","light")}</script>
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--txt);font-family:var(--font);
-  min-height:100vh;font-size:14px;line-height:1.65;
+  min-height:100vh;font-size:clamp(13px,.28vw + 12.4px,14.5px);line-height:1.65;
   font-feature-settings:"tnum" 1,"ss01" 1}
 .wrap{max-width:1280px;margin:0 auto;padding:0 24px 64px}
 
@@ -67,7 +67,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);
 .brand .mark img{width:100%;height:100%;object-fit:contain;display:block;padding:0}
 .brand b{font-size:15.5px;font-weight:800;letter-spacing:.2px;display:block;line-height:1.2}
 .brand span{font-size:11px;color:var(--mut)}
-.brand .uni{display:block;font-size:10px;color:var(--dim);margin-top:1px}
+.brand .uni{display:block;font-size:10.5px;color:var(--dim);margin-top:1px}
 .hspace{flex:1}
 .topclock{display:flex;align-items:center;gap:7px;white-space:nowrap;
   font-variant-numeric:tabular-nums;direction:ltr;
@@ -86,7 +86,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);
 }
 .hctl{display:flex;align-items:center;gap:14px;flex-wrap:wrap;min-height:64px}
 .hgroup{display:flex;flex-direction:column;gap:4px;min-width:0;justify-content:center}
-.hlabel{font-size:9.5px;color:var(--dim);font-weight:700;line-height:1;
+.hlabel{font-size:10.5px;color:var(--dim);font-weight:700;line-height:1;
   letter-spacing:.03em}
 
 /* ===== Modern Select (hsel) ===== */
@@ -323,7 +323,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 }
 .dev-stats .mstat:hover{border-color:rgba(25,195,154,.4);transform:translateY(-1px)}
 .dev-stats .mstat .mv{
-  display:block;font-size:22px;font-weight:800;
+  display:block;font-size:clamp(19px,2vw,23px);font-weight:800;
   font-variant-numeric:tabular-nums;color:var(--fg);direction:ltr
 }
 .dev-stats .mstat .ml{display:block;font-size:10.5px;color:var(--mut);margin-top:4px}
@@ -373,7 +373,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 .reg-empty .fa{display:block;font-size:20px;margin-bottom:8px;opacity:.5}
 /* responsive: collapse to horizontal scroll on narrow screens */
 @media(max-width:720px){
-  .reg-thead,.reg-row{grid-template-columns:1.2fr 1fr 1.1fr .9fr;min-width:430px}
+  .reg-thead,.reg-row{grid-template-columns:1.2fr 1fr 1.1fr .9fr;min-width:430px;font-size:11px}
   .reg-cell--rssi,.reg-cell--sensor{display:none}
 }
 .langseg button{height:32px;padding:0 13px;display:inline-flex;align-items:center}
@@ -532,7 +532,7 @@ html[data-theme=light] .dots i{background:rgba(0,0,0,.14)}
   gap:6px;max-height:170px;overflow:auto;border:1px solid var(--line);
   border-radius:9px;padding:8px;background:var(--bg2)}
 .cp-grid .sheetrow{padding:5px 8px;font-size:10.5px}
-.cp-grid .cnt{color:var(--dim);font-size:9px}
+.cp-grid .cnt{color:var(--dim);font-size:10px}
 
 /* methodology */
 .pipe{display:flex;align-items:stretch;gap:6px;flex-wrap:wrap}
@@ -540,7 +540,7 @@ html[data-theme=light] .dots i{background:rgba(0,0,0,.14)}
   border-radius:10px;padding:10px 9px;text-align:center;position:relative}
 .pstep b{display:block;font-size:16px;color:var(--acc);margin-bottom:4px}
 .pstep span{display:block;font-size:11px;font-weight:650;margin-bottom:3px}
-.pstep small{font-size:9.5px;color:var(--dim);line-height:1.5;display:block}
+.pstep small{font-size:10.5px;color:var(--dim);line-height:1.5;display:block}
 .pstep.accent{border-color:rgba(25,195,154,.4);background:rgba(25,195,154,.05)}
 html[dir=rtl] .parrow{transform:scaleX(-1)}
 .parrow{display:flex;align-items:center;font-size:17px;color:var(--dim)}
@@ -566,7 +566,7 @@ nav::-webkit-scrollbar{display:none}
   padding:10px 14px 12px;font-family:inherit;font-size:12.5px;font-weight:650;
   display:inline-flex;gap:7px;align-items:center;white-space:nowrap;
   border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
-.tab .no{font-size:9.5px;color:var(--dim);letter-spacing:.5px}
+.tab .no{font-size:10.5px;color:var(--dim);letter-spacing:.5px}
 .tab:hover{color:var(--txt)}
 .tab.on{color:var(--acc);border-bottom-color:var(--acc)}
 section.view{display:none}
@@ -595,7 +595,7 @@ section.view.on{display:block;animation:fade .3s ease}
 .dbox.lit{box-shadow:0 0 18px rgba(25,195,154,.24),var(--sh-md)}
 #tip{box-shadow:var(--sh-lg)}
 #toast{box-shadow:var(--sh-lg)}
-.card h3{font-size:11px;font-weight:750;color:var(--mut);margin-bottom:13px;
+.card h3{font-size:11.5px;font-weight:750;color:var(--mut);margin-bottom:13px;
   letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;
   gap:8px;flex-wrap:wrap}
 html[dir=ltr] .card h3{letter-spacing:.08em}
@@ -696,7 +696,7 @@ small.src{color:var(--dim);font-size:10px;font-weight:450}
 .gauge>i{position:absolute;bottom:0;left:0;right:0;height:74%;
   background:linear-gradient(180deg,var(--acc),rgba(25,195,154,.3));transition:height .35s,background .35s}
 .gauge.low>i{background:linear-gradient(180deg,var(--bad),rgba(229,72,77,.3))}
-.gauge span{position:absolute;inset:0;display:grid;place-items:center;font-size:9.5px;
+.gauge span{position:absolute;inset:0;display:grid;place-items:center;font-size:10.5px;
   color:var(--txt);font-weight:700}
 .statusline{margin-top:8px;font-size:11px;color:var(--mut);text-align:center;min-height:17px}
 
@@ -715,7 +715,7 @@ bdi{unicode-bidi:isolate}
 .dir-rtl{direction:rtl!important;unicode-bidi:isolate;text-align:start}
 .kpi .v,.insp .krow b{direction:ltr;unicode-bidi:isolate}
 .pmatrix{direction:ltr}
-.tag{font-size:9.5px;padding:3px 9px;border-radius:99px;font-weight:750;white-space:nowrap}
+.tag{font-size:10.5px;padding:3px 9px;border-radius:99px;font-weight:750;white-space:nowrap}
 .tag.ok{background:rgba(25,195,154,.12);color:var(--acc)}
 .tag.wn{background:rgba(233,155,38,.12);color:var(--warn)}
 .tag.bd{background:rgba(229,72,77,.12);color:var(--bad)}
@@ -740,7 +740,7 @@ bdi{unicode-bidi:isolate}
 .srcs b{color:var(--txt)}
 .srcs a{color:#7fabfc;text-decoration:none}
 .srcs a:hover{text-decoration:underline}
-.step{display:inline-block;font-size:9.5px;padding:2.5px 9px;border-radius:99px;
+.step{display:inline-block;font-size:10.5px;padding:2.5px 9px;border-radius:99px;
   font-weight:750;margin-inline-end:7px}
 .step.ok{background:rgba(25,195,154,.12);color:var(--acc)}
 .step.wn{background:rgba(233,155,38,.12);color:var(--warn)}
@@ -816,7 +816,7 @@ footer a:hover{color:var(--acc)}
   pointer-events:auto;cursor:pointer;z-index:3;
   will-change:transform;filter:saturate(.92) drop-shadow(0 1.5px 1.5px rgba(0,0,0,.4))}
 .chick::after{content:attr(data-tag);position:absolute;top:-10px;left:50%;
-  transform:translateX(-50%);font-size:7px;font-weight:700;letter-spacing:.2px;
+  transform:translateX(-50%);font-size:9px;font-weight:700;letter-spacing:.2px;
   color:#dbe4f0;text-shadow:0 1px 2px #000,0 0 3px rgba(0,0,0,.6);
   font-family:ui-monospace,Consolas,monospace;pointer-events:none;white-space:nowrap}
 .pens-wrap.hide-tags .chick::after{display:none}
@@ -824,12 +824,12 @@ footer a:hover{color:var(--acc)}
 .chick.eat{animation:peck .45s ease-in-out infinite alternate}
 @keyframes peck{from{margin-top:0}to{margin-top:2.5px}}
 .chick.die{transition:opacity .8s,filter .8s;opacity:0;filter:grayscale(1)}
-.troughrow{display:flex;align-items:center;gap:7px;padding:0 9px 3px;font-size:9.5px;color:var(--mut)}
+.troughrow{display:flex;align-items:center;gap:7px;padding:0 9px 3px;font-size:10.5px;color:var(--mut)}
 .mbin{flex:1;height:6px;background:var(--bg);border:1px solid var(--line);border-radius:99px;
   overflow:hidden;direction:ltr}
 .mbin>i{display:block;height:100%;background:linear-gradient(90deg,#e99b26,#f3b04a);transition:width .4s}
 .mbin.low>i{background:linear-gradient(90deg,#e5484d,#f48080)}
-.penstats{padding:0 9px 7px;font-size:9.5px;color:var(--mut);display:flex;
+.penstats{padding:0 9px 7px;font-size:10.5px;color:var(--mut);display:flex;
   justify-content:space-between;direction:ltr;font-variant-numeric:tabular-nums}
 .darkveil{position:absolute;inset:0;background:rgba(3,5,10,.74);opacity:0;
   transition:opacity 1.3s;pointer-events:none;z-index:4;display:flex;
@@ -952,6 +952,9 @@ html[dir=ltr] body{font-family:"IBM Plex Sans","Vazirmatn",system-ui,sans-serif}
 
 /* touch targets & a11y */
 @media(pointer:coarse){
+  .btn{min-height:42px}
+  .tab{min-height:44px}
+  select,.field__input{min-height:42px}
   .tab,.btn,select,input,.langseg button{min-height:42px}
   .tab{padding-inline:15px}
 }
@@ -969,11 +972,47 @@ html[dir=ltr] select{background-position:right 10px center;background-image:url(
 .table-x{overflow-x:auto}
 .table-x table{min-width:520px}
 
+/* ================= Products & Services ================= */
+.prod-hero{margin-top:18px;padding:26px 24px;border:1px solid var(--line);border-radius:20px;
+  background:linear-gradient(135deg,rgba(25,195,154,.10),rgba(59,130,246,.08)),var(--card);
+  backdrop-filter:blur(14px);box-shadow:var(--sh-md)}
+.prod-hero h2{font-size:clamp(20px,2.4vw,26px);font-weight:900;letter-spacing:-.02em;margin:0 0 8px}
+.prod-hero p{margin:0;color:var(--mut);font-size:13.5px;line-height:1.9;max-width:760px}
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px;margin-top:18px}
+.prod-card{position:relative;display:flex;flex-direction:column;gap:14px;padding:24px 22px;
+  border:1px solid var(--line);border-radius:20px;background:var(--card);backdrop-filter:blur(10px);
+  box-shadow:var(--sh-sm);transition:transform .18s,box-shadow .18s,border-color .18s;overflow:hidden}
+.prod-card::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;
+  background:linear-gradient(180deg,var(--acc),var(--acc2));opacity:.9}
+.prod-card:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(15,23,42,.14);border-color:rgba(25,195,154,.35)}
+.prod-ic{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:24px;color:#fff;
+  background:linear-gradient(135deg,#19c39a,#2563eb);box-shadow:0 8px 22px rgba(37,99,235,.25)}
+.prod-card h3{font-size:17px;font-weight:900;margin:0}
+.prod-card .prod-tag{font-size:11px;font-weight:700;color:var(--acc);letter-spacing:.03em}
+.prod-card p.prod-desc{margin:0;color:var(--mut);font-size:13px;line-height:1.9}
+.prod-feats{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.prod-feats li{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.75;color:var(--txt)}
+.prod-feats li i{color:var(--acc);font-size:12px;margin-top:4px;flex-shrink:0}
+.prod-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.prod-status{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:750;color:var(--acc)}
+.prod-status .dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 3px rgba(25,195,154,.18);animation:prodPulse 2s ease-in-out infinite}
+@keyframes prodPulse{0%,100%{opacity:1}50%{opacity:.45}}
+.prod-cta{cursor:pointer;border:none;border-radius:10px;padding:9px 16px;font-family:inherit;font-size:12.5px;font-weight:800;
+  color:#04140f;background:linear-gradient(135deg,var(--acc),#37d9a8);display:inline-flex;gap:7px;align-items:center;transition:.15s;box-shadow:var(--sh-sm)}
+.prod-cta:hover{filter:brightness(1.07)}
+.prod-cta.ghost{background:none;color:var(--acc);border:1px solid rgba(25,195,154,.35)}
+html[data-theme=dark] .prod-hero{background:linear-gradient(135deg,rgba(25,195,154,.12),rgba(59,130,246,.09)),rgba(17,24,38,.78)}
+html[data-theme=dark] .prod-card{background:rgba(17,24,38,.78);border-color:rgba(255,255,255,.06)}
+html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
+@media(max-width:560px){.prod-hero{padding:20px 16px}.prod-card{padding:18px 16px}.prod-card h3{font-size:15.5px}}
+@media(prefers-reduced-motion:reduce){.prod-status .dot{animation:none}}
+
 /* view header */
 .view-head{margin-bottom:15px}
-.view-head .eyebrow{font-size:9.5px;letter-spacing:.14em;color:var(--dim);
+.view-head .eyebrow{font-size:10.5px;letter-spacing:.14em;color:var(--dim);
   text-transform:uppercase;font-weight:750;display:block;margin-bottom:3px}
-.view-head h2{font-size:19px;font-weight:800;letter-spacing:-.2px;margin-bottom:3px}
+.view-head h2{font-size:clamp(17px,1.6vw,20px);font-weight:800;letter-spacing:-.2px;margin-bottom:3px}
 .view-head p{font-size:12px;color:var(--mut)}
 
 /* farm empty state */
@@ -1065,7 +1104,7 @@ html[data-theme=light] .m-dialog{box-shadow:0 24px 64px rgba(15,23,42,.18),0 1px
 
 /* gate: when not authed, hide app and show only brand + login */
 body.needs-auth #v-workspace, body.needs-auth #v-dash, body.needs-auth #v-exp, body.needs-auth #v-farm, body.needs-auth #v-sim, body.needs-auth #v-scn, body.needs-auth #v-dev, body.needs-auth #v-sci, body.needs-auth #v-met{display:none !important}
-body.needs-auth .tab[data-v]:not([data-v="v-landing"]):not([data-v="v-about"]){opacity:.55}
+body.needs-auth .tab[data-v]:not([data-v="v-landing"]):not([data-v="v-about"]):not([data-v="v-products"]){opacity:.55}
 body.needs-auth .topbar{backdrop-filter:none}
 body.needs-auth .auth-modal-backdrop{background:rgba(255,255,255,.06);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
 body.needs-auth .auth-modal{animation:none;box-shadow:0 24px 64px rgba(0,0,0,.55)}
@@ -1092,11 +1131,11 @@ html[data-theme=light] .auth-modal{background:rgba(255,255,255,.72);backdrop-fil
 .ws-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
 @media(max-width:760px){.ws-stats{grid-template-columns:repeat(2,1fr)}}
 .ws-stat{padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:var(--card);text-align:center;box-shadow:var(--sh-sm)}
-.ws-stat b{font-size:22px;font-weight:900;display:block;line-height:1}
+.ws-stat b{font-size:clamp(19px,2vw,23px);font-weight:900;display:block;line-height:1}
 .ws-stat span{font-size:11px;color:var(--mut);letter-spacing:.04em}
 .ws-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
 @media(max-width:1000px){.ws-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:560px){.ws-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.ws-grid{grid-template-columns:1fr}.ws-card p{font-size:12.5px}.ws-head-main b{font-size:16px}}
 .ws-card{position:relative;padding:16px 16px 14px;border-radius:18px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(10px);display:flex;flex-direction:column;gap:10px;transition:transform .18s,box-shadow .18s,border-color .18s;cursor:pointer;text-align:right;box-shadow:var(--sh-sm)}
 .ws-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(15,23,42,.10);border-color:rgba(25,195,154,.35)}
 .ws-card i{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(135deg,rgba(25,195,154,.14),rgba(59,130,246,.12));color:#0f766e;font-size:18px}
@@ -1148,8 +1187,8 @@ html[data-theme=light] .ws-card:hover{box-shadow:var(--sh-md)}
 .landing-visual-float .lvf-txt span{font-size:11px;color:rgba(255,255,255,.72)}
 .landing-visual-float .lvf-badge{flex-shrink:0;padding:6px 10px;border-radius:999px;background:rgba(25,195,154,.16);border:1px solid rgba(25,195,154,.28);color:#5eead4;font-size:11px;font-weight:800;white-space:nowrap}
 .landing-badge{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;background:rgba(25,195,154,.12);border:1px solid rgba(25,195,154,.22);color:var(--acc);font-size:12px;font-weight:700;backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(25,195,154,.12)}
-.landing-title{margin:16px 0 10px;font-size:34px;line-height:1.15;font-weight:900;letter-spacing:-.03em}
-.landing-title span{display:block;font-size:18px;font-weight:700;color:var(--mut);margin-top:6px;min-height:26px}
+.landing-title{margin:16px 0 10px;font-size:clamp(26px,4.2vw,38px);line-height:1.18;font-weight:900;letter-spacing:-.03em}
+.landing-title span{display:block;font-size:clamp(15px,1.8vw,19px);font-weight:700;color:var(--mut);margin-top:6px;min-height:26px}
 .landing-title .typed-cursor{display:inline-block;width:2px;height:1.15em;background:var(--acc);margin-inline-start:3px;vertical-align:-2px;animation:typed-blink .75s step-end infinite}
 @keyframes typed-blink{0%,50%{opacity:1}51%,100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.landing-title .typed-cursor{animation:none}}
@@ -1173,8 +1212,8 @@ html[data-theme=light] .ws-card:hover{box-shadow:var(--sh-md)}
 .landing-grid .lcard p{margin:0;color:var(--mut);font-size:12px;line-height:1.7}
 .landing-foot{margin:8px 0 0;padding:16px;border-radius:16px;background:var(--card);border:1px dashed var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .landing-foot p{margin:0;color:var(--mut);font-size:12px;line-height:1.8;max-width:620px}
-@media(max-width:900px){.landing-hero{grid-template-columns:1fr}.landing-visual{aspect-ratio:16/9;order:-1}.landing-grid{grid-template-columns:repeat(2,1fr)}.landing-title{font-size:26px}.landing-badge{align-self:center}.landing-cta{justify-content:center}}
-@media(max-width:560px){.landing-grid{grid-template-columns:1fr}.landing-hero{padding:22px 16px}.landing-title{font-size:22px}.landing-title span{font-size:15px}.landing-badge{align-self:center}.landing-cta{justify-content:center}}
+@media(max-width:900px){.landing-hero{grid-template-columns:1fr}.landing-visual{aspect-ratio:16/9;order:-1}.landing-grid{grid-template-columns:repeat(2,1fr)}.landing-badge{align-self:center}.landing-cta{justify-content:center}}
+@media(max-width:560px){.landing-grid{grid-template-columns:1fr}.landing-hero{padding:22px 16px}.landing-badge{align-self:center}.landing-cta{justify-content:center}}
 html[data-theme=light] .landing-hero{background:radial-gradient(820px 520px at 72% -8%, rgba(25,195,154,.12), transparent 58%), radial-gradient(640px 420px at 4% 102%, rgba(59,130,246,.09), transparent 60%), linear-gradient(180deg, #fff, #f6f7f9);border-color:rgba(0,0,0,.06)}
 html[data-theme=light] .landing-visual{border-color:rgba(0,0,0,.08);box-shadow:0 20px 50px rgba(0,0,0,.12)}
 html[data-theme=light] .landing-visual-float{background:rgba(255,255,255,.78);border-color:rgba(0,0,0,.07)}
@@ -1305,6 +1344,7 @@ canvas{will-change: contents}
   <button class="tab" data-v="v-dev"><span data-i18n="nav.dev">دستگاه و داده</span></button>
   <button class="tab" data-v="v-sci"><span data-i18n="nav.sci">مبانی علمی</span></button>
   <button class="tab" data-v="v-met"><span data-i18n="nav.met">روش‌شناسی</span></button>
+  <button class="tab" data-v="v-products"><span data-i18n="nav.products">محصولات و خدمات</span></button>
   <button class="tab" data-v="v-about"><span data-i18n="nav.about">درباره ما</span></button>
 </nav>
 
@@ -1316,18 +1356,18 @@ canvas{will-change: contents}
   <div class="landing-hero">
     <div class="landing-hero-bg"></div>
     <div class="landing-hero-inner">
-      <div class="landing-badge"><i class="fa-solid fa-flask"></i> سامانه هوشمند پایش مصرف خوراک و سیستم‌های کنترل محیطی</div>
+      <div class="landing-badge"><i class="fa-solid fa-flask"></i> <span data-i18n="landing.badge">سامانه هوشمند پایش مصرف خوراک و سیستم‌های کنترل محیطی</span></div>
       <h1 class="landing-title">ققنوس <span id="landing-typed" data-text="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی" aria-label="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی"></span></h1>
       <div class="landing-cta">
-        <button class="btn primary lg" id="landing-login"><i class="fa-solid fa-right-to-bracket"></i> ورود به پنل</button>
-        <button class="btn ghost lg" id="landing-register">ثبت‌نام رایگان</button>
-        <button class="btn ghost lg" id="landing-guest">مشاهده معرفی</button>
+        <button class="btn primary lg" id="landing-login"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="landing.login">ورود به پنل</span></button>
+        <button class="btn ghost lg" id="landing-register" data-i18n="landing.register">ثبت‌نام رایگان</button>
+        <button class="btn ghost lg" id="landing-guest" data-i18n="landing.guest">مشاهده معرفی</button>
       </div>
       <div class="landing-stats">
-        <div class="ls"><b>طرح‌های آزمایشی</b></div>
-        <div class="ls"><b>آزمایشگاه مجازی و تخصصی</b></div>
-        <div class="ls"><b>۲۴ ساعته</b><span>داده زنده دستگاه</span></div>
-        <div class="ls"><b>کاربرمحور</b><span>داده‌های کاربرمحور</span></div>
+        <div class="ls"><b data-i18n="landing.stat.trials">طرح‌های آزمایشی</b></div>
+        <div class="ls"><b data-i18n="landing.stat.lab">آزمایشگاه مجازی و تخصصی</b></div>
+        <div class="ls"><b>۲۴ ساعته</b><span data-i18n="landing.stat.live">داده زنده دستگاه</span></div>
+        <div class="ls"><b data-i18n="landing.stat.user">کاربرمحور</b><span data-i18n="landing.stat.live">داده زنده دستگاه</span></div>
       </div>
     </div>
     <div class="landing-visual" aria-hidden="true">
@@ -1339,23 +1379,23 @@ canvas{will-change: contents}
       <div class="landing-visual-float">
         <div class="lvf-left">
           <span class="lvf-dot"></span>
-          <span class="lvf-txt"><b>داده زنده · ۲۴ ساعته</b><span>داده‌های کاربرمحور و ایمن</span></span>
+          <span class="lvf-txt"><b data-i18n="landing.live.b">داده زنده · ۲۴ ساعته</b><span data-i18n="landing.live.s">داده‌های کاربرمحور و ایمن</span></span>
         </div>
-        <span class="lvf-badge"><i class="fa-solid fa-shield-halved"></i> ایزوله</span>
+        <span class="lvf-badge"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="landing.iso">ایزوله</span></span>
       </div>
     </div>
   </div>
   <div class="landing-grid">
-    <div class="lcard"><i class="fa-solid fa-chart-line"></i><h3>داشبورد اعتبارسنجی</h3><p>مقایسه لحظه‌ای نتایج شبیه‌سازی با عملکرد استاندارد سویه، همراه با نمودار رشد و ضریب تبدیل خوراک اختصاصی هر کاربر.</p></div>
-    <div class="lcard"><i class="fa-solid fa-vial"></i><h3>طرح آزمایش</h3><p>تعریف دوره‌های پرورشی، گروه‌های تیمار و تکرارهای آزمایشی — هر دوره به‌صورت کامل و ایزوله در حساب کاربری شما ثبت می‌شود.</p></div>
-    <div class="lcard"><i class="fa-solid fa-map"></i><h3>نقشه فارم پویا</h3><p>جانمایی جایگاه‌های پرورشی، حسگرها و نمایش وضعیت زنده فارم — داده‌ها به‌صورت اختصاصی و ایزوله در اختیار شما قرار دارد.</p></div>
-    <div class="lcard"><i class="fa-solid fa-satellite-dish"></i><h3>شبیه‌سازی زنده</h3><p>اجرای سناریو با شناسه اختصاصی و مشاهده بلادرنگ نتایج و خروجی‌های شبیه‌سازی.</p></div>
-    <div class="lcard"><i class="fa-solid fa-layer-group"></i><h3>سناریوها</h3><p>ذخیره‌سازی، مقایسه و اجرای مجدد سناریوهای شخصی‌سازی‌شده با امکان بازبینی دقیق نتایج.</p></div>
-    <div class="lcard"><i class="fa-solid fa-microchip"></i><h3>دستگاه و داده</h3><p>ثبت و ذخیره‌سازی خودکار اطلاعات دستگاه‌های پایش — داده‌ها به‌صورت کامل کاربرمحور، ایمن و اختصاصی شما نگهداری می‌شود.</p></div>
+    <div class="lcard"><i class="fa-solid fa-chart-line"></i><h3 data-i18n="landing.card.dash.t">داشبورد اعتبارسنجی</h3><p data-i18n="landing.card.dash.p">مقایسه لحظه‌ای نتایج شبیه‌سازی با عملکرد استاندارد سویه، همراه با نمودار رشد و ضریب تبدیل خوراک اختصاصی هر کاربر.</p></div>
+    <div class="lcard"><i class="fa-solid fa-vial"></i><h3 data-i18n="landing.card.exp.t">طرح آزمایش</h3><p data-i18n="landing.card.exp.p">تعریف دوره‌های پرورشی، گروه‌های تیمار و تکرارهای آزمایشی — هر دوره به‌صورت کامل و ایزوله در حساب کاربری شما ثبت می‌شود.</p></div>
+    <div class="lcard"><i class="fa-solid fa-map"></i><h3 data-i18n="landing.card.farm.t">نقشه فارم پویا</h3><p data-i18n="landing.card.farm.p">جانمایی جایگاه‌های پرورشی، حسگرها و نمایش وضعیت زنده فارم — داده‌ها به‌صورت اختصاصی و ایزوله در اختیار شما قرار دارد.</p></div>
+    <div class="lcard"><i class="fa-solid fa-satellite-dish"></i><h3 data-i18n="landing.card.sim.t">شبیه‌سازی زنده</h3><p data-i18n="landing.card.sim.p">اجرای سناریو با شناسه اختصاصی و مشاهده بلادرنگ نتایج و خروجی‌های شبیه‌سازی.</p></div>
+    <div class="lcard"><i class="fa-solid fa-layer-group"></i><h3 data-i18n="landing.card.scn.t">سناریوها</h3><p data-i18n="landing.card.scn.p">ذخیره‌سازی، مقایسه و اجرای مجدد سناریوهای شخصی‌سازی‌شده با امکان بازبینی دقیق نتایج.</p></div>
+    <div class="lcard"><i class="fa-solid fa-microchip"></i><h3 data-i18n="landing.card.dev.t">دستگاه و داده</h3><p data-i18n="landing.card.dev.p">ثبت و ذخیره‌سازی خودکار اطلاعات دستگاه‌های پایش — داده‌ها به‌صورت کامل کاربرمحور، ایمن و اختصاصی شما نگهداری می‌شود.</p></div>
   </div>
   <div class="landing-foot">
-    <p>برای دسترسی به داشبورد، آزمایش‌ها و داده‌های دستگاه، وارد حساب کاربری خود شوید. داده‌ها و شبیه‌سازی‌ها کاملاً اختصاصی و بر اساس عملکرد شما ذخیره می‌شوند.</p>
-    <button class="btn primary" id="landing-enter"><i class="fa-solid fa-arrow-left"></i> ورود و شروع</button>
+    <p data-i18n="landing.foot.p">برای دسترسی به داشبورد، آزمایش‌ها و داده‌های دستگاه، وارد حساب کاربری خود شوید. داده‌ها و شبیه‌سازی‌ها کاملاً اختصاصی و بر اساس عملکرد شما ذخیره می‌شوند.</p>
+    <button class="btn primary" id="landing-enter"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="landing.foot.btn">ورود و شروع</span></button>
   </div>
 </section>
 
@@ -1364,34 +1404,34 @@ canvas{will-change: contents}
     <div class="ws-head" id="ws-head">
       <div class="ws-avatar" id="ws-avatar">ق</div>
       <div class="ws-head-main">
-        <b id="ws-name">محیط کاربری ققنوس</b>
-        <span id="ws-email">وارد شده — داده‌های شما کاملاً اختصاصی و ایزوله است</span>
+        <b id="ws-name" data-i18n="ws.title">محیط کاربری ققنوس</b>
+        <span id="ws-email" data-i18n="ws.subtitle">وارد شده — داده‌های شما کاملاً اختصاصی و ایزوله است</span>
       </div>
       <div class="ws-badges">
-        <span class="ws-badge ok" id="ws-role">کاربر</span>
-        <span class="ws-badge" id="ws-status">فعال • کاربرمحور</span>
+        <span class="ws-badge ok" id="ws-role" data-i18n="ws.badge.user">کاربر</span>
+        <span class="ws-badge" id="ws-status" data-i18n="ws.badge.active">فعال • کاربرمحور</span>
       </div>
     </div>
     <div class="ws-stats">
-      <div class="ws-stat"><b id="ws-n-cycles">—</b><span>دوره‌ها</span></div>
-      <div class="ws-stat"><b id="ws-n-scenarios">—</b><span>سناریوها</span></div>
-      <div class="ws-stat"><b id="ws-n-device">—</b><span>رکورد دستگاه</span></div>
-      <div class="ws-stat"><b>۲۴ ساعته</b><span>داده زنده</span></div>
+      <div class="ws-stat"><b id="ws-n-cycles">—</b><span data-i18n="ws.stat.cycles">دوره‌ها</span></div>
+      <div class="ws-stat"><b id="ws-n-scenarios">—</b><span data-i18n="ws.stat.scenarios">سناریوها</span></div>
+      <div class="ws-stat"><b id="ws-n-device">—</b><span data-i18n="ws.stat.device">رکورد دستگاه</span></div>
+      <div class="ws-stat"><b>۲۴ ساعته</b><span data-i18n="ws.stat.live">داده زنده</span></div>
     </div>
     <div class="ws-grid">
-      <div class="ws-card" data-go="v-dash"><i class="fa-solid fa-chart-line"></i><h3>داشبورد اعتبارسنجی</h3><p>مقایسه شبیه‌سازی با داده واقعی و نمودار رشد</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-exp"><i class="fa-solid fa-vial"></i><h3>طرح آزمایش</h3><p>تعریف دوره‌ها، تیمارها و تکرارها</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-farm"><i class="fa-solid fa-map"></i><h3>نقشه فارم پویا</h3><p>جانمایی پن‌ها و حسگرها به‌صورت زنده</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-sim"><i class="fa-solid fa-satellite-dish"></i><h3>شبیه‌سازی زنده</h3><p>اجرای سناریو با نتیجه بلادرنگ</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-scn"><i class="fa-solid fa-layer-group"></i><h3>سناریوها</h3><p>ذخیره، مقایسه و اجرای مجدد</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-dev"><i class="fa-solid fa-microchip"></i><h3>دستگاه و داده</h3><p>ثبت خودکار داده‌ها — داده‌های کاربرمحور</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-sci"><i class="fa-solid fa-book-open"></i><h3>مبانی علمی</h3><p>مدل‌های رشد و مصرف خوراک</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-met"><i class="fa-solid fa-flask-vial"></i><h3>روش‌شناسی</h3><p>روش اندازه‌گیری و اعتبارسنجی</p><span class="ws-go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-dash"><i class="fa-solid fa-chart-line"></i><h3 data-i18n="ws.card.dash.t">داشبورد اعتبارسنجی</h3><p data-i18n="ws.card.dash.p">مقایسه شبیه‌سازی با داده واقعی و نمودار رشد</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-exp"><i class="fa-solid fa-vial"></i><h3 data-i18n="ws.card.exp.t">طرح آزمایش</h3><p data-i18n="ws.card.exp.p">تعریف دوره‌ها، تیمارها و تکرارها</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-farm"><i class="fa-solid fa-map"></i><h3 data-i18n="ws.card.farm.t">نقشه فارم پویا</h3><p data-i18n="ws.card.farm.p">جانمایی پن‌ها و حسگرها به‌صورت زنده</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-sim"><i class="fa-solid fa-satellite-dish"></i><h3 data-i18n="ws.card.sim.t">شبیه‌سازی زنده</h3><p data-i18n="ws.card.sim.p">اجرای سناریو با نتیجه بلادرنگ</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-scn"><i class="fa-solid fa-layer-group"></i><h3 data-i18n="ws.card.scn.t">سناریوها</h3><p data-i18n="ws.card.scn.p">ذخیره، مقایسه و اجرای مجدد</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-dev"><i class="fa-solid fa-microchip"></i><h3 data-i18n="ws.card.dev.t">دستگاه و داده</h3><p data-i18n="ws.card.dev.p">ثبت خودکار داده‌ها — داده‌های کاربرمحور</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-sci"><i class="fa-solid fa-book-open"></i><h3 data-i18n="ws.card.sci.t">مبانی علمی</h3><p data-i18n="ws.card.sci.p">مدل‌های رشد و مصرف خوراک</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-met"><i class="fa-solid fa-flask-vial"></i><h3 data-i18n="ws.card.met.t">روش‌شناسی</h3><p data-i18n="ws.card.met.p">روش اندازه‌گیری و اعتبارسنجی</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
     </div>
     <div class="ws-actions">
-      <button class="btn primary" id="ws-go-dash"><i class="fa-solid fa-gauge"></i> رفتن به داشبورد</button>
-      <button class="btn ghost" id="ws-logout"><i class="fa-solid fa-right-from-bracket"></i> خروج از حساب</button>
-      <button class="btn ghost" id="ws-back-landing"><i class="fa-solid fa-house"></i> بازگشت به صفحه اصلی</button>
+      <button class="btn primary" id="ws-go-dash"><i class="fa-solid fa-gauge"></i> <span data-i18n="ws.btn.dash">رفتن به داشبورد</span></button>
+      <button class="btn ghost" id="ws-logout"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="ws.btn.logout">خروج از حساب</span></button>
+      <button class="btn ghost" id="ws-back-landing"><i class="fa-solid fa-house"></i> <span data-i18n="ws.btn.home">بازگشت به صفحه اصلی</span></button>
     </div>
   </div>
 </section>
@@ -2046,6 +2086,56 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 
 
 <!-- ================= VIEW: ABOUT ================= -->
+<section class="view" id="v-products" aria-label="Products and Services">
+  <div class="prod-hero">
+    <h2 data-i18n="prod.hero.t">محصولات و خدمات ققنوس</h2>
+    <p data-i18n="prod.hero.p">سامانه‌های هوشمند پرورش و اصلاح نژاد طیور گوشتی — از ثبت دقیق داده در واحد آزمایشی تا کنترل خودکار شرایط محیطی سالن؛ طراحی‌شده برای مراکز تحقیقاتی، واحدهای مادر و فارم‌های تجاری.</p>
+  </div>
+  <div class="prod-grid">
+
+    <article class="prod-card">
+      <div class="prod-ic"><i class="fa-solid fa-utensils" aria-hidden="true"></i></div>
+      <div>
+        <div class="prod-tag" data-i18n="prod.p1.tag">محصول ۱</div>
+        <h3 data-i18n="prod.p1.t">سیستم پایش مصرف خوراک</h3>
+      </div>
+      <p class="prod-desc" data-i18n="prod.p1.d">ثبت خودکار بازدید هر پرنده از ایستگاه تغذیه با شناسایی الکترونیکی و توزین هم‌زمان؛ محاسبه دقیق مصرف خوراک فردی، وزن‌کشی پیوسته و تشخیص هوشمند وعده‌های تغذیه‌ای — بدون دخالت انسانی و بدون استرس گله.</p>
+      <ul class="prod-feats">
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f1">شناسایی الکترونیکی هر پرنده با بال‌تگ و ثبت لحظه‌ای ورود و خروج</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f2">حسگرهای وزن‌کشی با هموارسازی نویز و دقت در حد گرم</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f3">محاسبه خودکار مصرف خوراک فردی، شمارش بازدید و بستن وعده</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f4">مدیریت دوره‌های پرورشی با داده‌های کاملاً اختصاصی هر کاربر</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f5">ثبت و ذخیره‌سازی خودکار داده‌ها و استریم زنده به داشبورد</span></li>
+      </ul>
+      <div class="prod-foot">
+        <span class="prod-status"><span class="dot"></span> <span data-i18n="prod.p1.status">فعال · داده زنده ۲۴ ساعته</span></span>
+        <button class="prod-cta" data-goto="v-dev"><i class="fa-solid fa-microchip"></i> <span data-i18n="prod.demo">مشاهده دمو</span></button>
+      </div>
+    </article>
+
+    <article class="prod-card">
+      <div class="prod-ic"><i class="fa-solid fa-temperature-half" aria-hidden="true"></i></div>
+      <div>
+        <div class="prod-tag" data-i18n="prod.p2.tag">محصول ۲</div>
+        <h3 data-i18n="prod.p2.t">سیستم هوشمند کنترل محیطی</h3>
+      </div>
+      <p class="prod-desc" data-i18n="prod.p2.d">پایش و کنترل خودکار دما، رطوبت و تهویه سالن بر اساس استانداردهای رسمی پرورش؛ تنظیم هوشمند شرایط محیطی در هر سن، کاهش تنش گرمایی و بهبود ضریب تبدیل خوراک — همه‌چیز از یک داشبورد واحد.</p>
+      <ul class="prod-feats">
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f1">حسگرهای دما و رطوبت با ثبت پیوسته در هر نقطه سالن</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f2">منطق کنترل خودکار تهویه و گرمایش بر اساس سن گله</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f3">هشدار لحظه‌ای انحراف از بازه استاندارد هر سویه</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f4">سناریوهای محیطی قابل تعریف و اجرای آزمایشی</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f5">گزارش‌گیری دوره‌ای و هم‌راستایی با اهداف عملکردی سویه</span></li>
+      </ul>
+      <div class="prod-foot">
+        <span class="prod-status"><span class="dot"></span> <span data-i18n="prod.p2.status">فعال · پایش ۲۴ ساعته</span></span>
+        <button class="prod-cta" data-goto="v-scn"><i class="fa-solid fa-sliders"></i> <span data-i18n="prod.demo">مشاهده دمو</span></button>
+      </div>
+    </article>
+
+  </div>
+</section>
+
 <section class="view" id="v-about">
   <div class="card">
     <h3><span class="ic">🏛️</span><span data-i18n="about.uniT">دانشگاه تربیت مدرس — گروه علوم دامی</span></h3>

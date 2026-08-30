@@ -32,6 +32,13 @@ function fx(v,d=1){
   }
   return s;
 }
+document.addEventListener("click",function(e){
+  var b=e.target.closest("[data-goto]");
+  if(!b) return;
+  var v=b.getAttribute("data-goto");
+  var tab=document.querySelector('.tab[data-v="'+v+'"]');
+  if(tab) tab.click();
+});
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");
   clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("on"),2600)}
 function animNum(el,target,fm){if(!el)return;const t0=performance.now(),dur=750,from=0;
@@ -166,13 +173,13 @@ function markTabs(){document.querySelectorAll(".tab").forEach(b=>{
 document.querySelectorAll(".tab").forEach(btn=>{
   btn.addEventListener("click",()=>{
     var targetV = btn.dataset.v;
-    var isLanding = targetV==="v-landing" || targetV==="v-about";
+    var isLanding = targetV==="v-landing" || targetV==="v-about" || targetV==="v-products";
     var needsAuth = document.body.classList.contains("needs-auth");
     var authed = window.isTokenValid && window.isTokenValid(localStorage.getItem("broiler_token"));
     if(!isLanding && (needsAuth || !authed)){
       if(window.Auth && window.Auth.showAuthModal) window.Auth.showAuthModal("login", {gated:false});
       else if(window.showAuthModal) window.showAuthModal("login");
-      if(window.toast) toast("برای دسترسی به این بخش وارد شوید");
+      if(window.toast) toast(window.tr?window.tr("toast.needLogin"):"برای دسترسی به این بخش وارد شوید");
       return;
     }
     document.querySelectorAll(".tab").forEach(b=>{b.classList.remove("on");b.setAttribute("aria-selected","false")});

@@ -47,7 +47,7 @@
       if (!box) return;
       box.innerHTML = "";
       if (!list.length) {
-        box.innerHTML = '<div class="cy-meta" style="padding:8px">دوره‌ای ثبت نشده است.</div>';
+        box.innerHTML = '<div class="cy-meta" style="padding:8px">'+(window.tr?window.tr("dev.empty"):"دوره‌ای ثبت نشده است.")+'</div>';
         return;
       }
       list.forEach(function (c) {
@@ -56,11 +56,11 @@
         el.innerHTML =
           '<span class="cy-code">' + esc(c.cycle_code) + '</span>' +
           '<span class="cy-label">' + esc(c.label) + '</span>' +
-          '<span class="cy-meta">' + esc(c.strain) + ' · ' + (c.bird_count || 0) + ' پرنده</span>' +
-          '<button class="cy-del" title="حذف"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>';
+          '<span class="cy-meta">' + esc(c.strain) + ' · ' + (c.bird_count || 0) + ' '+(window.tr?window.tr("dev.birds"):"پرنده")+'</span>' +
+          '<button class="cy-del" title="'+(window.tr?window.tr("dev.delete"):"حذف")+'"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>';
         el.addEventListener("click", function (e) {
           if (e.target.closest(".cy-del")) {
-            if(window.MDialog){ MDialog.confirm({title:"حذف دوره", message:"دوره " + c.cycle_code + " و تمام داده‌های آن حذف شود؟\nاین عمل قابل بازگشت نیست.", confirmText:"حذف", cancelText:"انصراف", icon:"danger", danger:true}).then(function(ok){ if(!ok) return; api("/api/cycles/" + c.id, { method: "DELETE" }).then(function () { if (selectedCycle === c.id) { selectedCycle = null; clearStats(); clearRegs(); } loadCycles(); }); }); return; } if (!confirm("دوره " + c.cycle_code + " و تمام داده‌های آن حذف شود؟")) return;
+            if(window.MDialog){ MDialog.confirm({title:window.tr?window.tr("dev.deleteTitle"):"حذف دوره", message:(window.tr?window.tr("dev.deleteMsg").replace("{code}",c.cycle_code):"دوره " + c.cycle_code + " و تمام داده‌های آن حذف شود؟\nاین عمل قابل بازگشت نیست."), confirmText:window.tr?window.tr("dev.deleteConfirm"):"حذف", cancelText:window.tr?window.tr("dialog.cancel"):"انصراف", icon:"danger", danger:true}).then(function(ok){ if(!ok) return; api("/api/cycles/" + c.id, { method: "DELETE" }).then(function () { if (selectedCycle === c.id) { selectedCycle = null; clearStats(); clearRegs(); } loadCycles(); }); }); return; } if (!confirm(window.tr?window.tr("dev.deleteMsg").replace("{code}",c.cycle_code):"دوره " + c.cycle_code + " و تمام داده‌های آن حذف شود؟")) return;
             api("/api/cycles/" + c.id, { method: "DELETE" }).then(function () {
               if (selectedCycle === c.id) { selectedCycle = null; clearStats(); clearRegs(); }
               loadCycles();
@@ -76,7 +76,7 @@
       });
     }).catch(function (e) {
       var box = $("cy-list");
-      if (box) box.innerHTML = '<div class="cy-meta" style="padding:8px;color:#e5484d">خطا در اتصال به بک‌اند: ' + esc(e.message) + '</div>';
+      if (box) box.innerHTML = '<div class="cy-meta" style="padding:8px;color:#e5484d">'+(window.tr?window.tr("dev.backendError"):"خطا در اتصال به بک‌اند: ")+ esc(e.message) + '</div>';
     });
   }
 
@@ -84,7 +84,7 @@
     var code = ($("cy-code").value || "").trim();
     var label = ($("cy-label").value || "").trim();
     var strain = getCyStrain();
-    if (!code || !label) { toast("کد و نام دوره الزامی است"); return; }
+    if (!code || !label) { toast(window.tr?window.tr("dev.codeRequired"):"کد و نام دوره الزامی است"); return; }
     api("/api/cycles", {
       method: "POST",
       body: JSON.stringify({ cycle_code: code, label: label, strain: strain, bird_count: 0 })
@@ -93,8 +93,8 @@
       selectedCycle = c.id;
       loadCycles(); loadStats(c.id);
       clearRegs(); loadRegistrations(c.id);
-      toast("دوره " + c.cycle_code + " ایجاد شد");
-    }).catch(function (e) { toast("خطا: " + e.message); });
+      toast(window.tr?window.tr("dev.created").replace("{code}",c.cycle_code):"دوره " + c.cycle_code + " ایجاد شد");
+    }).catch(function (e) { toast((window.tr?window.tr("dev.backendError"):"خطا: ") + e.message); });
   }
 
   // read selected strain from the custom .strain-select component
@@ -119,7 +119,7 @@
   }
   function clearRegs() {
     var body = $("reg-body");
-    if (body) body.innerHTML = '<div class="reg-empty"><i class="fa-solid fa-inbox" aria-hidden="true"></i>هنوز ثبت لحظه‌ای دریافت نشده است.<br>پرنده‌ها هنگام ورود اینجا ظاهر می‌شوند.</div>';
+    if (body) body.innerHTML = '<div class="reg-empty"><i class="fa-solid fa-inbox" aria-hidden="true"></i>'+(window.tr?window.tr("dev.regEmpty"):"هنوز ثبت لحظه‌ای دریافت نشده است.<br>پرنده‌ها هنگام ورود اینجا ظاهر می‌شوند.")+'</div>';
   }
 
   // ---------- Live WebSocket ----------
@@ -204,7 +204,7 @@
     api("/api/cycles/" + id + "/registrations?limit=50").then(function (list) {
       body.innerHTML = "";
       if (!list.length) {
-        body.innerHTML = '<div class="reg-empty"><i class="fa-solid fa-inbox" aria-hidden="true"></i>هنوز ثبت لحظه‌ای دریافت نشده است.<br>پرنده‌ها هنگام ورود اینجا ظاهر می‌شوند.</div>';
+        body.innerHTML = '<div class="reg-empty"><i class="fa-solid fa-inbox" aria-hidden="true"></i>'+(window.tr?window.tr("dev.regEmpty"):"هنوز ثبت لحظه‌ای دریافت نشده است.<br>پرنده‌ها هنگام ورود اینجا ظاهر می‌شوند.")+'</div>';
         return;
       }
       list.forEach(function (r) {
