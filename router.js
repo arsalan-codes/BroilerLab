@@ -85,11 +85,11 @@
     // active nav: direct tab + feed-group parent + dropdown items (route-aware, not exact-string)
     var tab = document.querySelector('.tab[data-v="' + route.view + '"]');
     if (tab) { tab.classList.add("on"); tab.setAttribute("aria-selected", "true"); }
+    // feed group is a plain tab now (v-feed); child views keep the group highlighted
     var feedBtn = document.getElementById("nav-feed-btn");
-    if (feedBtn) feedBtn.classList.toggle("on", FEED_GROUP.indexOf(route.view) > -1);
-    document.querySelectorAll(".nav-dropdown-item").forEach(function (x) {
-      x.classList.toggle("on", x.dataset.v === route.view);
-    });
+    if (feedBtn && route.view !== "v-feed") {
+      feedBtn.classList.toggle("on", FEED_GROUP.indexOf(route.view) > -1);
+    }
     // per-route document title (bilingual via tr)
     var brand = tr("brand.name", "Arian");
     document.title = route.i18n ? tr(route.i18n) + " — " + brand : tr("app.title");
@@ -103,8 +103,6 @@
     var hc = document.querySelector(".hctl"), bd = document.getElementById("backdrop");
     if (hc && hc.classList.contains("open") && typeof window.closeDrawer === "function") window.closeDrawer();
     if (bd) bd.classList.remove("on");
-    var fb = document.getElementById("nav-feed-btn"), fd = document.getElementById("nav-feed-dropdown");
-    if (fb && fd) { fb.setAttribute("aria-expanded", "false"); fd.hidden = true; }
     current = route;
     document.dispatchEvent(new CustomEvent("arian:route", { detail: { path: route.path, view: route.view } }));
   }
@@ -190,8 +188,6 @@
     // tabs (incl. dropdown children) and any [data-goto]/[data-go]
     var t = e.target.closest("[data-v], [data-goto], [data-go]");
     if (t) {
-      // feed-group parent button toggles its dropdown instead of navigating
-      if (t.id === "nav-feed-btn") return;
       var v = t.dataset.v || t.dataset.goto || t.dataset.go;
       if (v && v.charAt(0) === "v") { e.preventDefault(); window.Router.go(v); }
       return;
