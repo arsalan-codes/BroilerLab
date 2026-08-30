@@ -1,15 +1,21 @@
 /* Arian runtime configuration — loaded before app/auth/device-panel.
-   On GitHub Pages the frontend is static; the API base must point at the
-   FastAPI host. Same-origin is tried first (custom domain / reverse proxy),
-   otherwise the deploy-time constant below. */
-window.BROILER_API = (function () {
+   API base resolution order:
+     1. window.BROILER_API_OVERRIDE  (manual override, e.g. ?api= or injected script)
+     2. same-origin                  (Vercel deployment serves /api via rewrite; local dev)
+     3. PROD_API_FALLBACK            (GitHub Pages mirror -> Vercel backend URL)
+   Set PROD_API_FALLBACK to the Vercel deployment URL after the first deploy. */
+(function () {
+  var h = window.location;
+  var isPages = h.hostname.indexOf("github.io") > -1;
+  var sameOriginOK = h.protocol === "http:" && (h.hostname === "localhost" || h.hostname === "127.0.0.1");
+  var onVercel = h.hostname.indexOf(".vercel.app") > -1 || (h.protocol === "https:" && !isPages && window.ARIAN_API_SAME_ORIGIN === true);
+  var PROD_API_FALLBACK = window.ARIAN_PROD_API || "";  // e.g. "https://arian-xyz.vercel.app"
+  var base = "";
   try {
-    var h = window.location;
-    // same-origin backend (served behind reverse proxy or custom domain with /api)
-    if (h.protocol === "http:" || (h.hostname === "localhost" || h.hostname === "127.0.0.1")) {
-      return h.origin;                       // dev: uvicorn also serves static on same origin
-    }
-    // production: explicit API host — set by CI or edited manually
-    return window.BROILER_API_OVERRIDE || "https://arian-api.arsalan-codes.workers.dev";
-  } catch (e) { return ""; }
+    if (window.BROILER_API_OVERRIDE) base = window.BROILER_API_OVERRIDE;
+    else if (onVercel || sameOriginOK) base = h.origin;
+    else if (isPages && PROD_API_FALLBACK) base = PROD_API_FALLBACK;
+    else base = h.origin;                                // last resort: same origin
+  } catch (e) { base = ""; }
+  window.BROILER_API = String(base).replace(/\/+$/, "");
 })();

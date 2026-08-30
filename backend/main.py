@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
     init_db()
     authmod.ensure_admin_seed()
     yield
-app = FastAPI(title="BroilerLab Device Backend", version="1.5.2", lifespan=lifespan)
+app = FastAPI(title="BroilerLab Device Backend", version="1.5.3", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=400)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 @app.get("/")
