@@ -94,6 +94,24 @@ def test_auth_and_isolation_contract(client):
     assert client.get("/api/cycles").status_code == 401
 
 
+def test_missing_endpoints_now_exist(client):
+    """Phase-3 contract: /api/scenarios + /api/device/records answered (no silent 404)."""
+    assert client.get("/api/scenarios").status_code == 401
+    assert client.get("/api/device/records").status_code == 401
+    if not _db_state["ok"]:
+        pytest.skip("no database reachable in this environment")
+    import uuid
+    em = f"e-{uuid.uuid4().hex[:8]}@t.local"
+    r = client.post("/api/auth/register", json={"email": em, "password": "secret1"})
+    tok = r.json()["access_token"]; H = {"Authorization": f"Bearer {tok}"}
+    rs = client.get("/api/scenarios", headers=H)
+    assert rs.status_code == 200 and rs.json() == []
+    rd = client.get("/api/device/records?limit=5", headers=H)
+    assert rd.status_code == 200
+    body = rd.json()
+    assert isinstance(body.get("total"), int) and isinstance(body.get("items"), list)
+
+
 def _iter(js):
     if isinstance(js, list):
         return js

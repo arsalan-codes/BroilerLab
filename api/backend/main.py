@@ -140,6 +140,37 @@ def list_cycles(current: User = Depends(authmod.get_current_user)):
         else:
             rows = q.filter(Cycle.user_id == current.id).order_by(Cycle.start_date.desc()).all()
         return [_cycle_to_dict(c) for c in rows]
+@app.get("/api/scenarios")
+def list_scenarios(current: User = Depends(authmod.get_current_user)):
+    """Scenario persistence is not implemented yet — contract-stable empty list.
+
+    The workspace UI already treats {scenarios|items|[]} uniformly; returning 200[]
+    removes the silent 404 without inventing a storage model prematurely.
+    """
+    return []
+
+
+@app.get("/api/device/records")
+def list_device_records(limit: int = 50, cycle_id: int | None = None,
+                        current: User = Depends(authmod.get_current_user)):
+    """Raw device rows for the current user (admin: all), newest first."""
+    limit = max(1, min(int(limit or 50), 500))
+    with SessionLocal() as s:
+        q = s.query(DeviceLog)
+        if not current.is_admin:
+            q = q.join(Cycle, DeviceLog.cycle_id == Cycle.id).filter(Cycle.user_id == current.id)
+        if cycle_id is not None:
+            q = q.filter(DeviceLog.cycle_id == cycle_id)
+        total = q.count()
+        rows = q.order_by(DeviceLog.timestamp.desc()).limit(limit).all()
+        items = [{
+            "id": r.id, "cycle_id": r.cycle_id, "timestamp": r.timestamp.isoformat() if r.timestamp else None,
+            "bird_id": r.bird_id, "sensor_id": r.sensor_id, "age_day": r.age_day,
+            "weight_g": r.weight_g, "raw_weight_g": r.raw_weight_g, "feed_delta_g": r.feed_delta_g,
+        } for r in rows]
+        return {"total": total, "items": items, "records": items}
+
+
 @app.post("/api/cycles")
 def create_cycle(payload: dict = Body(...), current: User = Depends(authmod.get_current_user)):
     code = (payload.get("cycle_code") or "").strip()
