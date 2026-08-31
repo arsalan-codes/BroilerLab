@@ -8,6 +8,7 @@ Entities:
   DeviceLog — raw per-event row from the hardware (12-col schema)
 """
 from datetime import datetime, timezone
+import os
 from sqlalchemy import (
     create_engine, Column, Integer, String, Float, Boolean, DateTime,
     ForeignKey, Index, text,
@@ -114,8 +115,31 @@ engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
+def _run_alembic_upgrade():
+    """Apply schema migrations via Alembic (production path)."""
+    import os
+    from sqlalchemy.engine import make_url
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.environ.setdefault("ALEMBIC_CONFIG", os.path.join(base, "alembic.ini"))
+    from alembic.config import Config
+    from alembic import command
+    cfg = Config(os.environ.get("ALEMBIC_CONFIG"))
+    cfg.set_main_option("script_location", os.path.join(base, "migrations"))
+    cfg.set_main_option("prepend_sys_path", os.path.join(base, "backend"))
+    cfg.set_main_option("sqlalchemy.url", DATABASE_URL)
+    command.upgrade(cfg, "head")
+
+
 def init_db():
-    """Create tables if missing (idempotent) + lightweight migration for user_id."""
+    """Create tables if missing + keep schema under migrations.
+
+    - Production (BROILER_DB_MIGRATE=alembic): applies Alembic migrations
+      (no destructive recreation, no data loss).
+    - Local/dev default: idempotent create_all for a zero-friction boot.
+    """
+    if os.getenv("BROILER_DB_MIGRATE", "").lower() == "alembic":
+        _run_alembic_upgrade()
+        return
     Base.metadata.create_all(engine)
     # --- migration: add user_id to existing cycles table if missing ---
     # Works on PostgreSQL: check information_schema and ALTER if needed.
