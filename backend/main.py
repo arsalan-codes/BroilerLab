@@ -28,6 +28,12 @@ _db_state = {"ok": False, "error": None}
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
+    # Phase 10: fail fast on missing critical env (production will crash at cold-start with clear message)
+    _required = [("BROILER_JWT_SECRET", "JWT signing key")]
+    for _k, _h in _required:
+        if not os.getenv(_k):
+            _log = get_logger(__name__)
+            _log.warning("Missing env %s (%s) — using dev-only fallback", _k, _h)
     hub.register_loop(asyncio.get_event_loop())
     try:
         init_db()
@@ -40,6 +46,39 @@ async def lifespan(app: FastAPI):
     yield
 app = FastAPI(title="BroilerLab Device Backend", version="1.5.8", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=400)
+
+
+# Simple in-memory rate limiter for auth endpoints (no external deps, works for single-process)
+import time as _rtime
+_RATE_LIMIT = {}  # ip -> (count, window_start)
+
+
+def _check_rate_limit(ip: str, max_requests: int = 10, window_s: int = 60) -> bool:
+    now = _rtime.monotonic()
+    entry = _RATE_LIMIT.get(ip)
+    if entry is None or now - entry[1] > window_s:
+        _RATE_LIMIT[ip] = (1, now)
+        return True
+    if entry[0] >= max_requests:
+        return False
+    _RATE_LIMIT[ip] = (entry[0] + 1, entry[1])
+    return True
+
+
+@app.middleware("http")
+async def _security_headers(request, call_next):
+    # Rate-limit auth endpoints (per IP, 10 req/min)
+    if request.url.path.startswith("/api/auth/"):
+        client_ip = request.client.host if request.client else "unknown"
+        if not _check_rate_limit(client_ip):
+            from fastapi.responses import JSONResponse
+            return JSONResponse(status_code=429, content={"detail": "Too many requests", "code": "rate_limited"})
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 
 @app.middleware("http")
