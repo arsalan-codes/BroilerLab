@@ -145,7 +145,7 @@
     });
     document.getElementById("hint-to-register").addEventListener("click", function(e){ e.preventDefault(); switchTab("register"); });
     document.getElementById("hint-to-login").addEventListener("click", function(e){ e.preventDefault(); switchTab("login"); });
-    document.getElementById("auth-modal-close").addEventListener("click", function(){ hideAuthModal(false); });
+    document.getElementById("auth-modal-close").addEventListener("click", function(){ hideAuthModal(true); });
     document.getElementById("auth-modal").addEventListener("click", function(e){ if(e.target.id==="auth-modal") hideAuthModal(false); });
     // forms
     document.getElementById("auth-form-login").addEventListener("submit", onLogin);
