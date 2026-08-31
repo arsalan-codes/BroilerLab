@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.6.1"></script>
-<script src="services/api.js?v=1.6.1"></script>
+<script src="config.js?v=1.6.2"></script>
+<script src="services/api.js?v=1.6.2"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -1309,6 +1309,76 @@ canvas{will-change: contents}
 [dir="rtl"] .strain-select__list{left:0;right:0}
 [dir="ltr"] .strain-select__list{left:0;right:0}
 
+
+/* ============================================================
+   UI/UX Polish Layer v2.0 — additive, safe (no markup changes)
+   ============================================================ */
+
+/* ---------- 1. Buttons: gradient + lift + focus ---------- */
+.btn{position:relative;overflow:hidden;transition:transform .16s ease, box-shadow .16s ease, filter .16s ease, border-color .16s ease, background .16s ease;will-change:transform}
+.btn:hover:not(:disabled){transform:translateY(-1px)}
+.btn:active:not(:disabled){transform:translateY(0) scale(.985);transition-duration:.05s}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary.lg{background:linear-gradient(135deg,#1ad3a6,#128d72);border:none;
+  box-shadow:0 6px 20px rgba(25,195,154,.28), 0 1px 0 rgba(255,255,255,.22) inset}
+.btn.primary.lg:hover{box-shadow:0 10px 28px rgba(25,195,154,.38), 0 1px 0 rgba(255,255,255,.25) inset;filter:brightness(1.04)}
+.btn.primary.lg::after{content:"";position:absolute;top:0;bottom:0;width:38%;left:-60%;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.35),transparent);
+  transform:skewX(-18deg);transition:left .55s ease}
+.btn.primary.lg:hover::after{left:135%}
+.btn.ghost.lg:hover{border-color:rgba(25,195,154,.45);color:var(--acc);background:rgba(25,195,154,.07)}
+.btn.blue:not(.ghost){background:linear-gradient(135deg,#4d8bff,#2f5fd6);
+  box-shadow:0 6px 18px rgba(61,123,253,.28), 0 1px 0 rgba(255,255,255,.2) inset}
+@media(prefers-reduced-motion:reduce){.btn.primary.lg::after{display:none}.btn:hover{transform:none}}
+
+/* ---------- 2. Landing hero: shimmering badge + stat accents ---------- */
+.landing-badge i{animation:badgeGlow 2.6s ease-in-out infinite}
+@keyframes badgeGlow{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.65;transform:scale(.88)}}
+@media(prefers-reduced-motion:reduce){.landing-badge i{animation:none}}
+.landing-stats .ls{position:relative;overflow:hidden}
+.landing-stats .ls::before{content:"";position:absolute;top:0;inset-inline:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(25,195,154,.55),transparent);
+  opacity:0;transition:opacity .25s}
+.landing-stats .ls:hover::before{opacity:1}
+.landing-stats .ls b{font-size:clamp(13.5px,1.05vw,15px)}
+
+/* ---------- 3. Module cards: icon motion + sheen sweep ---------- */
+.landing-grid .lcard i,.feed-card .fc-ic,.feed-vis-card i{transition:transform .25s ease, background .25s}
+.lcard:hover i,.feed-card:hover .fc-ic,.feed-vis-card:hover i{transform:scale(1.08) rotate(-4deg);background:rgba(25,195,154,.18)}
+.feed-card,.lcard{position:relative;overflow:hidden}
+.feed-card::after,.lcard::after{content:"";position:absolute;top:0;bottom:0;width:34%;left:-55%;
+  background:linear-gradient(105deg,transparent,rgba(25,195,154,.09),transparent);
+  transform:skewX(-18deg);transition:left .5s ease;pointer-events:none}
+.feed-card:hover::after,.lcard:hover::after{left:140%}
+
+/* ---------- 4. View transition: softer + subtle scale ---------- */
+@keyframes fade{from{opacity:0;transform:translateY(8px) scale(.995)}to{opacity:1;transform:none}}
+
+@keyframes fade{from{opacity:0;transform:translateY(8px) scale(.995)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){section.view.on{animation:none}}
+
+/* ---------- 5. Focus rings everywhere (a11y polish) ---------- */
+.lcard:focus-visible,.feed-card:focus-visible,.ws-card:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.tab{transition:color .18s, border-color .18s, background .18s}
+
+/* ---------- 6. Auth area polish ---------- */
+.auth-login-btn{transition:transform .16s, box-shadow .16s, border-color .16s}
+.auth-login-btn:hover{transform:translateY(-1px);border-color:rgba(25,195,154,.4);color:var(--acc)}
+.auth-avatar{box-shadow:0 2px 8px rgba(0,0,0,.2)}
+
+/* ---------- 7. Inputs: accent focus glow (unified) ---------- */
+input:focus,select:focus{border-color:rgba(25,195,154,.5);box-shadow:0 0 0 3px rgba(25,195,154,.09)}
+
+/* ---------- 8. Selection color ---------- */
+::selection{background:rgba(25,195,154,.28);color:inherit}
+
+/* ---------- 9. Light theme compatibility ---------- */
+html[data-theme=light] .btn.primary.lg{box-shadow:0 6px 18px rgba(25,195,154,.30)}
+html[data-theme=light] .btn.ghost.lg{background:#fff}
+html[data-theme=light] .landing-stats .ls{background:#fff;border-color:#e2e8f0}
+html[data-theme=light] .landing-grid .lcard{background:#fff;border-color:#e2e8f0;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
+
 </style>
 </head>
 <body>
@@ -2336,22 +2406,22 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.6.1" defer></script>
-<script src="engine.js?v=1.6.1" defer></script>
-<script src="xlsx.js?v=1.6.1" defer></script>
-<script src="stats.js?v=1.6.1" defer></script>
-<script src="locales/fa.js?v=1.6.1" defer></script>
-<script src="locales/en.js?v=1.6.1" defer></script>
-<script src="i18n.js?v=1.6.1" defer></script>
-<script src="utils/formatters.js?v=1.6.1" defer></script>
-<script src="shamsi.js?v=1.6.1" defer></script>
-<script src="auth.js?v=1.6.1" defer></script>
-<script src="device-panel.js?v=1.6.1" defer></script>
-<script src="dialog.js?v=1.6.1" defer></script>
-<script src="router.js?v=1.6.1" defer></script>
-<script src="components/chart.js?v=1.6.1" defer></script>
-<script src="services/export.js?v=1.6.1" defer></script>
-<script src="app.js?v=1.6.1" defer></script>
+<script src="strains.js?v=1.6.2" defer></script>
+<script src="engine.js?v=1.6.2" defer></script>
+<script src="xlsx.js?v=1.6.2" defer></script>
+<script src="stats.js?v=1.6.2" defer></script>
+<script src="locales/fa.js?v=1.6.2" defer></script>
+<script src="locales/en.js?v=1.6.2" defer></script>
+<script src="i18n.js?v=1.6.2" defer></script>
+<script src="utils/formatters.js?v=1.6.2" defer></script>
+<script src="shamsi.js?v=1.6.2" defer></script>
+<script src="auth.js?v=1.6.2" defer></script>
+<script src="device-panel.js?v=1.6.2" defer></script>
+<script src="dialog.js?v=1.6.2" defer></script>
+<script src="router.js?v=1.6.2" defer></script>
+<script src="components/chart.js?v=1.6.2" defer></script>
+<script src="services/export.js?v=1.6.2" defer></script>
+<script src="app.js?v=1.6.2" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
