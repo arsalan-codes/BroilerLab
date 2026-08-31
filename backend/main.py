@@ -79,6 +79,28 @@ class ChangePasswordIn(BaseModel):
     old_password: str = ""
     new_password: str = ""
 
+class IngestIn(BaseModel):
+    """Device ingest payload — permissive on purpose: firmware may add fields.
+
+    extra='allow' preserves the current dict passthrough behavior while giving
+    OpenAPI typed documentation for the 12-col schema fields.
+    """
+    model_config = {"extra": "allow"}
+    timestamp: str | None = None
+    kind: str | None = None
+    bird_id: str | None = None
+    sensor_id: str | None = None
+    flock_id: str | None = None
+    age_day: int | None = None
+    raw_weight_g: float | None = None
+    weight_g: float | None = None
+    feed_bin_kg: float | None = None
+    feed_delta_g: float | None = None
+    temp_c: float | None = None
+    humidity: float | None = None
+    rssi: float | None = None
+
+
 class CycleIn(BaseModel):
     cycle_code: str = ""
     label: str = ""
@@ -241,12 +263,13 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
         rows = (s.query(Visit).filter(Visit.cycle_id == cycle_id, Visit.bird_id.isnot(None)).order_by(Visit.visit_start.desc()).limit(limit).all())
         return [{"bird_id": v.bird_id, "initial_weight_g": v.initial_weight_g, "registered_at": _iso(v.visit_start), "age_day": v.age_day, "sensor_id": v.sensor_id, "rssi": v.rssi, "read_ok": v.read_ok} for v in rows]
 @app.post("/api/cycles/{cycle_id}/ingest")
-def ingest_event(cycle_id: int, payload: dict = Body(...), current: User = Depends(authmod.get_current_user)):
+def ingest_event(cycle_id: int, payload: IngestIn, current: User = Depends(authmod.get_current_user)):
     with SessionLocal() as s:
         _require_owner_cycle(s, cycle_id, current)
     proc = get_processor(cycle_id)
-    payload["cycle"] = _code_for(cycle_id)
-    log_d = proc.ingest(payload)
+    data = payload.model_dump()
+    data["cycle"] = _code_for(cycle_id)
+    log_d = proc.ingest(data)
     hub.publish(log_d)
     return log_d
 @app.websocket("/ws/device")
