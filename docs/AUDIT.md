@@ -61,11 +61,14 @@ Local dev: webapp_server.py:8080 (gzip+SPA fallback) + uvicorn:8755 + docker pg:
    (users/cycles/visits/device_logs — مطابق مدل‌ها، بدون تخریب)؛ `init_db` با
    `BROILER_DB_MIGRATE=alembic` → `alembic upgrade head` (dev: create_all idempotent)؛
    تأیید: SQL آفلاین روی scratch Postgres اعمال شد → هر ۴ جدول + alembic_version ✓
-5. 🔄 **Frontend modularize** (2026-08-31):
+5. ✅ **Frontend modularize** (2026-08-31):
    - `services/api.js` — client مرکزی (base/wsBase/token/fetch با 401 hook) — 7/7 unit tests
    - `auth.js` + `device-panel.js` — اتصال به `window.API` (حذف تکرار base-URL)
-   - `utils/formatters.js` — façade بر `format*` (تارگت ایمپورت آینده)
-   - structure: `services/`, `utils/` فعال؛ `components/`, `pages/`, `state/`, `locales/` در نوبت
+   - `utils/formatters.js` — façade بر `format*`
+   - **`components/chart.js`** — chart engine (۷ تابع: rr..clearChart) — استخراج از app.js
+   - **`services/export.js`** — export/row builders (۷ تابع: summaryRows..expTotals) — استخراج از app.js
+   - app.js: 91KB → 82KB (-۱۰KB)
+   - structure فعال: `services/`, `utils/`, `components/`, `locales/`
 6. **i18n** — استخراج dict به `locales/{fa,en}/*.json`
 7. **CI** — workflow: ruff + pytest روی هر push
 8-10. logging/Sentry → multi-tenant (فقط طرح مدل `Organization`) → hardening

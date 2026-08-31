@@ -45,116 +45,12 @@ function animNum(el,target,fm){if(!el)return;const t0=performance.now(),dur=750,
    ===================================================================== */
 const CH={};const tipEl=$("tip");
 let CT={grid:"rgba(35,45,68,.55)",label:"#7d889f"};
-function refreshChartTheme(){
-  const cs=getComputedStyle(document.documentElement);
-  CT.grid=(cs.getPropertyValue("--chart-grid")||"").trim()||CT.grid;
-  CT.label=(cs.getPropertyValue("--chart-label")||"").trim()||CT.label}
-function rr(x,x0,y0,w,h,r){r=Math.max(0,Math.min(r,h/2,w/2));x.beginPath();
-  x.moveTo(x0+r,y0);x.arcTo(x0+w,y0,x0+w,y0+h,r);x.arcTo(x0+w,y0+h,x0,y0+h,r);
-  x.arcTo(x0,y0+h,x0,y0,r);x.arcTo(x0,y0,x0+w,y0,r);x.closePath()}
-function chart(id,cfg){CH[id]=cfg;const cv=$(id);if(cv&&!cv._hover){cv._hover=1;bindHover(cv)}paint(id)}
-function paint(id){
-  const cfg=CH[id],cv=$(id);if(!cfg||!cv)return;
-  const box=cv.parentElement;if(!box||!box.offsetWidth)return;
-  const dpr=Math.min(2,window.devicePixelRatio||1);
-  const w=box.clientWidth,h=box.clientHeight;
-  if(w<40||h<40)return;
-  cv.width=w*dpr;cv.height=h*dpr;cv.style.width=w+"px";cv.style.height=h+"px";
-  const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
-  const S=cfg.series||[];
-  let n=cfg.n||0;S.forEach(s=>n=Math.max(n,s.y.length));
-  if(cfg.band)n=Math.max(n,cfg.band.hi.length,cfg.band.lo.length);
-  if(!n)return;
-  const P={l:47,r:14,t:12,b:cfg.labels?26:18};
-  const ys=[];S.forEach(s=>s.y.forEach(v=>{if(v!=null&&isFinite(v))ys.push(v)}));
-  if(cfg.band)[...cfg.band.hi,...cfg.band.lo].forEach(v=>{if(v!=null)ys.push(v)});
-  (cfg.refLines||(cfg.refLine?[cfg.refLine]:[])).forEach(r=>ys.push(r.v));
-  if(!ys.length)return;
-  let mn=Math.min(...ys),mx=Math.max(...ys);
-  if(cfg.type==="bar"||cfg.zeroBase)mn=Math.min(0,mn);
-  if(cfg.min!=null)mn=Math.min(mn,cfg.min);
-  if(mx===mn)mx=mn+1;
-  const span=(mx-mn);mn-=span*.08;mx+=span*.08;
-  const X=i=>P.l+(w-P.l-P.r)*(n<2?.5:i/(n-1));
-  const Y=v=>h-P.b-(h-P.t-P.b)*(v-mn)/(mx-mn);
-  /* shaded index zones */
-  (cfg.shades||[]).forEach(s=>{x.fillStyle=s.c;
-    const sw=(w-P.l-P.r)/n;
-    x.fillRect(P.l+s.from*sw,P.t,(s.to-s.from+1)*sw,h-P.t-P.b)});
-  /* grid */
-  const yF=cfg.yFmt||(v=>en(v));
-  x.strokeStyle=CT.grid;x.fillStyle=CT.label;
-  x.font="10px Vazirmatn,Tahoma,sans-serif";
-  for(let g=0;g<=4;g++){const v=mn+(mx-mn)*g/4,y=Y(v);
-    x.beginPath();x.moveTo(P.l,y);x.lineTo(w-P.r,y);x.stroke();
-    x.textAlign="left";x.fillText(yF(v),5,y+3)}
-  /* band between lo..hi */
-  if(cfg.band){x.beginPath();let st=false;
-    for(let i=0;i<n;i++){const v=cfg.band.hi[i];if(v==null){continue}
-      st?x.lineTo(X(i),Y(v)):(x.moveTo(X(i),Y(v)),st=true)}
-    for(let i=n-1;i>=0;i--){const v=cfg.band.lo[i];if(v==null)continue;x.lineTo(X(i),Y(v))}
-    x.closePath();x.fillStyle=cfg.band.c;x.fill()}
-  /* series */
-  S.forEach(s=>{
-    if(cfg.type==="bar"){
-      const bw=(w-P.l-P.r)/n;
-      s.y.forEach((v,i)=>{if(v==null)return;
-        const bx=P.l+i*bw+bw*.17,bwid=bw*.66,y0=Y(0),y1=Y(v);
-        x.fillStyle=s.c;x.globalAlpha=s.a??.85;
-        rr(x,bx,Math.min(y0,y1),bwid,Math.abs(y1-y0)||1,Math.min(5,bwid/3));
-        x.fill();x.globalAlpha=1});
-    }else{
-      x.strokeStyle=s.c;x.lineWidth=s.w||(s.dash?1.5:2.4);
-      x.setLineDash(s.dash?[6,4]:[]);
-      x.beginPath();let st=false,firstX=0,lastX=0;
-      s.y.forEach((v,i)=>{if(v==null||!isFinite(v))return;
-        const px=X(i),py=Y(v);
-        st?x.lineTo(px,py):(x.moveTo(px,py),st=true,firstX=px);lastX=px});
-      x.stroke();x.setLineDash([]);
-      if(s.fill&&st){x.lineTo(lastX,Y(Math.max(0,mn)));x.lineTo(firstX,Y(Math.max(0,mn)));
-        x.closePath();
-        const g=x.createLinearGradient(0,P.t,0,h);
-        g.addColorStop(0,s.c+"3d");g.addColorStop(1,s.c+"04");
-        x.fillStyle=g;x.fill()}
-    }});
-  /* reference lines */
-  (cfg.refLines||(cfg.refLine?[cfg.refLine]:[])).forEach(r=>{
-    const y=Y(r.v);x.strokeStyle=r.c||"#f59e0b";x.setLineDash([6,4]);x.lineWidth=1.4;
-    x.beginPath();x.moveTo(P.l,y);x.lineTo(w-P.r,y);x.stroke();x.setLineDash([]);
-    if(r.label){x.fillStyle=r.c||"#f59e0b";x.font="10px Vazirmatn,Tahoma,sans-serif";
-      x.textAlign="left";x.fillText(r.label,P.l+5,y-5)}});
-  /* x labels */
-  if(cfg.labels){x.fillStyle=CT.label;x.textAlign="center";
-    x.font="10px Vazirmatn,Tahoma,sans-serif";
-    const step=Math.max(1,Math.round(n/9));
-    cfg.labels.forEach((lb,i)=>{if(i%step===0)x.fillText(lb,X(i),h-7)})}
-  cv._geo={P,n};
-}
-function bindHover(cv){
-  cv.addEventListener("mousemove",ev=>{
-    const cfg=CH[cv.id],geo=cv._geo;if(!cfg||!geo)return;
-    const rect=cv.getBoundingClientRect(),lx=ev.clientX-rect.left;
-    const {P,n}=geo;
-    const i=clamp(Math.round((lx-P.l)/((rect.width-P.l-P.r)/Math.max(1,n-1))),0,n-1);
-    let html="";
-    const title=cfg.hoverTitle?cfg.hoverTitle(i):(cfg.labels?cfg.labels[i]:null);
-    if(title!=null&&title!=="")html+=`<b class="t">${title}</b>`;
-    (cfg.series||[]).forEach(s=>{
-      const v=s.y[i];if(v==null||!isFinite(v))return;
-      const fm=s.fmt||cfg.vFmt||(vv=>en(vv));
-      html+=`<div class="row"><span class="dt" style="background:${s.c}"></span>${s.name||""}<b>${fm(v)}</b></div>`});
-    if(!html)return;
-    tipEl.innerHTML=html;tipEl.style.display="block";
-    const tw=tipEl.offsetWidth,th=tipEl.offsetHeight;
-    let px=ev.clientX+16;if(px+tw>innerWidth-8)px=ev.clientX-tw-14;
-    let py=ev.clientY+16;if(py+th>innerHeight-8)py=ev.clientY-th-12;
-    tipEl.style.left=px+"px";tipEl.style.top=py+"px";
-  });
-  cv.addEventListener("mouseleave",()=>{tipEl.style.display="none"});
-}
-function repaintView(vid){
-  const sec=$(vid);if(!sec||!sec.classList.contains("on"))return;
-  sec.querySelectorAll("canvas").forEach(cv=>{if(CH[cv.id])paint(cv.id)})}
+
+
+
+
+
+
 
 /* =====================================================================
    TABS
@@ -536,70 +432,12 @@ function dl(name,data,mime){
   setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
 const XLSX_MIME="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-function summaryRows(summaries,sel){
-  const cols=(sel&&sel.size)?SUM_COLS.filter(c=>sel.has(c.id)):SUM_COLS;
-  const labelOf=t=>(TREATMENTS[t]&&TREATMENTS[t].labelEn)||t;
-  const getters={pen:s=>s.pen,treatment:s=>labelOf(s.treat),age_day:s=>s.age,
-    n_alive:s=>s.alive,mean_bw_g:s=>+s.meanBW.toFixed(1),
-    fi_per_bird_g:s=>+s.fiPerBird.toFixed(1),fi_po_g:s=>s.fiPerBirdPo,
-    visits_total:s=>s.visits,visits_per_bird:s=>+(s.visits/s.alive).toFixed(1),
-    busy_pct:s=>+s.busyPct.toFixed(1),overlap_events:s=>s.overlap,
-    bin_refills:s=>s.refills,bin_end_kg:s=>s.binEnd,
-    temp_c:s=>+s.temp.toFixed(1),humidity_pct:s=>+s.hum.toFixed(1)};
-  const head=["date",...cols.map(c=>c.en)];
-  return [head,
-    ...summaries.map(s=>[...cols.map(c=>{
-      const g=getters[c.id];
-      return c.id==="pen"?s.pen:g(s)})])]}
-function deviceRows(rows){return [
-  ["timestamp","flock_id","bird_id","sensor_id","age_day","raw_weight_g","weight_g",
-   "feed_bin_kg","feed_delta_g","temp_c","humidity","rssi"],
-  ...rows]}
-function designRows(meta){return [
-  ["pen_id","n_birds","treatment_key","treatment_label"],
-  ...meta.map(p=>[p.pid,p.n,p.treat,trTreat(p.treat)])]}
-function poSheetRows(){return [
-  ["day","bw_ash_g","fi_ash_g","fcr_ash","bw_male_g","bw_female_g"],
-  ...(()=>{const P=PO(),rows=[];
-    for(let d=1;d<=P.maxDay;d++)rows.push([d,P.bwAsh[d-1],P.fiAsh[d-1],
-      P.fcrAsh[d-1],P.bwM[d-1],P.bwF[d-1]]);
-    return rows})()]}
-function birdsSheetRows(run){
-  if(!run.birdsDaily||!run.birdsDaily.length)return null;
-  const last=new Map();
-  for(const x of run.birdsDaily)last.set(x.id,x);
-  const dead=new Set(run.deaths.map(d=>d.id));
-  const rows=[["tag","pen","treatment","sex","cv_pct","age_day","final_bw_g",
-    "cum_intake_g","window_fcr","status"]];
-  const sorted=[...last.entries()].sort((a,b)=>
-    a[1].pen.localeCompare(b[1].pen)||a[0].localeCompare(b[0]));
-  for(const[id,x]of sorted){
-    const fcr=x.fi/Math.max(60,x.bw-45);
-    rows.push([id,x.pen,TREATMENTS[x.treat]?TREATMENTS[x.treat].label:x.treat,
-      x.sex==="m"?"male":"female",+(x.cv*100).toFixed(1),x.age,Math.round(x.bw),
-      Math.round(x.fi),+fcr.toFixed(3),dead.has(id)?"dead":"alive"])}
-  return rows}
-function buildWorkbook(run,extraRows){
-  const sheets=[{name:"Daily summary",rows:summaryRows(run.summaries),
-    widths:[11,7,15,8,9,10,12,10,10,13,9,13,11,10,8,12]}];
-  let rows=extraRows||run.rows;
-  const MAXDEV=500000;
-  if(rows&&rows.length){
-    let cut=false;
-    if(rows.length>MAXDEV){rows=rows.slice(0,MAXDEV);cut=true}
-    const dr=deviceRows(rows);
-    if(cut)dr.push(["… truncated (row limit)", "", "", "", "", "", "", "", "", "", "", ""]);
-    sheets.push({name:"Raw device data",rows:dr,rtl:false,
-      widths:[19,9,9,9,9,12,10,12,13,8,9,7]})}
-  const br=birdsSheetRows(run);
-  if(br)sheets.push({name:"Per-bird records",rows:br,
-    widths:[9,8,16,8,8,9,12,13,11,9]});
-  const dr=designRows(run.pensMeta);
-  dr.splice(1,0,["strain",CUR_STRAIN_KEY,STRAINS[CUR_STRAIN_KEY].breeder,
-    STRAINS[CUR_STRAIN_KEY].guide]);
-  sheets.push({name:"Trial design",rows:dr,widths:[10,10,14,24]});
-  sheets.push({name:"Reference PO",rows:poSheetRows(),rtl:false,widths:[6,10,12,12]});
-  return xlsxBuild(sheets)}
+
+
+
+
+
+
 
 /* live-sim exports -> Export Center */
 on("btn-export","click",openExport);
@@ -616,7 +454,7 @@ lvSetBtns=function(){
    ===================================================================== */
 const TR_KEYS=Object.keys(TREATMENTS);
 let EXP=null;
-function expTotals(){return EXP.pens.reduce((s,p)=>s+p.n,0)}
+
 function expRender(){
   $("exp-rows").innerHTML=EXP.pens.map((p,i)=>`<tr>
     <td class="num">${fa(i+1)}</td>
@@ -1654,10 +1492,7 @@ on("btn-met-run","click",()=>{});
    ===================================================================== */
 const RESET_CHARTS=["c-live-growth","c-live-cum","c-farm-growth","c-farm-fi",
   "c-insp","c-scn-growth","c-scn-fi"];
-function clearChart(id){delete CH[id];
-  const cv=$(id);if(!cv)return;
-  const ctx=cv.getContext("2d");
-  if(ctx&&cv.width)ctx.clearRect(0,0,cv.width,cv.height)}
+
 function resetAll(){
   lvStop(true);LV=null;
   ["l-day","l-date","l-bw","l-bwpo","l-fi","l-visits","l-busy","l-temp"].forEach(function(id){
