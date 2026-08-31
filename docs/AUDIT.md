@@ -49,9 +49,14 @@ Local dev: webapp_server.py:8080 (gzip+SPA fallback) + uvicorn:8755 + docker pg:
 `.github/workflows/deploy.yml`, `fa/all.min.css`, `assets/*`.
 
 ## 6. ترتیب فازها (به‌روز شده پس از audit)
-1. ✅ **Audit + baseline regression** — `tests/` (route surface, health contract, auth+isolation روی DB واقعی, vendored parity) — **4 passed**
-2. ✅ **Vercel** — قبلاً فیکس و پایدار (vendored function + health db-state)
-3. **Backend stabilize** — endpointهای گم‌شده (`/api/scenarios`, `/api/device/records`) یا پیاده یا فرانت پاک؛ Pydantic schema برای cycles؛ CORS env-aware
+1. ✅ **Audit + baseline regression** — `tests/` (route surface, health contract, auth+isolation روی DB واقعی, vendored parity)
+2. ✅ **Vercel** — فیکس و پایدار (vendored function + health db-state)
+3. ✅ **Backend stabilize** (2026-08-31):
+   - `/api/scenarios` → 200 [] (قرارداد پایدار) + `/api/device/records` → رکوردهای خام user-scoped
+   - Pydantic کامل: RegisterIn/LoginIn/ChangePasswordIn/CycleIn/**IngestIn (extra=allow)** — صفر `dict=Body` باقی‌مانده
+   - CORS env-aware: `BROILER_CORS_ORIGINS` (fallback `["*"]`)
+   - ingest round-trip تست شد با فیلد اضافه فریم‌ور (extra passthrough سالم)
+   - Suite: **6 passed**
 4. **Alembic** — baseline migration از schema فعلی (create_all فقط در dev می‌ماند)
 5. **Frontend modularize** — اول `services/api.js` (یک client مرکزی) سپس صفحات؛ بدون Vite تا Phase 5-انتها
 6. **i18n** — استخراج dict به `locales/{fa,en}/*.json`
