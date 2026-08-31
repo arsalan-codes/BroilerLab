@@ -1,6 +1,11 @@
 /* Arian — Persian translations */
 "use strict";
 window.I18N_FA={
+"lv.s1": "فارم و جوجه",
+"lv.s2": "دستگاه پایش",
+"lv.s3": "ارسال داده",
+"lv.s4": "پردازش داده",
+"lv.s5": "اصلاح نژادی",
 "bio.title": "آزمایشگاه آمار زیستی",
 "bio.sub": "واحد نمونه = پن · Welch t / ANOVA یک‌راهه / η² / Holm",
 "bio.metric": "متغیر پاسخ",

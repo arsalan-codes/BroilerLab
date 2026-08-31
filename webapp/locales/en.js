@@ -1,6 +1,11 @@
 /* Arian — English translations */
 "use strict";
 window.I18N_EN={
+"lv.s1": "Farm & chick",
+"lv.s2": "Monitor device",
+"lv.s3": "Data uplink",
+"lv.s4": "Processing",
+"lv.s5": "Genetic selection",
 "bio.title": "Biostatistics laboratory",
 "bio.sub": "unit = pen · Welch t / one-way ANOVA / η² / Holm",
 "bio.metric": "Response variable",
