@@ -57,7 +57,10 @@ Local dev: webapp_server.py:8080 (gzip+SPA fallback) + uvicorn:8755 + docker pg:
    - CORS env-aware: `BROILER_CORS_ORIGINS` (fallback `["*"]`)
    - ingest round-trip تست شد با فیلد اضافه فریم‌ور (extra passthrough سالم)
    - Suite: **6 passed**
-4. **Alembic** — baseline migration از schema فعلی (create_all فقط در dev می‌ماند)
+4. ✅ **Alembic** (2026-08-31): `alembic.ini` + `migrations/env.py` + `versions/001_baseline.py`
+   (users/cycles/visits/device_logs — مطابق مدل‌ها، بدون تخریب)؛ `init_db` با
+   `BROILER_DB_MIGRATE=alembic` → `alembic upgrade head` (dev: create_all idempotent)؛
+   تأیید: SQL آفلاین روی scratch Postgres اعمال شد → هر ۴ جدول + alembic_version ✓
 5. **Frontend modularize** — اول `services/api.js` (یک client مرکزی) سپس صفحات؛ بدون Vite تا Phase 5-انتها
 6. **i18n** — استخراج dict به `locales/{fa,en}/*.json`
 7. **CI** — workflow: ruff + pytest روی هر push
