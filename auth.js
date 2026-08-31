@@ -234,6 +234,12 @@
   window.showAuthModal = showAuthModal;
   window.hideAuthModal = hideAuthModal;
   window.renderAuthArea = renderAuthArea;
+  window.reportUnauthorized = function(){
+    try{ if (getToken()) { clearAuth(); renderAuthArea(); } }catch(e){}
+    setGated(true);
+    var cur2=document.querySelector("section.view.on"); var isPub2=cur2 && ((window.Router&&window.Router.isPublic(cur2.id)) || cur2.id==="v-landing" || cur2.id==="v-about");
+    if(!isPub2) showAuthModal("login", {gated:true});
+  };
 
   // init on DOM ready
   function updateLandingCTA(){
