@@ -37,13 +37,14 @@ async def lifespan(app: FastAPI):
         _db_state["ok"] = False
         _db_state["error"] = f"{type(e).__name__}: {e}"
     yield
-app = FastAPI(title="BroilerLab Device Backend", version="1.5.3", lifespan=lifespan)
+app = FastAPI(title="BroilerLab Device Backend", version="1.5.8", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=400)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+_CORS_ORIGINS = [o.strip() for o in os.getenv("BROILER_CORS_ORIGINS", "").split(",") if o.strip()] or ["*"]
+app.add_middleware(CORSMiddleware, allow_origins=_CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"])
 @app.get("/")
 def index():
     return FileResponse(os.path.join(WEBAPP_DIR, "index.html"), headers={"Cache-Control":"no-cache"})
-_STATIC_FILES = ("app.js", "device-panel.js", "auth.js", "i18n.js", "engine.js", "strains.js","stats.js", "xlsx.js", "shamsi.js", "dialog.js", "router.js", "config.js","favicon.png", "logo_32.png", "logo_128.png","logo_180.png", "logo_192.png", "logo_256.png", "logo_512.png","fa/all.min.css","fa/fa-solid-900.woff2", "fa/fa-solid-900.ttf","fa/fa-regular-400.woff2", "fa/fa-regular-400.ttf","fa/fa-brands-400.woff2", "fa/fa-brands-400.ttf",)
+_STATIC_FILES = ("app.js","device-panel.js","auth.js","i18n.js","engine.js","strains.js","stats.js","xlsx.js","shamsi.js","dialog.js","router.js","config.js","favicon.png","logo_32.png","logo_128.png","logo_180.png","logo_192.png","logo_256.png","logo_512.png","fa/all.min.css","fa/fa-solid-900.woff2","fa/fa-solid-900.ttf","fa/fa-regular-400.woff2","fa/fa-regular-400.ttf","fa/fa-brands-400.woff2","fa/fa-brands-400.ttf","logo.svg","logo_1024.png","logo_128.webp","logo_512.webp","logo_256.webp",)
 for _f in _STATIC_FILES:
     _path = os.path.join(WEBAPP_DIR, _f)
     if os.path.exists(_path):
@@ -59,12 +60,39 @@ def health():
     if not _db_state["ok"]:
         out["db_error"] = _db_state["error"]
     return out
+
+# ---- Pydantic request schemas (typing/defaults only; status codes preserved by manual checks) ----
+from pydantic import BaseModel, Field
+
+class RegisterIn(BaseModel):
+    email: str = ""
+    password: str = ""
+    username: str | None = None
+    full_name: str | None = None
+
+class LoginIn(BaseModel):
+    email: str | None = None
+    username: str | None = None
+    password: str = ""
+
+class ChangePasswordIn(BaseModel):
+    old_password: str = ""
+    new_password: str = ""
+
+class CycleIn(BaseModel):
+    cycle_code: str = ""
+    label: str = ""
+    strain: str = "ross308"
+    bird_count: int = 0
+    pen_id: str | None = None
+    notes: str | None = None
+
 @app.post("/api/auth/register")
-def register(payload: dict = Body(...)):
-    email = (payload.get("email") or "").strip().lower()
-    password = payload.get("password") or ""
-    username = (payload.get("username") or "").strip() or None
-    full_name = (payload.get("full_name") or "").strip() or None
+def register(payload: RegisterIn):
+    email = (payload.email or "").strip().lower()
+    password = payload.password or ""
+    username = (payload.username or "").strip() or None
+    full_name = (payload.full_name or "").strip() or None
     if not email or not password:
         raise HTTPException(400, "email and password are required")
     if not authmod.EMAIL_RE.match(email):
@@ -81,9 +109,9 @@ def register(payload: dict = Body(...)):
         token = authmod.create_access_token({"sub": str(u.id)})
         return {"access_token": token, "token_type": "bearer", "user": _user_to_dict(u)}
 @app.post("/api/auth/login")
-def login(payload: dict = Body(...)):
-    raw = (payload.get("email") or payload.get("username") or "").strip()
-    password = payload.get("password") or ""
+def login(payload: LoginIn):
+    raw = ((payload.email or payload.username or "")).strip()
+    password = payload.password or ""
     if not raw or not password:
         raise HTTPException(400, "email/username and password required")
     with SessionLocal() as s:
@@ -102,9 +130,9 @@ def login(payload: dict = Body(...)):
 def me(current: User = Depends(authmod.get_current_user)):
     return _user_to_dict(current)
 @app.post("/api/auth/change-password")
-def change_password(payload: dict = Body(...), current: User = Depends(authmod.get_current_user)):
-    old = payload.get("old_password") or ""
-    new = payload.get("new_password") or ""
+def change_password(payload: ChangePasswordIn, current: User = Depends(authmod.get_current_user)):
+    old = payload.old_password or ""
+    new = payload.new_password or ""
     if not old or not new:
         raise HTTPException(400, "old_password and new_password required")
     if len(new) < 6:
@@ -172,15 +200,15 @@ def list_device_records(limit: int = 50, cycle_id: int | None = None,
 
 
 @app.post("/api/cycles")
-def create_cycle(payload: dict = Body(...), current: User = Depends(authmod.get_current_user)):
-    code = (payload.get("cycle_code") or "").strip()
-    label = (payload.get("label") or "").strip()
+def create_cycle(payload: CycleIn, current: User = Depends(authmod.get_current_user)):
+    code = (payload.cycle_code or "").strip()
+    label = (payload.label or "").strip()
     if not code or not label:
         raise HTTPException(400, "cycle_code and label are required")
     with SessionLocal() as s:
         if s.query(Cycle).filter(Cycle.cycle_code == code).first():
             raise HTTPException(409, f"cycle '{code}' already exists")
-        c = Cycle(cycle_code=code, label=label, strain=payload.get("strain", "ross308"), bird_count=int(payload.get("bird_count", 0) or 0), pen_id=(payload.get("pen_id") or "").strip() or None, notes=(payload.get("notes") or "").strip() or None, user_id=current.id)
+        c = Cycle(cycle_code=code, label=label, strain=payload.strain, bird_count=int(payload.bird_count or 0), pen_id=((payload.pen_id or "").strip() or None), notes=((payload.notes or "").strip() or None), user_id=current.id)
         s.add(c); s.commit()
         return _cycle_to_dict(c)
 @app.delete("/api/cycles/{cycle_id}")
@@ -256,5 +284,3 @@ if __name__ == "__main__":
     uvicorn.run(app, host=API_HOST, port=API_PORT, ws="websockets")
 
 
-# Vercel serverless ASGI entrypoint
-app.handler = app  # vercel.json builds use 'api/main.py:app'

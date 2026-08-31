@@ -94,6 +94,33 @@ def test_auth_and_isolation_contract(client):
     assert client.get("/api/cycles").status_code == 401
 
 
+def test_orphan_cycle_ownership_rules(client):
+    """Legacy contract: user_id NULL cycles — admin sees all; a user with zero cycles
+    adopts an orphan; a user WITH cycles gets 404. Locked so multi-tenant refactor
+    (phase 9) cannot silently change ownership semantics."""
+    if not _db_state["ok"]:
+        pytest.skip("no database reachable in this environment")
+    import uuid
+    mk = lambda p: f"{p}-{uuid.uuid4().hex[:8]}@t.local"
+    ra = client.post("/api/auth/register", json={"email": mk("o"), "password": "secret1"})
+    ta = ra.json()["access_token"]; HA = {"Authorization": f"Bearer {ta}"}
+    rc = client.post("/api/cycles", headers=HA,
+                     json={"cycle_code": "ORPH-" + uuid.uuid4().hex[:6], "label": "legacy"})
+    assert rc.status_code == 200
+    # normal user WITH a cycle: orphan route must not hand it over
+    rb = client.post("/api/auth/register", json={"email": mk("n"), "password": "secret1"})
+    tb2 = rb.json()["access_token"]
+    rc2 = client.post("/api/cycles", headers={"Authorization": f"Bearer {tb2}"},
+                      json={"cycle_code": "OWN-" + uuid.uuid4().hex[:6], "label": "own"})
+    assert rc2.status_code == 200
+    orphan_id = rc.json().get("id")
+    r404 = client.get(f"/api/cycles/{orphan_id}/stats", headers={"Authorization": f"Bearer {tb2}"})
+    assert r404.status_code == 404
+    # owner still sees own
+    rok = client.get(f"/api/cycles/{orphan_id}/stats", headers=HA)
+    assert rok.status_code == 200
+
+
 def test_missing_endpoints_now_exist(client):
     """Phase-3 contract: /api/scenarios + /api/device/records answered (no silent 404)."""
     assert client.get("/api/scenarios").status_code == 401
