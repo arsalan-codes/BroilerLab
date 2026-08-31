@@ -659,7 +659,7 @@ window.I18N_FA={
 "bw.base": "پایه: ",
 "bw.lower": "پایین‌تر از پایه ",
 "bw.higher": "بالاتر از پایه ",
-"footer.brand": "آرین v1.0.0",
+"footer.brand": "آرین v"+(window.SITE_VERSION||"")+"",
 "footer.copyright": "© 2026 Arsalan Rezazadeh",
 "sci.effectTitle": "اثر تیمارها"
 };

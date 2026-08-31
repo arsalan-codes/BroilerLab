@@ -657,7 +657,7 @@ window.I18N_EN={
 "bw.base": "base: ",
 "bw.lower": "lower than baseline ",
 "bw.higher": "higher than baseline ",
-"footer.brand": "Arian v1.0.0",
+"footer.brand": "Arian v"+(window.SITE_VERSION||"")+"",
 "footer.copyright": "© 2026 Arsalan Rezazadeh",
 "sci.effectTitle": "Treatment effects",
 "theme.dark": "Dark theme",

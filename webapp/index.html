@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.6.3"></script>
-<script src="services/api.js?v=1.6.3"></script>
+<script src="config.js?v=1.6.4"></script>
+<script src="services/api.js?v=1.6.4"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -819,16 +819,16 @@ bdi{unicode-bidi:isolate}
 .step.wn{background:rgba(233,155,38,.12);color:var(--warn)}
 code{background:var(--bg2);border:1px solid var(--line);border-radius:5px;
   padding:1px 6px;font-size:10.5px;direction:ltr;display:inline-block}
-footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 4px 8px;
+footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 12px 10px;
   color:var(--dim);font-size:11.5px;line-height:1.9;
-  display:flex;flex-direction:column;gap:8px}
+  display:flex;flex-direction:column;gap:9px;align-items:center;text-align:center}
 footer a{color:var(--mut);text-decoration:none;transition:color .15s}
 footer a:hover{color:var(--acc)}
-.f-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.f-top{display:flex;flex-direction:column;align-items:center;gap:10px}
 .f-brand{display:flex;align-items:center;gap:9px;color:var(--mut);font-size:12.5px}
 .f-brand b{font-weight:800;color:var(--txt);letter-spacing:.2px}
 .f-ver{font-size:10px;color:var(--dim);border:1px solid var(--line);border-radius:99px;padding:2px 8px;font-weight:700;direction:ltr}
-.own{display:flex;gap:8px;flex-wrap:wrap}
+.own{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .own a{display:inline-flex;gap:7px;align-items:center;padding:6px 12px;border-radius:99px;
   border:1px solid var(--line);background:var(--bg2);font-size:11.5px;font-weight:600;
   transition:border-color .15s, color .15s, background .15s}
@@ -837,8 +837,8 @@ footer a:hover{color:var(--acc)}
 .f-meta{font-size:11px;color:var(--dim)}
 .f-copy{font-size:10.5px;color:var(--dim);opacity:.85}
 @media(max-width:560px){
-  .f-top{flex-direction:column;align-items:center;gap:10px}
-  footer{text-align:center}
+  .own a{padding:6px 10px;font-size:11px}
+  .f-meta{max-width:92%;overflow-wrap:anywhere}
 }
 #tip{position:fixed;z-index:90;display:none;pointer-events:none;
   background:var(--tip-bg);border:1px solid var(--tip-bd);border-radius:9px;
@@ -1325,6 +1325,42 @@ canvas{will-change: contents}
 [dir="ltr"] .strain-select__list{left:0;right:0}
 
 
+/* ---------- landing visual: live SVG engine ---------- */
+.landing-visual{background:radial-gradient(600px 380px at 70% 0%, rgba(25,195,154,.10), transparent 55%),
+  radial-gradient(500px 320px at 10% 100%, rgba(61,123,253,.10), transparent 55%), #0b1220}
+.landing-visual::after{background:linear-gradient(180deg, transparent 55%, rgba(6,12,24,.45) 95%)}
+.lv-svg{width:100%;height:100%;display:block}
+.lv-line{stroke-dasharray:640;stroke-dashoffset:640;animation:lvDraw 1.6s ease-out .2s forwards}
+.lv-area{opacity:0;animation:lvFade .8s ease-out 1.1s forwards}
+.lv-cmp{opacity:0;animation:lvFade .8s ease-out 1.3s forwards}
+.lv-bars rect{transform-origin:bottom;transform:scaleY(0);animation:lvGrow .5s ease-out forwards}
+.lv-bars rect:nth-child(1){animation-delay:.55s}.lv-bars rect:nth-child(2){animation-delay:.62s}
+.lv-bars rect:nth-child(3){animation-delay:.69s}.lv-bars rect:nth-child(4){animation-delay:.76s}
+.lv-bars rect:nth-child(5){animation-delay:.83s}.lv-bars rect:nth-child(6){animation-delay:.90s}
+.lv-bars rect:nth-child(7){animation-delay:.97s}.lv-bars rect:nth-child(8){animation-delay:1.04s}
+.lv-bars rect:nth-child(9){animation-delay:1.11s}.lv-bars rect:nth-child(10){animation-delay:1.18s}
+.lv-bars rect:nth-child(11){animation-delay:1.25s}.lv-bars rect:nth-child(12){animation-delay:1.32s}
+.lv-bars rect:nth-child(13){animation-delay:1.39s}
+.lv-dot{animation:lvPulseDot 2s ease-in-out infinite}
+@keyframes lvDraw{to{stroke-dashoffset:0}}
+@keyframes lvFade{to{opacity:1}}
+@keyframes lvGrow{to{transform:scaleY(1)}}
+@keyframes lvPulseDot{0%,100%{opacity:1;r:5}50%{opacity:.55;r:6.5}}
+@media(prefers-reduced-motion:reduce){
+  .lv-line{stroke-dasharray:none;stroke-dashoffset:0;animation:none}
+  .lv-area,.lv-cmp{opacity:1;animation:none}
+  .lv-bars rect{transform:none;animation:none}
+  .lv-dot{animation:none}
+}
+/* svg text */
+.lv-chip-l{font:700 11px var(--font);fill:rgba(255,255,255,.55);letter-spacing:.08em}
+.lv-chip-v{font:800 14px var(--font);fill:#5eead4}
+.lv-chip:last-child .lv-chip-v{fill:#fff;font-size:12px;letter-spacing:.06em}
+.lv-axis{font:600 10px var(--font);fill:rgba(255,255,255,.38)}
+/* light theme: visual panel stays dark by design (like a device screen) */
+html[data-theme=light] .landing-visual{box-shadow:0 24px 64px rgba(15,23,42,.25), 0 0 0 1px rgba(15,23,42,.08) inset}
+
+
 /* ============================================================
    UI/UX Polish Layer v2.0 — additive, safe (no markup changes)
    ============================================================ */
@@ -1435,7 +1471,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     <div class="hpills">
       <span class="pill tag ok" title="Weight MAE vs catalog"><span data-i18n="hdr.mae">MAE</span> <b id="h-mae">—</b></span>
       <span class="pill tag bl" title="records per cycle">≈ <b id="h-rows">—</b> <span data-i18n="hdr.rows">رکورد</span></span>
-      <span class="vbadge">v1.0.0</span>
+      <span class="vbadge" data-vbadge>v1.0.0</span>
     </div>
     </div><!-- /hctl -->
   <div id="auth-area"></div>
@@ -1489,7 +1525,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
           <div class="hpills">
             <span class="pill tag ok" title="Weight MAE vs catalog"><span data-i18n="hdr.mae">MAE</span> <b id="h-mae-dd">—</b></span>
             <span class="pill tag bl" title="records per cycle">≈ <b id="h-rows-dd">—</b> <span data-i18n="hdr.rows">رکورد</span></span>
-            <span class="vbadge">v1.0.0</span>
+            <span class="vbadge" data-vbadge>v1.0.0</span>
           </div>
         </div>
       </div>
@@ -1534,10 +1570,66 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     </div>
     <div class="landing-visual" aria-hidden="true">
       <div class="landing-visual-glow"></div>
-      <picture>
-        <source srcset="assets/landing-hero.webp" type="image/webp">
-        <img src="assets/landing-hero-900.jpg" alt="آرین - سامانه هوشمند پرورش" data-alt-i18n="brand.name" loading="eager" decoding="async" width="900" height="620">
-      </picture>
+      <svg class="lv-svg" viewBox="0 0 450 326" preserveAspectRatio="xMidYMid slice" role="img" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="lgA" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#19c39a" stop-opacity=".95"/>
+            <stop offset="1" stop-color="#3d7bfd" stop-opacity=".9"/>
+          </linearGradient>
+          <linearGradient id="lgFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#19c39a" stop-opacity=".30"/>
+            <stop offset="1" stop-color="#19c39a" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- grid -->
+        <g stroke="rgba(255,255,255,.06)" stroke-width="1">
+          <path d="M0 65 H450 M0 130 H450 M0 195 H450 M0 260 H450"/>
+          <path d="M75 0 V326 M150 0 V326 M225 0 V326 M300 0 V326 M375 0 V326"/>
+        </g>
+        <!-- growth curve: Ross 308 male cumulative intake shape -->
+        <path class="lv-area" d="M8 296 C60 290 95 272 130 250 C175 224 215 196 255 168 C300 137 340 112 385 92 C410 81 430 76 442 74 L442 318 L8 318 Z" fill="url(#lgFill)"/>
+        <path class="lv-line" d="M8 296 C60 290 95 272 130 250 C175 224 215 196 255 168 C300 137 340 112 385 92 C410 81 430 76 442 74" fill="none" stroke="url(#lgA)" stroke-width="3" stroke-linecap="round"/>
+        <!-- comparison dashed line (standard/other pen) -->
+        <path class="lv-cmp" d="M8 302 C70 298 110 285 150 268 C200 246 250 222 300 198 C345 177 395 162 442 152" fill="none" stroke="rgba(255,255,255,.34)" stroke-width="2" stroke-dasharray="5 7" stroke-linecap="round"/>
+        <!-- feed bars along the baseline -->
+        <g class="lv-bars" fill="rgba(61,123,253,.55)">
+          <rect x="20" y="284" width="10" height="34" rx="2"/>
+          <rect x="52" y="272" width="10" height="46" rx="2"/>
+          <rect x="84" y="258" width="10" height="60" rx="2"/>
+          <rect x="116" y="242" width="10" height="76" rx="2"/>
+          <rect x="148" y="226" width="10" height="92" rx="2"/>
+          <rect x="180" y="208" width="10" height="110" rx="2"/>
+          <rect x="212" y="190" width="10" height="128" rx="2"/>
+          <rect x="244" y="172" width="10" height="146" rx="2"/>
+          <rect x="276" y="154" width="10" height="164" rx="2"/>
+          <rect x="308" y="138" width="10" height="180" rx="2"/>
+          <rect x="340" y="122" width="10" height="196" rx="2"/>
+          <rect x="372" y="108" width="10" height="210" rx="2"/>
+          <rect x="404" y="96" width="10" height="222" rx="2"/>
+        </g>
+        <!-- live point on curve -->
+        <circle class="lv-dot" cx="255" cy="168" r="5" fill="#19c39a" stroke="#0b1220" stroke-width="2"/>
+        <!-- mini KPI chips -->
+        <g class="lv-chip" transform="translate(16 16)">
+          <rect width="112" height="40" rx="10" fill="rgba(11,18,32,.72)" stroke="rgba(255,255,255,.12)"/>
+          <text class="lv-chip-l" x="12" y="17">FCR</text>
+          <text class="lv-chip-v" x="100" y="30" text-anchor="end">1.52</text>
+        </g>
+        <g class="lv-chip" transform="translate(140 16)">
+          <rect width="112" height="40" rx="10" fill="rgba(11,18,32,.72)" stroke="rgba(255,255,255,.12)"/>
+          <text class="lv-chip-l" x="12" y="17">MAE</text>
+          <text class="lv-chip-v" x="100" y="30" text-anchor="end">1.8%</text>
+        </g>
+        <g class="lv-chip" transform="translate(264 16)">
+          <rect width="112" height="40" rx="10" fill="rgba(11,18,32,.72)" stroke="rgba(255,255,255,.12)"/>
+          <text class="lv-chip-l" x="12" y="17">PEN 04</text>
+          <text class="lv-chip-v" x="100" y="30" text-anchor="end">LIVE</text>
+        </g>
+        <!-- day axis labels -->
+        <text class="lv-axis" x="8" y="316">d1</text>
+        <text class="lv-axis" x="212" y="316">d24</text>
+        <text class="lv-axis" x="420" y="316">d42</text>
+      </svg>
       <div class="landing-visual-float">
         <div class="lvf-left">
           <span class="lvf-dot"></span>
@@ -2412,7 +2504,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
     <div class="f-brand">
       <img src="logo_32.png" alt="" width="22" height="22" style="border-radius:6px;object-fit:contain">
       <b data-i18n="brand.name">آرین</b>
-      <span class="f-ver">v1.0.0</span>
+      <span class="f-ver" data-vbadge>v1.0.0</span>
     </div>
     <div class="own">
       <a href="https://github.com/arsalan-codes" target="_blank" rel="noopener"><i class="fa-brands fa-github" aria-hidden="true"></i><span>arsalan-codes</span></a>
@@ -2428,22 +2520,23 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.6.3" defer></script>
-<script src="engine.js?v=1.6.3" defer></script>
-<script src="xlsx.js?v=1.6.3" defer></script>
-<script src="stats.js?v=1.6.3" defer></script>
-<script src="locales/fa.js?v=1.6.3" defer></script>
-<script src="locales/en.js?v=1.6.3" defer></script>
-<script src="i18n.js?v=1.6.3" defer></script>
-<script src="utils/formatters.js?v=1.6.3" defer></script>
-<script src="shamsi.js?v=1.6.3" defer></script>
-<script src="auth.js?v=1.6.3" defer></script>
-<script src="device-panel.js?v=1.6.3" defer></script>
-<script src="dialog.js?v=1.6.3" defer></script>
-<script src="router.js?v=1.6.3" defer></script>
-<script src="components/chart.js?v=1.6.3" defer></script>
-<script src="services/export.js?v=1.6.3" defer></script>
-<script src="app.js?v=1.6.3" defer></script>
+<script src="strains.js?v=1.6.4" defer></script>
+<script src="engine.js?v=1.6.4" defer></script>
+<script src="xlsx.js?v=1.6.4" defer></script>
+<script src="stats.js?v=1.6.4" defer></script>
+<script src="version.js?v=1.6.4" defer></script>
+  <script src="locales/fa.js?v=1.6.4" defer></script>
+<script src="locales/en.js?v=1.6.4" defer></script>
+<script src="i18n.js?v=1.6.4" defer></script>
+<script src="utils/formatters.js?v=1.6.4" defer></script>
+<script src="shamsi.js?v=1.6.4" defer></script>
+<script src="auth.js?v=1.6.4" defer></script>
+<script src="device-panel.js?v=1.6.4" defer></script>
+<script src="dialog.js?v=1.6.4" defer></script>
+<script src="router.js?v=1.6.4" defer></script>
+<script src="components/chart.js?v=1.6.4" defer></script>
+<script src="services/export.js?v=1.6.4" defer></script>
+<script src="app.js?v=1.6.4" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">

@@ -101,6 +101,15 @@ function formatPercent(v,d){ return lnum(v,d)+"%" }
 // expose globally for app components
 try{ window.formatNumber=formatNumber; window.formatDate=formatDate; window.formatTime=formatTime; window.formatDateTime=formatDateTime; window.formatRelativeTime=formatRelativeTime; window.formatCurrency=formatCurrency; window.formatPercent=formatPercent; }catch(e){}
 
+/* keep every version badge in sync with window.SITE_VERSION (version.js) */
+function syncVersion(){
+  var v=window.SITE_VERSION; if(!v)return;
+  var s="v"+v;
+  document.querySelectorAll("[data-vbadge]").forEach(el=>{ el.textContent=s; });
+  document.querySelectorAll("[data-version-text]").forEach(el=>{ el.textContent=s; });
+}
+try{window.syncVersion=syncVersion}catch(e){}
+
 function applyLang(){
   document.documentElement.lang=LANG;
   document.documentElement.dir=LANG==="fa"?"rtl":"ltr";
@@ -118,6 +127,7 @@ function applyLang(){
   $("lang-en").classList.toggle("on",LANG==="en");
   $("lang-fa-dd").classList.toggle("on",LANG==="fa");
   $("lang-en-dd").classList.toggle("on",LANG==="en");
+  try{syncVersion()}catch(e){}
 }
 function setLang(l){if(LANG===l)return;LANG=l;
   try{localStorage.setItem("rossim_lang",l)}catch(e){}
