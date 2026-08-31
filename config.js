@@ -7,14 +7,15 @@
 (function () {
   var h = window.location;
   var isPages = h.hostname.indexOf("github.io") > -1;
-  var sameOriginOK = h.protocol === "http:" && (h.hostname === "localhost" || h.hostname === "127.0.0.1");
   var onVercel = h.hostname.indexOf(".vercel.app") > -1 || (h.protocol === "https:" && !isPages && window.ARIAN_API_SAME_ORIGIN === true);
   var PROD_API_FALLBACK = window.ARIAN_PROD_API || "";  // e.g. "https://arian-xyz.vercel.app"
+  var LOCAL_API = window.ARIAN_LOCAL_API || "http://127.0.0.1:8755";  // local backend port
   var base = "";
   try {
     if (window.BROILER_API_OVERRIDE) base = window.BROILER_API_OVERRIDE;
-    else if (onVercel || sameOriginOK) base = h.origin;
+    else if (onVercel) base = h.origin;                  // Vercel serves /api via rewrite
     else if (isPages && PROD_API_FALLBACK) base = PROD_API_FALLBACK;
+    else if (h.hostname === "localhost" || h.hostname === "127.0.0.1") base = LOCAL_API;
     else base = h.origin;                                // last resort: same origin
   } catch (e) { base = ""; }
   window.BROILER_API = String(base).replace(/\/+$/, "");
