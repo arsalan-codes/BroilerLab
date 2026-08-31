@@ -9,8 +9,9 @@
  */
 (function () {
   "use strict";
-  var API = (window.BROILER_API || "http://127.0.0.1:8755").replace(/\/+$/, "");
-  var WS = API.replace(/^http/, "ws");
+  // centralized API client (services/api.js) — loaded before this module
+  var API = (window.API && window.API.base) || (window.BROILER_API || "http://127.0.0.1:8755").replace(/\/+$/, "");
+  var WS = (window.API && window.API.wsBase) || API.replace(/^http/, "ws");
   var selectedCycle = null;
   var ws = null;
 

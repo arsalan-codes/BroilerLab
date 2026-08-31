@@ -5,7 +5,7 @@
  */
 (function () {
   "use strict";
-  var API = (window.BROILER_API || "http://127.0.0.1:8755").replace(/\/+$/, "");
+  var API = (window.API && window.API.base) || (window.BROILER_API || "http://127.0.0.1:8755").replace(/\/+$/, "");
   function apiBase(){ return ((window.BROILER_API||"").replace(/\/+$/,"")) || API; }
   var TOKEN_KEY = "broiler_token";
   var USER_KEY = "broiler_user";
