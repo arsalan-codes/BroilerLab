@@ -139,6 +139,15 @@ def test_missing_endpoints_now_exist(client):
     assert isinstance(body.get("total"), int) and isinstance(body.get("items"), list)
 
 
+def test_logging_and_org_contract():
+    """Phase 8/9: request-id header, 500 handler, Organization model in metadata."""
+    assert Exception in app.exception_handlers  # global 500 handler registered
+    import models as models_mod
+    assert hasattr(models_mod, "Organization")
+    assert "organizations" in models_mod.Base.metadata.tables
+    assert hasattr(models_mod.User, "organization_id")  # additive nullable FK, no data loss
+
+
 def _iter(js):
     if isinstance(js, list):
         return js

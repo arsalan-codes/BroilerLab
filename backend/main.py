@@ -18,6 +18,7 @@ from models import init_db, SessionLocal, Cycle, Visit, DeviceLog, User
 from processor import get_processor
 import hub
 import auth as authmod
+from logging_config import setup_logging, get_logger, redact, new_request_id
 _ROOTS = [os.path.dirname(os.path.dirname(os.path.abspath(__file__))),  # repo/dev root
           os.path.dirname(os.path.abspath(__file__))]                    # vendored api/ layout
 WEBAPP_DIR = next((os.path.join(r, "webapp") for r in _ROOTS if os.path.isdir(os.path.join(r, "webapp"))),
@@ -26,20 +27,44 @@ _db_state = {"ok": False, "error": None}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    setup_logging()
     hub.register_loop(asyncio.get_event_loop())
     try:
         init_db()
         authmod.ensure_admin_seed()
         _db_state["ok"] = True
     except Exception as e:  # keep function alive; health endpoint reports DB status
-        import logging
-        logging.exception("DB init failed")
+        get_logger(__name__).exception("DB init failed")
         _db_state["ok"] = False
         _db_state["error"] = f"{type(e).__name__}: {e}"
     yield
 app = FastAPI(title="BroilerLab Device Backend", version="1.5.8", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=400)
+
+
+@app.middleware("http")
+async def _log_requests(request, call_next):
+    import time as _time
+    rid = new_request_id()
+    t0 = _time.monotonic()
+    response = await call_next(request)
+    dt = int((_time.monotonic() - t0) * 1000)
+    get_logger("http").info(
+        "%s %s %s %sms",
+        request.method, request.url.path, response.status_code, dt,
+        extra={"request_id": rid, "method": request.method, "path": str(request.url.path),
+               "status": response.status_code, "duration_ms": dt},
+    )
+    response.headers["X-Request-Id"] = rid
+    return response
 _CORS_ORIGINS = [o.strip() for o in os.getenv("BROILER_CORS_ORIGINS", "").split(",") if o.strip()] or ["*"]
+@app.exception_handler(Exception)
+async def _global_exception_handler(request, exc):
+    get_logger(__name__).exception("Unhandled exception: %s %s", request.method, request.url.path)
+    from fastapi.responses import JSONResponse
+    return JSONResponse(status_code=500, content={"detail": "Internal server error", "code": "internal_error"})
+
+
 app.add_middleware(CORSMiddleware, allow_origins=_CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"])
 @app.get("/")
 def index():

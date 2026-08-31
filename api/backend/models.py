@@ -36,8 +36,18 @@ class User(Base):
     is_admin = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow)
     last_login = Column(DateTime(timezone=True), nullable=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="SET NULL"), nullable=True)
 
+    organization = relationship("Organization", back_populates="users")
     cycles = relationship("Cycle", back_populates="owner", cascade="all, delete-orphan")
+
+
+class Organization(Base):
+    __tablename__ = "organizations"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(120), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utcnow)
+    users = relationship("User", back_populates="organization", cascade="all, delete-orphan")
 
 
 class Cycle(Base):
