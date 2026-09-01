@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.7.8"></script>
-<script src="services/api.js?v=1.7.8"></script>
+<script src="config.js?v=1.8.0"></script>
+<script src="services/api.js?v=1.8.0"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -61,10 +61,19 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);
   backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);
   border-bottom:1px solid var(--line);
   box-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 10px 30px rgba(0,0,0,.18)}
-.topbar-in{max-width:1320px;margin:0 auto;padding:0 22px;height:64px;display:flex;
+.topbar-in{max-width:1320px;margin:0 auto;padding:0 22px;height:76px;display:flex;
   align-items:center;gap:14px}
+/* topbar centering polish (v1.8.0): taller bar, everything vertically centered */
+.topbar-in{align-items:center;justify-content:flex-start}
+.topbar-in>*{flex:none}
+.topbar-in .hspace{flex:1 1 auto}
+.topbar-in .brand{align-self:center}
+.topbar-in .hctl,.topbar-in .auth-area,.topbar-in .hsettings,.topbar-in #auth-area{display:flex;align-items:center;justify-content:center}
+.topbar-in .hgroup,.topbar-in .topclock,.topbar-in .dhead{display:flex;align-items:center}
+nav{align-items:center}
+nav .tab{display:inline-flex;align-items:center;justify-content:center}
 .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;min-width:0}
-.brand .mark{width:44px;height:44px;border-radius:14px;overflow:hidden;flex:none;
+.brand .mark{width:52px;height:52px;border-radius:14px;overflow:hidden;flex:none;
   display:flex;align-items:center;justify-content:center;
   background:radial-gradient(120% 120% at 30% 20%, rgba(25,195,154,.16), rgba(13,18,29,.4) 60%);
   border:1px solid rgba(255,255,255,.08);box-shadow:0 4px 14px rgba(0,0,0,.22)}
@@ -562,7 +571,7 @@ html[dir=rtl] .parrow{transition:transform .2s}
 /* ================= nav ================= */
 /* ================= nav — modern tabs ================= */
 nav{display:flex;gap:4px;margin:0;border-bottom:1px solid var(--line);
-  overflow-x:auto;scrollbar-width:none;padding:0 22px;height:48px;align-items:stretch;
+  overflow-x:auto;scrollbar-width:none;padding:0 22px;height:54px;align-items:stretch;
   background:rgba(11,15,23,.82);backdrop-filter:blur(18px) saturate(1.4);
   -webkit-backdrop-filter:blur(18px) saturate(1.4)}
 nav::-webkit-scrollbar{display:none}
@@ -994,7 +1003,7 @@ html[dir=ltr] body{font-family:"IBM Plex Sans","Vazirmatn",system-ui,sans-serif}
   .tickercard ul{max-height:150px}
 }
 @media(max-width:860px){
-  .topbar-in{padding:0 16px;height:56px;gap:10px}
+  .topbar-in{padding:0 16px;height:66px;gap:10px}
   .wrap{padding:0 14px 56px}
   nav{margin:14px 0 18px}
   .tab{padding:11px 13px;font-size:12px}
@@ -2424,23 +2433,23 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.7.8" defer></script>
-<script src="engine.js?v=1.7.8" defer></script>
-<script src="xlsx.js?v=1.7.8" defer></script>
-<script src="stats.js?v=1.7.8" defer></script>
-<script src="version.js?v=1.7.8" defer></script>
-  <script src="locales/fa.js?v=1.7.8" defer></script>
-<script src="locales/en.js?v=1.7.8" defer></script>
-<script src="i18n.js?v=1.7.8" defer></script>
-<script src="utils/formatters.js?v=1.7.8" defer></script>
-<script src="shamsi.js?v=1.7.8" defer></script>
-<script src="auth.js?v=1.7.9" defer></script>
-<script src="device-panel.js?v=1.7.8" defer></script>
-<script src="dialog.js?v=1.7.8" defer></script>
-<script src="router.js?v=1.7.8" defer></script>
-<script src="components/chart.js?v=1.7.8" defer></script>
-<script src="services/export.js?v=1.7.8" defer></script>
-<script src="app.js?v=1.7.9" defer></script>
+<script src="strains.js?v=1.8.0" defer></script>
+<script src="engine.js?v=1.8.0" defer></script>
+<script src="xlsx.js?v=1.8.0" defer></script>
+<script src="stats.js?v=1.8.0" defer></script>
+<script src="version.js?v=1.8.0" defer></script>
+  <script src="locales/fa.js?v=1.8.0" defer></script>
+<script src="locales/en.js?v=1.8.0" defer></script>
+<script src="i18n.js?v=1.8.0" defer></script>
+<script src="utils/formatters.js?v=1.8.0" defer></script>
+<script src="shamsi.js?v=1.8.0" defer></script>
+<script src="auth.js?v=1.8.0" defer></script>
+<script src="device-panel.js?v=1.8.0" defer></script>
+<script src="dialog.js?v=1.8.0" defer></script>
+<script src="router.js?v=1.8.0" defer></script>
+<script src="components/chart.js?v=1.8.0" defer></script>
+<script src="services/export.js?v=1.8.0" defer></script>
+<script src="app.js?v=1.8.0" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
