@@ -1,23 +1,12 @@
 /* Arian — Persian translations */
 "use strict";
 window.I18N_FA={
-"lv.d.title": "وضعیت دستگاه‌ها",
-"lv.d.online": "آنلاین",
-"lv.d.offline": "آفلاین",
-"lv.t.temp": "دمات سالن",
-"lv.t.rh": "رطوبت نسبی",
-"lv.t.feed": "مصرف خوراک امروز",
 "landing.fact.strains": "سویه استاندارد",
 "landing.fact.points": "نقطه داده مرجع",
 "landing.fact.verified": "کالیبره‌شده با مقالات داوری‌شده",
 "landing.typed1": "پایش هوشمند مصرف خوراک، روزبه‌روز",
 "landing.typed2": "اصلاح نژاد داده‌محور، دقیق و قابل تکرار",
 "landing.typed3": "از دستگاه تا تصمیم ژنتیکی، یکپارچه",
-"lv.s1": "فارم و جوجه",
-"lv.s2": "دستگاه پایش",
-"lv.s3": "ارسال داده",
-"lv.s4": "پردازش داده",
-"lv.s5": "اصلاح نژادی",
 "bio.title": "آزمایشگاه آمار زیستی",
 "bio.sub": "واحد نمونه = پن · Welch t / ANOVA یک‌راهه / η² / Holm",
 "bio.metric": "متغیر پاسخ",

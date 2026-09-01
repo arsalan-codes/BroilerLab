@@ -1,23 +1,12 @@
 /* Arian — English translations */
 "use strict";
 window.I18N_EN={
-"lv.d.title": "Device status",
-"lv.d.online": "online",
-"lv.d.offline": "offline",
-"lv.t.temp": "House temp",
-"lv.t.rh": "Humidity",
-"lv.t.feed": "Feed used today",
 "landing.fact.strains": "standard strains",
 "landing.fact.points": "reference data points",
 "landing.fact.verified": "Calibrated on peer-reviewed science",
 "landing.typed1": "Smart feed-intake monitoring, day by day",
 "landing.typed2": "Data-driven breeding, precise & reproducible",
 "landing.typed3": "From device to genetic decision, unified",
-"lv.s1": "Farm & chick",
-"lv.s2": "Monitor device",
-"lv.s3": "Data uplink",
-"lv.s4": "Processing",
-"lv.s5": "Selection",
 "bio.title": "Biostatistics laboratory",
 "bio.sub": "unit = pen · Welch t / one-way ANOVA / η² / Holm",
 "bio.metric": "Response variable",

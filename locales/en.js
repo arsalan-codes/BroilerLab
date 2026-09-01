@@ -1,6 +1,12 @@
 /* Arian — English translations */
 "use strict";
 window.I18N_EN={
+"landing.fact.strains": "standard strains",
+"landing.fact.points": "reference data points",
+"landing.fact.verified": "Calibrated on peer-reviewed science",
+"landing.typed1": "Smart feed-intake monitoring, day by day",
+"landing.typed2": "Data-driven breeding, precise & reproducible",
+"landing.typed3": "From device to genetic decision, unified",
 "bio.title": "Biostatistics laboratory",
 "bio.sub": "unit = pen · Welch t / one-way ANOVA / η² / Holm",
 "bio.metric": "Response variable",
@@ -447,9 +453,6 @@ window.I18N_EN={
 "landing.card.dev.p": "Automatic capture of monitoring devices — fully user-isolated and secure.",
 "landing.foot.p": "Sign in to access dashboards, trials and device data. All data and simulations are fully isolated per account.",
 "landing.foot.btn": "Sign in & start",
-"landing.live.b": "Live data · 24h",
-"landing.live.s": "User-isolated & secure",
-"landing.iso": "Isolated",
 "ws.title": "Arian workspace",
 "ws.subtitle": "Signed in — your data is fully isolated",
 "ws.badge.user": "User",
