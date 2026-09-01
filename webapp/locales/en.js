@@ -1,6 +1,9 @@
 /* Arian — English translations */
 "use strict";
 window.I18N_EN={
+"lv.d.title": "Device status",
+"lv.d.online": "online",
+"lv.d.offline": "offline",
 "lv.t.temp": "House temp",
 "lv.t.rh": "Humidity",
 "lv.t.feed": "Feed used today",

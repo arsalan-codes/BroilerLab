@@ -1,6 +1,9 @@
 /* Arian — Persian translations */
 "use strict";
 window.I18N_FA={
+"lv.d.title": "وضعیت دستگاه‌ها",
+"lv.d.online": "آنلاین",
+"lv.d.offline": "آفلاین",
 "lv.t.temp": "دمات سالن",
 "lv.t.rh": "رطوبت نسبی",
 "lv.t.feed": "مصرف خوراک امروز",

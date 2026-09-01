@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.7.3"></script>
-<script src="services/api.js?v=1.7.3"></script>
+<script src="config.js?v=1.7.4"></script>
+<script src="services/api.js?v=1.7.4"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -1332,6 +1332,12 @@ html[dir=ltr] .lv-st{font-size:12.5px}   /* EN labels are wider — keep inside 
 .lv-tile-l{font:700 12.5px var(--font);fill:rgba(255,255,255,.60)}
 .lv-tile-v{font:800 18px var(--font);fill:#fff;font-variant-numeric:tabular-nums}
 .lv-tile-bar{transition:width 1.2s ease}
+.lv-devdot{filter:drop-shadow(0 0 4px rgba(25,195,154,.6));animation:lvWave 1.6s ease-in-out infinite}
+.lv-devdot.lv-offline{filter:drop-shadow(0 0 4px rgba(229,72,77,.5));animation:none}
+.lv-devname{font:650 12px var(--font);fill:rgba(232,237,245,.85)}
+.lv-devname.lv-dim{fill:rgba(232,237,245,.45)}
+.lv-devices rect[width="420"]{transition:stroke .3s}
+.lv-devices:hover rect[width="420"]{stroke:rgba(25,195,154,.35)}
 .lv-tdot{animation:lvWave 1.8s ease-in-out infinite}
 .lv-tile:nth-of-type(3) .lv-tdot{animation-delay:.3s}
 .lv-tile:nth-of-type(5) .lv-tdot{animation-delay:.6s}
@@ -1599,8 +1605,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
           </linearGradient>
         </defs>
 
-        <!-- data track between stations (centers: 48·154·260·366·462? no—462 out) -->
-        <!-- centers: 48·154·230·336·412 (all inside 0..460) -->
+        <!-- data track between stations (centers: 48·154·230·336·412, all inside 0..460) -->
         <path d="M48 155 H412" stroke="rgba(255,255,255,.15)" stroke-width="2" stroke-dasharray="4 9" fill="none"/>
         <g fill="rgba(255,255,255,.25)">
           <path d="M101 150 l7 5 -7 5 z"/>
@@ -1721,6 +1726,24 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
           <rect x="13" y="64" width="106" height="6" rx="3" fill="rgba(255,255,255,.10)"/>
           <rect class="lv-tile-bar" id="lv-feed-bar" x="13" y="64" width="86" height="6" rx="3" fill="#e99b26"/>
           <circle class="lv-tdot" cx="121" cy="16.5" r="3.2" fill="#e99b26"/>
+        </g>
+
+        <!-- device status strip (runtime-injected demo state) -->
+        <g class="lv-devices" transform="translate(20 334)">
+          <rect width="420" height="46" rx="13" fill="rgba(11,18,32,.72)" stroke="rgba(255,255,255,.10)"/>
+          <text class="lv-tile-l" x="14" y="28" data-i18n="lv.d.title">وضعیت دستگاه‌ها</text>
+          <g transform="translate(150 0)">
+            <circle class="lv-devdot" id="lv-dev1-dot" cx="0" cy="23" r="4" fill="#19c39a"/>
+            <text class="lv-devname" x="9" y="27" id="lv-dev1">DEV-A1</text>
+          </g>
+          <g transform="translate(242 0)">
+            <circle class="lv-devdot" id="lv-dev2-dot" cx="0" cy="23" r="4" fill="#19c39a"/>
+            <text class="lv-devname" x="9" y="27" id="lv-dev2">DEV-B2</text>
+          </g>
+          <g transform="translate(334 0)">
+            <circle class="lv-devdot lv-offline" id="lv-dev3-dot" cx="0" cy="23" r="4" fill="#e5484d"/>
+            <text class="lv-devname lv-dim" x="9" y="27" id="lv-dev3">DEV-C3</text>
+          </g>
         </g>
       </svg>
       
@@ -2607,23 +2630,23 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.7.3" defer></script>
-<script src="engine.js?v=1.7.3" defer></script>
-<script src="xlsx.js?v=1.7.3" defer></script>
-<script src="stats.js?v=1.7.3" defer></script>
-<script src="version.js?v=1.7.3" defer></script>
-  <script src="locales/fa.js?v=1.7.3" defer></script>
-<script src="locales/en.js?v=1.7.3" defer></script>
-<script src="i18n.js?v=1.7.3" defer></script>
-<script src="utils/formatters.js?v=1.7.3" defer></script>
-<script src="shamsi.js?v=1.7.3" defer></script>
-<script src="auth.js?v=1.7.3" defer></script>
-<script src="device-panel.js?v=1.7.3" defer></script>
-<script src="dialog.js?v=1.7.3" defer></script>
-<script src="router.js?v=1.7.3" defer></script>
-<script src="components/chart.js?v=1.7.3" defer></script>
-<script src="services/export.js?v=1.7.3" defer></script>
-<script src="app.js?v=1.7.3" defer></script>
+<script src="strains.js?v=1.7.4" defer></script>
+<script src="engine.js?v=1.7.4" defer></script>
+<script src="xlsx.js?v=1.7.4" defer></script>
+<script src="stats.js?v=1.7.4" defer></script>
+<script src="version.js?v=1.7.4" defer></script>
+  <script src="locales/fa.js?v=1.7.4" defer></script>
+<script src="locales/en.js?v=1.7.4" defer></script>
+<script src="i18n.js?v=1.7.4" defer></script>
+<script src="utils/formatters.js?v=1.7.4" defer></script>
+<script src="shamsi.js?v=1.7.4" defer></script>
+<script src="auth.js?v=1.7.4" defer></script>
+<script src="device-panel.js?v=1.7.4" defer></script>
+<script src="dialog.js?v=1.7.4" defer></script>
+<script src="router.js?v=1.7.4" defer></script>
+<script src="components/chart.js?v=1.7.4" defer></script>
+<script src="services/export.js?v=1.7.4" defer></script>
+<script src="app.js?v=1.7.4" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
@@ -2787,6 +2810,40 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   if(document.readyState==='complete') start();
   else window.addEventListener('load', function(){ setTimeout(start,120); });
   window.addEventListener('rossim:lang', tick); /* re-render digits on language switch */
+})();
+</script>
+<script>
+/* device status strip — demo flapping: one device offline, recovers, occasionally drops */
+(function(){
+  var devs=[
+    {id:1, up:true,  name:"DEV-A1"},
+    {id:2, up:true,  name:"DEV-B2"},
+    {id:3, up:false, name:"DEV-C3"}   /* starts offline, recovers at ~8s */
+  ];
+  var fa=function(){ return (typeof LANG!=='undefined'&&LANG==='fa'); };
+  function paint(){
+    devs.forEach(function(d){
+      var dot=document.getElementById('lv-dev'+d.id+'-dot'),
+          tx=document.getElementById('lv-dev'+d.id);
+      if(!dot||!tx) return;
+      var on=d.up;
+      dot.setAttribute('fill', on?'#19c39a':'#e5484d');
+      dot.classList.toggle('lv-offline', !on);
+      tx.classList.toggle('lv-dim', !on);
+      tx.textContent=d.name+' '+(fa()?(on?'آنلاین':'آفلاین'):(on?'online':'offline'));
+    });
+  }
+  function start(){
+    paint();
+    setTimeout(function(){ devs[2].up=true; paint(); }, 8000);       /* C3 recovers */
+    setInterval(function(){                                           /* random flap B2 */
+      if(Math.random()<.18){ devs[1].up=!devs[1].up; paint();
+        setTimeout(function(){ devs[1].up=true; paint(); }, 4000); }
+    }, 9000);
+  }
+  if(document.readyState==='complete') start();
+  else window.addEventListener('load', function(){ setTimeout(start,140); });
+  window.addEventListener('rossim:lang', paint);
 })();
 </script>
 <!-- Material Dialog -->
