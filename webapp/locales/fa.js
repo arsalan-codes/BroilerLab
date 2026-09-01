@@ -1,6 +1,7 @@
 /* Arian — Persian translations */
 "use strict";
 window.I18N_FA={
+"landing.heroPrefix": "سامانه یکپارچه هوشمند",
 "landing.fact.strains": "سویه استاندارد",
 "landing.fact.points": "نقطه داده مرجع",
 "landing.fact.verified": "کالیبره‌شده با مقالات داوری‌شده",
