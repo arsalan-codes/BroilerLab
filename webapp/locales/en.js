@@ -1,6 +1,7 @@
 /* Arian — English translations */
 "use strict";
 window.I18N_EN={
+"lv.live": "LIVE",
 "landing.fact.strains": "standard strains",
 "landing.fact.points": "reference data points",
 "landing.fact.verified": "Calibrated on peer-reviewed science",
