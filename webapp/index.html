@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.6.6"></script>
-<script src="services/api.js?v=1.6.6"></script>
+<script src="config.js?v=1.6.9"></script>
+<script src="services/api.js?v=1.6.9"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -1274,7 +1274,12 @@ html[data-theme=light] .ws-card:hover{box-shadow:var(--sh-md)}
 .landing-visual-float .lvf-txt b{display:block;font-size:12px;font-weight:800;letter-spacing:-.01em}
 .landing-visual-float .lvf-txt span{font-size:11px;color:rgba(255,255,255,.72)}
 .landing-visual-float .lvf-badge{flex-shrink:0;padding:6px 10px;border-radius:999px;background:rgba(25,195,154,.16);border:1px solid rgba(25,195,154,.28);color:#5eead4;font-size:11px;font-weight:800;white-space:nowrap}
-.landing-badge{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;background:rgba(25,195,154,.12);border:1px solid rgba(25,195,154,.22);color:var(--acc);font-size:12px;font-weight:700;backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(25,195,154,.12)}
+.landing-badge{align-self:flex-start;display:inline-flex;align-items:center;gap:9px;padding:7px 14px;border-radius:999px;background:rgba(25,195,154,.12);border:1px solid rgba(25,195,154,.22);color:var(--acc);font-size:12px;font-weight:700;backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(25,195,154,.12);flex-wrap:wrap;row-gap:4px}
+.landing-badge .lb-fact{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.landing-badge .lb-fact b{font-weight:900;color:#fff;font-size:12.5px;font-variant-numeric:tabular-nums}
+.landing-badge .lb-fact i{font-size:11px;opacity:.9}
+.landing-badge .lb-sep{color:rgba(25,195,154,.45);font-weight:900}
+@media(max-width:560px){.landing-badge{border-radius:16px}.landing-badge .lb-sep{display:none}.landing-badge .lb-fact{padding:2px 8px;border-radius:999px;background:rgba(25,195,154,.08)}}
 .landing-title{margin:16px 0 10px;font-size:clamp(26px,4.2vw,38px);line-height:1.18;font-weight:900;letter-spacing:-.03em}
 .landing-title span{display:block;font-size:clamp(15px,1.8vw,19px);font-weight:700;color:var(--mut);margin-top:6px;min-height:26px}
 .landing-title .typed-cursor{display:inline-block;width:2px;height:1.15em;background:var(--acc);margin-inline-start:3px;vertical-align:-2px;animation:typed-blink .75s step-end infinite}
@@ -1568,8 +1573,14 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
   <div class="landing-hero">
     <div class="landing-hero-bg"></div>
     <div class="landing-hero-inner">
-      <div class="landing-badge"><i class="fa-solid fa-flask"></i> <span data-i18n="landing.badge">سامانه هوشمند پایش مصرف خوراک و سیستم‌های کنترل محیطی</span></div>
-      <h1 class="landing-title"><span data-i18n="brand.name">آرین</span> <span id="landing-typed" data-i18n="landing.typed" data-text="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی" aria-label="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی<span class="typed-cursor" aria-hidden="true"></span></span></h1>
+      <div class="landing-badge" id="landing-facts" aria-live="off">
+        <span class="lb-fact"><i class="fa-solid fa-dna" aria-hidden="true"></i><b id="lb-strains">۴</b>&nbsp;<span data-i18n="landing.fact.strains">سویه استاندارد</span></span>
+        <span class="lb-sep" aria-hidden="true">·</span>
+        <span class="lb-fact"><i class="fa-solid fa-database" aria-hidden="true"></i><b id="lb-points">۲٬۳۸۰</b>&nbsp;<span data-i18n="landing.fact.points">نقطه داده مرجع</span></span>
+        <span class="lb-sep" aria-hidden="true">·</span>
+        <span class="lb-fact"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span data-i18n="landing.fact.verified">کالیبره‌شده با مقالات داوری‌شده</span></span>
+      </div>
+      <h1 class="landing-title"><span data-i18n="brand.name">آرین</span> <span id="landing-typed" data-text="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی" aria-label="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی<span class="typed-cursor" aria-hidden="true"></span></span></h1>
       <div class="landing-cta">
         <button class="btn primary lg" id="landing-login"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="landing.login">ورود به پنل</span></button>
         <button class="btn ghost lg" id="landing-register" data-i18n="landing.register">ثبت‌نام رایگان</button>
@@ -2601,23 +2612,23 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.6.6" defer></script>
-<script src="engine.js?v=1.6.6" defer></script>
-<script src="xlsx.js?v=1.6.6" defer></script>
-<script src="stats.js?v=1.6.6" defer></script>
-<script src="version.js?v=1.6.6" defer></script>
-  <script src="locales/fa.js?v=1.6.6" defer></script>
-<script src="locales/en.js?v=1.6.6" defer></script>
-<script src="i18n.js?v=1.6.6" defer></script>
-<script src="utils/formatters.js?v=1.6.6" defer></script>
-<script src="shamsi.js?v=1.6.6" defer></script>
-<script src="auth.js?v=1.6.6" defer></script>
-<script src="device-panel.js?v=1.6.6" defer></script>
-<script src="dialog.js?v=1.6.6" defer></script>
-<script src="router.js?v=1.6.6" defer></script>
-<script src="components/chart.js?v=1.6.6" defer></script>
-<script src="services/export.js?v=1.6.6" defer></script>
-<script src="app.js?v=1.6.6" defer></script>
+<script src="strains.js?v=1.6.9" defer></script>
+<script src="engine.js?v=1.6.9" defer></script>
+<script src="xlsx.js?v=1.6.9" defer></script>
+<script src="stats.js?v=1.6.9" defer></script>
+<script src="version.js?v=1.6.9" defer></script>
+  <script src="locales/fa.js?v=1.6.9" defer></script>
+<script src="locales/en.js?v=1.6.9" defer></script>
+<script src="i18n.js?v=1.6.9" defer></script>
+<script src="utils/formatters.js?v=1.6.9" defer></script>
+<script src="shamsi.js?v=1.6.9" defer></script>
+<script src="auth.js?v=1.6.9" defer></script>
+<script src="device-panel.js?v=1.6.9" defer></script>
+<script src="dialog.js?v=1.6.9" defer></script>
+<script src="router.js?v=1.6.9" defer></script>
+<script src="components/chart.js?v=1.6.9" defer></script>
+<script src="services/export.js?v=1.6.9" defer></script>
+<script src="app.js?v=1.6.9" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
@@ -2665,9 +2676,24 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 (function(){
   var el=document.getElementById('landing-typed');
   if(!el) return;
-  var timer=null, token=0;
+  var timer=null, token=0, msgIdx=0;
+  var MSGS=['landing.typed1','landing.typed2','landing.typed3'];
+  function msgList(){
+    var out=[];
+    for(var i=0;i<MSGS.length;i++){
+      var s=window.tr?window.tr(MSGS[i]):null;
+      if(s && s!==MSGS[i]) out.push(s);
+    }
+    if(!out.length){
+      var fb=(window.tr?window.tr('landing.typed'):null)||el.getAttribute('data-text')||'';
+      if(fb) out.push(fb);
+    }
+    return out;
+  }
   function fullText(){
-    return (window.tr?window.tr('landing.typed'):null)||el.getAttribute('data-text')||'';
+    var list=msgList();
+    if(!list.length) return '';
+    return list[msgIdx % list.length];
   }
   function stop(){ if(timer){clearTimeout(timer);timer=null;} token++; }
   function render(full, cursor){
@@ -2701,6 +2727,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
       } else {
         timer=setTimeout(function(){
           if(my!==token) return;
+          msgIdx=(msgIdx+1)%Math.max(1,msgList().length);  // rotate to next value prop
           el.textContent='';
           el.appendChild(cursor);
           i=0;
@@ -2714,6 +2741,29 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   // i18n.js (defer) fires applyLang on load; start typing after it settles
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(run,60); });
   else setTimeout(run,60);
+})();
+</script>
+<script>
+/* landing facts chip — real numbers from strains.js (single source of truth) */
+(function(){
+  function fill(){
+    try{
+      var el=document.getElementById('lb-strains'), pt=document.getElementById('lb-points');
+      if(!el||!pt) return;
+      var S=window.STRAINS||{}, n=0, pts=0;
+      for(var k in S){ if(!S.hasOwnProperty(k)) continue;
+        n++;
+        var st=S[k]; var dl=st.day?st.day.length:0;
+        pts+=dl*10; /* 10 reference series per strain: day + 3×(bw,fi,fcr) */
+      }
+      el.textContent=(window.num?window.num(n,0):String(n));
+      pt.textContent=(window.num?window.num(pts,0):String(pts));
+    }catch(e){}
+  }
+  function tryFill(){ fill(); if((document.getElementById('lb-points')||{}).textContent==='0'){ setTimeout(tryFill,120); } }
+  if(document.readyState==='complete') tryFill();
+  else window.addEventListener('load', tryFill);   /* deferred strains.js must be ready */
+  window.addEventListener('rossim:lang', fill);    /* re-render digits per locale */
 })();
 </script>
 <!-- Material Dialog -->
