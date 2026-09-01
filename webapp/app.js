@@ -1564,7 +1564,7 @@ on("btn-exp-defaults","click",function(){
 
 /* ---------------- init ---------------- */
 document.addEventListener("keydown",e=>{
-  if(e.key.toLowerCase()!=="t"||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(!e.key||e.key.toLowerCase()!=="t"||e.ctrlKey||e.metaKey||e.altKey)return;
   const t=e.target;
   if(t&&(t.tagName==="INPUT"||t.tagName==="SELECT"||t.tagName==="TEXTAREA"||t.isContentEditable))return;
   setTheme(THEME==="dark"?"light":"dark")});
