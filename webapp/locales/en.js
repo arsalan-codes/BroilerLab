@@ -1,7 +1,9 @@
 /* Arian — English translations */
 "use strict";
 window.I18N_EN={
-"lv.live": "LIVE",
+"lv.t.temp": "House temp",
+"lv.t.rh": "Humidity",
+"lv.t.feed": "Feed used today",
 "landing.fact.strains": "standard strains",
 "landing.fact.points": "reference data points",
 "landing.fact.verified": "Calibrated on peer-reviewed science",

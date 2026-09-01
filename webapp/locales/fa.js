@@ -1,7 +1,9 @@
 /* Arian — Persian translations */
 "use strict";
 window.I18N_FA={
-"lv.live": "زنده",
+"lv.t.temp": "دمات سالن",
+"lv.t.rh": "رطوبت نسبی",
+"lv.t.feed": "مصرف خوراک امروز",
 "landing.fact.strains": "سویه استاندارد",
 "landing.fact.points": "نقطه داده مرجع",
 "landing.fact.verified": "کالیبره‌شده با مقالات داوری‌شده",
