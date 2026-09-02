@@ -150,6 +150,15 @@
       if (ob) ob.addEventListener("click", function(){ showAuthModal("login"); });
       updateLandingCTA();
     }
+    /* status ring on the mobile round trigger: green = logged in, red = logged out */
+    try {
+      var authArea = document.getElementById("auth-area");
+      if (authArea) {
+        var logged = !!(getToken() && isTokenValid(getToken()) && getUser());
+        authArea.classList.toggle("is-logged-in", logged);
+        authArea.classList.toggle("is-logged-out", !logged);
+      }
+    } catch (e) {}
   }
 
   // ---- Modal ----
