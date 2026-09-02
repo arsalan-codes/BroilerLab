@@ -953,15 +953,6 @@ function closeDrawer(){
   document.body.style.overflow=""}
 function bindDrawer(){
   on("nav-burger","click",()=>drawerOpen()?closeDrawer():openDrawer());
-  /* ≤992px: the round avatar in the topbar acts as the drawer trigger */
-  var aa=document.getElementById("auth-area");
-  if(aa) aa.addEventListener("click",function(e){
-    if(innerWidth>992) return;
-    var chip=e.target.closest(".auth-user,.auth-login-btn");
-    if(!chip) return;
-    e.preventDefault(); e.stopPropagation();
-    openDrawer();
-  },true);
   on("backdrop","click",closeDrawer);
   document.addEventListener("keydown",e=>{
     if(e.key==="Escape"&&drawerOpen())closeDrawer()});
@@ -1598,6 +1589,16 @@ function startClock(){
   if(!elD||!elT) return;
   function tick(){
     var now=new Date();
+    try{
+      var dh=document.getElementById("dhead-clock");
+      if(dh){
+        var dTxt="", tTxt=now.toLocaleTimeString((typeof LANG!=="undefined"&&LANG==="fa")?"fa-IR":"en-US",{hour:"2-digit",minute:"2-digit"});
+        if(typeof window.formatDate==="function") dTxt=window.formatDate(now,{longMonth:false});
+        else if(window.Shamsi && typeof window.Shamsi.toShamsi==="function" && (typeof LANG==="undefined"||LANG==="fa")) dTxt=window.Shamsi.toShamsi(now,{longMonth:false});
+        else dTxt=now.toLocaleDateString((typeof LANG!=="undefined"&&LANG==="fa")?"fa-IR":"en-US",{year:"numeric",month:"2-digit",day:"2-digit"});
+        dh.textContent=dTxt+" · "+tTxt;
+      }
+    }catch(e){}
     try {
       if(typeof window.formatDate==="function"){
         elD.textContent=window.formatDate(now,{longMonth:false});

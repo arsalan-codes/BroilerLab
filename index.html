@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.17"></script>
-<script src="services/api.js?v=1.8.17"></script>
+<script src="config.js?v=1.8.18"></script>
+<script src="services/api.js?v=1.8.18"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -417,11 +417,15 @@ body.drawer-open .topbar{z-index:220}
   #nav-burger:hover{filter:brightness(1.08)}
   #nav-burger span{background:#fff}
   .topbar-in > #auth-area{display:none}
-  .dhead{display:flex;align-items:center;justify-content:space-between;
-    position:static;background:none;border:none;padding:0 0 4px}
-  .dhead b{font-size:12px;letter-spacing:.14em;text-transform:uppercase;
-    color:var(--dim);font-weight:800}
-  .dhead .icon-btn{width:34px;height:34px;border-radius:10px}
+  .dhead{display:flex;align-items:center;gap:10px;position:static;background:none;border:none;
+    padding:2px 0 10px;border-bottom:1px solid var(--line)}
+  .dhead-brand{display:inline-flex;align-items:center;gap:8px;font-weight:900;font-size:15px}
+  .dhead-brand img{border-radius:7px;display:block}
+  .dhead-clock{margin-inline-start:auto;direction:ltr;font-size:11.5px;font-weight:700;
+    color:var(--dim);background:color-mix(in srgb, var(--txt) 5%, transparent);
+    border:1px solid var(--line);border-radius:999px;padding:5px 11px;
+    font-variant-numeric:tabular-nums}
+  .dhead .icon-btn{width:34px;height:34px;border-radius:10px;flex:none}
   .hctl{position:fixed;top:0;inset-inline-end:0;z-index:60;
     height:100dvh;max-height:none;width:min(330px,90vw);
     flex-direction:column;align-items:stretch;gap:14px;
@@ -430,7 +434,6 @@ body.drawer-open .topbar{z-index:220}
       radial-gradient(260px 180px at 0% 100%, color-mix(in srgb, var(--acc2) 10%, transparent), transparent 70%),
       var(--card);
     border-inline-start:1px solid var(--line);
-    border-radius:22px 0 0 22px;
     box-shadow:-24px 0 60px rgba(4,8,16,.35);
     padding:20px 18px calc(22px + env(safe-area-inset-bottom,0px));
     transition:transform .32s cubic-bezier(.32,.72,.24,1),visibility .32s;
@@ -1540,7 +1543,8 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
       <span class="tc-time" id="tc-time">—</span>
     </div>
     <div class="dhead">
-      <b data-i18n="hdr.settings">تنظیمات</b>
+      <span class="dhead-brand"><img src="logo_32.png" alt="" width="22" height="22"><b data-i18n="brand.name">آرین</b></span>
+      <span class="dhead-clock" id="dhead-clock" aria-hidden="true"></span>
       <button id="drawer-close" class="icon-btn" aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
     </div>
 
@@ -2549,23 +2553,23 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.8.17" defer></script>
-<script src="engine.js?v=1.8.17" defer></script>
-<script src="xlsx.js?v=1.8.17" defer></script>
-<script src="stats.js?v=1.8.17" defer></script>
-<script src="version.js?v=1.8.17" defer></script>
-  <script src="locales/fa.js?v=1.8.17" defer></script>
-<script src="locales/en.js?v=1.8.17" defer></script>
-<script src="i18n.js?v=1.8.17" defer></script>
-<script src="utils/formatters.js?v=1.8.17" defer></script>
-<script src="shamsi.js?v=1.8.17" defer></script>
-<script src="auth.js?v=1.8.17" defer></script>
-<script src="device-panel.js?v=1.8.17" defer></script>
-<script src="dialog.js?v=1.8.17" defer></script>
-<script src="router.js?v=1.8.17" defer></script>
-<script src="components/chart.js?v=1.8.17" defer></script>
-<script src="services/export.js?v=1.8.17" defer></script>
-<script src="app.js?v=1.8.17" defer></script>
+<script src="strains.js?v=1.8.18" defer></script>
+<script src="engine.js?v=1.8.18" defer></script>
+<script src="xlsx.js?v=1.8.18" defer></script>
+<script src="stats.js?v=1.8.18" defer></script>
+<script src="version.js?v=1.8.18" defer></script>
+  <script src="locales/fa.js?v=1.8.18" defer></script>
+<script src="locales/en.js?v=1.8.18" defer></script>
+<script src="i18n.js?v=1.8.18" defer></script>
+<script src="utils/formatters.js?v=1.8.18" defer></script>
+<script src="shamsi.js?v=1.8.18" defer></script>
+<script src="auth.js?v=1.8.18" defer></script>
+<script src="device-panel.js?v=1.8.18" defer></script>
+<script src="dialog.js?v=1.8.18" defer></script>
+<script src="router.js?v=1.8.18" defer></script>
+<script src="components/chart.js?v=1.8.18" defer></script>
+<script src="services/export.js?v=1.8.18" defer></script>
+<script src="app.js?v=1.8.18" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
