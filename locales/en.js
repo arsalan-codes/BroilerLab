@@ -1,10 +1,10 @@
 /* Arian — English translations */
 "use strict";
 window.I18N_EN={
-"landing.heroPrefix": "Unified Intelligent System",
+"landing.heroPrefix": "Smart Monitoring System",
 "landing.fact.strains": "standard strains",
 "landing.fact.points": "reference data points",
-"landing.fact.verified": "Calibrated on peer-reviewed science",
+"landing.fact.verified": "Built on up-to-date peer-reviewed research",
 "landing.typed1": "Smart feed-intake monitoring, day by day",
 "landing.typed2": "Data-driven breeding, precise & reproducible",
 "landing.typed3": "From device to genetic decision, unified",

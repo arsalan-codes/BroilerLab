@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.2"></script>
+<script src="config.js?v=1.8.3"></script>
 <script src="services/api.js?v=1.8.1"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
@@ -39,7 +39,7 @@ document.documentElement.setAttribute("data-theme","light")}</script>
 :root{
   --bg:#0b0f17;--bg2:#0e141f;--card:#111826;--card2:#151d2c;--line:#1f2a3d;
   --txt:#e8edf5;--mut:#8a95ab;--dim:#58647e;
-  --acc:#19c39a;--acc2:#3d7bfd;--warn:#e99b26;--bad:#e5484d;--purple:#8b5cf6;
+  --acc:#1fd9a8;--acc2:#3d7bfd;--warn:#e99b26;--bad:#e5484d;--purple:#8b5cf6;
   --r:12px;
   --sh-sm:0 1px 2px rgba(0,0,0,.28),0 2px 8px rgba(0,0,0,.16);
   --sh-md:0 6px 24px rgba(0,0,0,.35);
@@ -959,7 +959,7 @@ footer a:hover{color:var(--acc)}
 html[data-theme=light]{
   --bg:#f5f6f8;--bg2:#edeff3;--card:#ffffff;--card2:#fbfcfd;--line:#dee3ea;
   --txt:#151a22;--mut:#57627a;--dim:#8791a2;
-  --acc:#0c8f72;--acc2:#2b62d9;--warn:#a86f0d;--bad:#cf3338;--purple:#6f46cc;
+  --acc:#0a7d63;--acc2:#2b62d9;--warn:#a86f0d;--bad:#cf3338;--purple:#6f46cc;
   --sh-sm:0 1px 2px rgba(25,35,55,.06),0 2px 6px rgba(25,35,55,.05);
   --sh-md:0 4px 14px rgba(25,35,55,.09);
   --sh-lg:0 14px 36px rgba(25,35,55,.16),0 4px 10px rgba(25,35,55,.08);
@@ -1274,27 +1274,19 @@ html[data-theme=light] .ws-card:hover{box-shadow:var(--sh-md)}
 .brand-hero-accent{position:relative;display:inline-block;padding:0 .06em .18em;color:transparent;background:linear-gradient(135deg,#19c39a 0%,#0ea5e9 48%,#7c3aed 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:1000;font-size:1.06em;letter-spacing:-.02em;filter:drop-shadow(0 2px 12px rgba(25,195,154,.22))}
 html[data-theme=dark] .brand-hero-accent{filter:drop-shadow(0 1px 8px rgba(25,195,154,.18))}
 .brand-hero-accent [data-i18n="brand.name"]{position:relative;z-index:1}
-.brand-underline{position:absolute;left:-3%;right:-3%;bottom:-2px;width:106%;height:14px;overflow:visible;pointer-events:none;color:#19c39a}
-.brand-underline .bu-hi{fill:none;stroke:currentColor;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;opacity:.18}
-.brand-underline .bu-stroke{fill:none;stroke:currentColor;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:200;stroke-dashoffset:200;animation:brandDraw 1.05s cubic-bezier(.22,1,.36,1) forwards;animation-delay:.45s}
-@keyframes brandDraw{to{stroke-dashoffset:0}}
-html[dir=ltr] .brand-hero{flex-direction:row-reverse;justify-content:flex-end}
 .brand-hero-sub{font-size:clamp(10px,.92vw,12.5px);font-weight:500;color:var(--mut);opacity:.85;margin-top:5px;min-height:18px;display:block;letter-spacing:.01em}
-@media(max-width:560px){.landing-title .brand-hero{font-size:clamp(30px,10vw,48px)}.brand-hero-sub{font-size:10.5px;min-height:16px}.brand-underline{height:14px;bottom:-1px}}
-@media(prefers-reduced-motion:reduce){.brand-underline .bu-stroke{animation:none;stroke-dashoffset:0}}
+@media(max-width:560px){.landing-title .brand-hero{font-size:clamp(30px,10vw,48px)}.brand-hero-sub{font-size:10.5px;min-height:16px}}
+@media(prefers-reduced-motion:reduce){}
 .landing-hero-inner .landing-cta{margin:0;display:flex;gap:12px;flex-wrap:wrap}
 .landing-hero-inner .landing-stats{margin:0}
 .landing-badge{align-self:flex-start;display:inline-flex;align-items:center;gap:9px;padding:7px 14px;border-radius:999px;background:rgba(25,195,154,.12);border:1px solid rgba(25,195,154,.22);color:var(--acc);font-size:12px;font-weight:700;backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(25,195,154,.12);flex-wrap:wrap;row-gap:4px}
 .landing-badge .lb-fact{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.landing-badge .lb-fact b{font-weight:900;color:#fff;font-size:12.5px;font-variant-numeric:tabular-nums}
+.landing-badge .lb-fact b{font-weight:900;color:var(--acc);font-size:13.5px;font-variant-numeric:tabular-nums;text-shadow:0 0 1px color-mix(in srgb, var(--acc) 35%, transparent)}
 .landing-badge .lb-fact i{font-size:11px;opacity:.9}
 .landing-badge .lb-sep{color:rgba(25,195,154,.45);font-weight:900}
 @media(max-width:560px){.landing-badge{border-radius:16px}.landing-badge .lb-sep{display:none}.landing-badge .lb-fact{padding:2px 8px;border-radius:999px;background:rgba(25,195,154,.08)}}
 .landing-title{margin:16px 0 10px;font-size:clamp(26px,4.2vw,38px);line-height:1.18;font-weight:900;letter-spacing:-.03em}
 .landing-title span{display:block;font-size:clamp(15px,1.8vw,19px);font-weight:700;color:var(--mut);margin-top:6px;min-height:26px}
-.landing-title .typed-cursor{display:inline-block;width:2px;height:1.15em;background:var(--acc);margin-inline-start:3px;vertical-align:-2px;animation:typed-blink .75s step-end infinite}
-@keyframes typed-blink{0%,50%{opacity:1}51%,100%{opacity:0}}
-@media(prefers-reduced-motion:reduce){.landing-title .typed-cursor{animation:none}}
 /* landing-desc-box removed — unused */
 .landing-cta{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 18px}
 .btn.lg{padding:10px 18px;font-size:13px;border-radius:12px}
@@ -1537,9 +1529,9 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
         <span class="lb-sep" aria-hidden="true">·</span>
         <span class="lb-fact"><i class="fa-solid fa-database" aria-hidden="true"></i><b id="lb-points">۲٬۳۸۰</b>&nbsp;<span data-i18n="landing.fact.points">نقطه داده مرجع</span></span>
         <span class="lb-sep" aria-hidden="true">·</span>
-        <span class="lb-fact"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span data-i18n="landing.fact.verified">کالیبره‌شده با مقالات داوری‌شده</span></span>
+        <span class="lb-fact"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span data-i18n="landing.fact.verified">توسعه داده شده با مقالات و پژوهش‌های معتبر روز</span></span>
       </div>
-      <h1 class="landing-title"><span class="brand-hero"><span data-i18n="landing.heroPrefix">سامانه یکپارچه هوشمند</span> <span class="brand-hero-accent"><span data-i18n="brand.name">آرین</span><svg class="brand-underline" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path class="bu-hi" d="M3 9.2 C 38 3.0, 82 12.2, 124 6.0 C 152 2.8, 174 4.0, 197 8.6" pathLength="200"/><path class="bu-stroke" d="M3 9.2 C 38 3.0, 82 12.2, 124 6.0 C 152 2.8, 174 4.0, 197 8.6" pathLength="200"/></svg></span></span><span id="landing-typed" class="brand-hero-sub" data-text="اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی" aria-label="اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی">اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی<span class="typed-cursor" aria-hidden="true"></span></span></h1>
+      <h1 class="landing-title"><span class="brand-hero"><span data-i18n="landing.heroPrefix">سامانه پایش هوشمند</span> <span class="brand-hero-accent"><span data-i18n="brand.name">آرین</span></span></span><span id="landing-typed" class="brand-hero-sub">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی</span></h1>
       <div class="landing-cta">
         <button class="btn primary lg" id="landing-login"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="landing.login">ورود به پنل</span></button>
         <button class="btn ghost lg" id="landing-register" data-i18n="landing.register">ثبت‌نام رایگان</button>
@@ -2495,84 +2487,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   </div>
 </div>
 <div id="tour-shade"></div>
-<script>
-(function(){
-  var el=document.getElementById('landing-typed');
-  if(!el) return;
-  var timer=null, token=0, msgIdx=0;
-  var MSGS=['landing.typed1','landing.typed2','landing.typed3'];
-  function msgList(){
-    var out=[];
-    for(var i=0;i<MSGS.length;i++){
-      var s=window.tr?window.tr(MSGS[i]):null;
-      if(s && s!==MSGS[i]) out.push(s);
-    }
-    if(!out.length){
-      var fb=(window.tr?window.tr('landing.typed'):null)||el.getAttribute('data-text')||'';
-      if(fb) out.push(fb);
-    }
-    return out;
-  }
-  function fullText(){
-    var list=msgList();
-    if(!list.length) return '';
-    return list[msgIdx % list.length];
-  }
-  function stop(){ if(timer){clearTimeout(timer);timer=null;} token++; }
-  function render(full, cursor){
-    el.textContent='';
-    el.appendChild(cursor);
-    return cursor;
-  }
-  function makeCursor(){
-    var c=document.createElement('span');
-    c.className='typed-cursor';
-    c.setAttribute('aria-hidden','true');
-    return c;
-  }
-  function run(){
-    stop();
-    var my=++token;
-    var full=fullText();
-    var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if(reduce){ el.textContent=full; return; }
-    var cursor=makeCursor();
-    el.textContent='';
-    el.appendChild(cursor);
-    var i=0, speed=45;
-    (function type(){
-      if(my!==token) return;                 // superseded by a newer run (lang switch)
-      if(i<full.length){
-        var ch=full.charAt(i);
-        el.insertBefore(document.createTextNode(ch), cursor);
-        i++;
-        timer=setTimeout(type, speed + (ch===' '||ch==='،'||ch===',' ? 18 : 0));
-      } else {
-        timer=setTimeout(function(){
-          if(my!==token) return;
-          msgIdx=(msgIdx+1)%Math.max(1,msgList().length);  // rotate to next value prop
-          el.textContent='';
-          el.appendChild(cursor);
-          i=0;
-          timer=setTimeout(type, 400);
-        }, 2600);
-      }
-    })();
-  }
-  // language switch (FA/EN) retypes with the new string
-  window.addEventListener('rossim:lang', run);
-  window.addEventListener('rossim:lang', function(){
-  var u=document.querySelector('.brand-underline .bu-stroke');
-  if(!u) return;
-  u.style.animation='none';
-  void u.getBoundingClientRect();
-  u.style.animation='';
-});
-  // i18n.js (defer) fires applyLang on load; start typing after it settles
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(run,60); });
-  else setTimeout(run,60);
-})();
-</script>
+
 <script>
 /* landing facts chip — real numbers from strains.js (single source of truth) */
 (function(){

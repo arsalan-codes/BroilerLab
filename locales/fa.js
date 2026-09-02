@@ -1,10 +1,10 @@
 /* Arian — Persian translations */
 "use strict";
 window.I18N_FA={
-"landing.heroPrefix": "سامانه یکپارچه هوشمند",
+"landing.heroPrefix": "سامانه پایش هوشمند",
 "landing.fact.strains": "سویه استاندارد",
 "landing.fact.points": "نقطه داده مرجع",
-"landing.fact.verified": "کالیبره‌شده با مقالات داوری‌شده",
+"landing.fact.verified": "توسعه داده شده با مقالات و پژوهش‌های معتبر روز",
 "landing.typed1": "پایش هوشمند مصرف خوراک، روزبه‌روز",
 "landing.typed2": "اصلاح نژاد داده‌محور، دقیق و قابل تکرار",
 "landing.typed3": "از دستگاه تا تصمیم ژنتیکی، یکپارچه",
