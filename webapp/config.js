@@ -8,7 +8,7 @@
   var h = window.location;
   var isPages = h.hostname.indexOf("github.io") > -1;
   var onVercel = h.hostname.indexOf(".vercel.app") > -1 || (h.protocol === "https:" && !isPages && window.ARIAN_API_SAME_ORIGIN === true);
-  var PROD_API_FALLBACK = window.ARIAN_PROD_API || "";  // e.g. "https://arian-xyz.vercel.app"
+  var PROD_API_FALLBACK = window.ARIAN_PROD_API || "https://ariansense.vercel.app";  // Vercel API for GitHub Pages frontend
   var LOCAL_API = window.ARIAN_LOCAL_API || "http://127.0.0.1:8755";  // local backend port
   var base = "";
   try {
