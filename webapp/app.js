@@ -953,6 +953,15 @@ function closeDrawer(){
   document.body.style.overflow=""}
 function bindDrawer(){
   on("nav-burger","click",()=>drawerOpen()?closeDrawer():openDrawer());
+  /* ≤992px: the round avatar in the topbar acts as the drawer trigger */
+  var aa=document.getElementById("auth-area");
+  if(aa) aa.addEventListener("click",function(e){
+    if(innerWidth>992) return;
+    var chip=e.target.closest(".auth-user,.auth-login-btn");
+    if(!chip) return;
+    e.preventDefault(); e.stopPropagation();
+    openDrawer();
+  },true);
   on("backdrop","click",closeDrawer);
   document.addEventListener("keydown",e=>{
     if(e.key==="Escape"&&drawerOpen())closeDrawer()});

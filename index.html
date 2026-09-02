@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.6"></script>
-<script src="services/api.js?v=1.8.6"></script>
+<script src="config.js?v=1.8.9"></script>
+<script src="services/api.js?v=1.8.9"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -76,9 +76,7 @@ nav{align-items:center}
 nav .tab{display:inline-flex;align-items:center;justify-content:center}
 .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;min-width:0}
 .brand .mark{width:52px;height:52px;border-radius:14px;overflow:hidden;flex:none;
-  display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(120% 120% at 30% 20%, rgba(25,195,154,.16), rgba(13,18,29,.4) 60%);
-  border:1px solid rgba(255,255,255,.08);box-shadow:0 4px 14px rgba(0,0,0,.22)}
+  display:flex;align-items:center;justify-content:center;background:none;border:none;box-shadow:none}
 .brand .mark img{width:100%;height:100%;object-fit:contain;display:block}
 .brand b{font-size:clamp(15px,1.3vw,18px);font-weight:800;letter-spacing:.2px;display:block;line-height:1.25}
 .brand .tagline{display:block;font-size:clamp(10.5px,.85vw,12px);color:var(--mut);line-height:1.35;
@@ -429,8 +427,22 @@ body.drawer-open .topbar{z-index:220}
   html[dir=rtl] .hctl{transform:translateX(-112%)}
   html[dir=ltr] .hctl{transform:translateX(112%)}
   html[dir=rtl] .hctl.open,html[dir=ltr] .hctl.open{transform:none;visibility:visible}
+  /* mobile: topbar shows ONLY a round avatar icon as the drawer trigger (no burger, no text) */
+  .topbar-in > #auth-area{display:block;margin-inline-start:auto}
+  #nav-burger{display:none!important}
+  #auth-area .auth-user{width:42px;height:42px;max-width:none;border-radius:999px;
+    padding:0;justify-content:center;background:var(--acc);color:#fff;cursor:pointer}
+  #auth-area .auth-user .auth-name,#auth-area .auth-user .auth-chevron{display:none}
+  #auth-area .auth-user .auth-avatar{background:transparent;color:#fff;font-size:16px;font-weight:900;width:auto;height:auto}
+  #auth-area .auth-login-btn{width:42px;height:42px;min-width:0;padding:0;border-radius:999px;overflow:hidden}
+  #auth-area .auth-login-btn .btn-label,#auth-area .auth-login-btn{font-size:0}
+  #auth-area .auth-login-btn i{font-size:15px}
+  #auth-area .auth-dropdown{display:none}
+  /* drawer trigger on avatar: open drawer instead of dropdown */
+  .topbar-in > #auth-area .auth-user{cursor:pointer}
+
   /* drawer auth mount: replaces the topbar auth controls ≤992px */
-  .auth-area-drawer{width:100%}
+  .auth-area-drawer{display:block;width:100%}
   .auth-area-drawer .auth-login-btn{width:100%;min-height:46px;justify-content:center;font-size:13.5px}
   .auth-area-drawer .auth-user{width:100%;max-width:none!important;justify-content:flex-start;padding:10px 12px}
   .auth-area-drawer .auth-dropdown{position:static;width:100%;box-shadow:none;margin-top:8px}
@@ -499,6 +511,9 @@ select,input[type=number],input[type=text]{background:var(--bg2);border:1px soli
 .settings-info .hpills{flex-direction:column;align-items:stretch;gap:6px}
 .settings-info .pill{justify-content:space-between;display:flex;align-items:center;padding:6px 10px}
 .settings-info .vbadge{align-self:flex-end}
+
+/* drawer auth mount: mobile-only (shown inside .hctl drawer ≤992px) */
+.auth-area-drawer{display:none}
 
 /* mobile: hide settings button in drawer (it goes into drawer) */
 @media(max-width:992px){
@@ -1305,7 +1320,7 @@ html[data-theme=light] .ws-card:hover{box-shadow:var(--sh-md)}
 .brand-hero-accent{position:relative;display:inline-block;padding:0 .01em .14em;color:transparent;background:linear-gradient(135deg,#19c39a 0%,#0ea5e9 48%,#7c3aed 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:1000;font-size:1.06em;letter-spacing:-.02em;filter:drop-shadow(0 2px 12px rgba(25,195,154,.22))}
 html[data-theme=dark] .brand-hero-accent{filter:drop-shadow(0 1px 8px rgba(25,195,154,.18))}
 .brand-hero-accent [data-i18n="brand.name"]{position:relative;z-index:1}
-.brand-hero-sub{font-size:clamp(10px,.92vw,12.5px);font-weight:500;color:var(--mut);opacity:.85;margin-top:5px;min-height:18px;display:block;letter-spacing:.01em}
+.brand-hero-sub{font-size:clamp(10px,.92vw,12.5px);font-weight:500;color:var(--mut);opacity:.85;margin-top:5px;min-height:18px;display:block;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .typed-cursor{display:inline-block;width:2px;height:.95em;background:var(--acc);margin-inline-start:3px;vertical-align:-.08em;animation:cursorBlink 1s steps(1) infinite}
 @keyframes cursorBlink{50%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.typed-cursor{animation:none}}
@@ -2465,23 +2480,23 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.8.6" defer></script>
-<script src="engine.js?v=1.8.6" defer></script>
-<script src="xlsx.js?v=1.8.6" defer></script>
-<script src="stats.js?v=1.8.6" defer></script>
-<script src="version.js?v=1.8.6" defer></script>
-  <script src="locales/fa.js?v=1.8.6" defer></script>
-<script src="locales/en.js?v=1.8.6" defer></script>
-<script src="i18n.js?v=1.8.6" defer></script>
-<script src="utils/formatters.js?v=1.8.6" defer></script>
-<script src="shamsi.js?v=1.8.6" defer></script>
-<script src="auth.js?v=1.8.8" defer></script>
-<script src="device-panel.js?v=1.8.6" defer></script>
-<script src="dialog.js?v=1.8.6" defer></script>
-<script src="router.js?v=1.8.6" defer></script>
-<script src="components/chart.js?v=1.8.6" defer></script>
-<script src="services/export.js?v=1.8.6" defer></script>
-<script src="app.js?v=1.8.6" defer></script>
+<script src="strains.js?v=1.8.9" defer></script>
+<script src="engine.js?v=1.8.9" defer></script>
+<script src="xlsx.js?v=1.8.9" defer></script>
+<script src="stats.js?v=1.8.9" defer></script>
+<script src="version.js?v=1.8.9" defer></script>
+  <script src="locales/fa.js?v=1.8.9" defer></script>
+<script src="locales/en.js?v=1.8.9" defer></script>
+<script src="i18n.js?v=1.8.9" defer></script>
+<script src="utils/formatters.js?v=1.8.9" defer></script>
+<script src="shamsi.js?v=1.8.9" defer></script>
+<script src="auth.js?v=1.8.9" defer></script>
+<script src="device-panel.js?v=1.8.9" defer></script>
+<script src="dialog.js?v=1.8.9" defer></script>
+<script src="router.js?v=1.8.9" defer></script>
+<script src="components/chart.js?v=1.8.9" defer></script>
+<script src="services/export.js?v=1.8.9" defer></script>
+<script src="app.js?v=1.8.9" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
@@ -2549,23 +2564,31 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   window.addEventListener('rossim:lang', fill);    /* re-render digits per locale */
 })();
 (function(){
-  /* hero subtitle typer — respects prefers-reduced-motion, replays on language switch */
+  /* hero subtitle typer — LOOP: type → hold → erase → retype.
+     Respects prefers-reduced-motion (static full text), replays on language switch. */
   var el = document.getElementById('landing-typed');
   if(!el) return;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var target = el.getAttribute('data-text') || el.textContent || '';
-  var timer = null;
+  var timer = null, i = 0, mode = 'type';
   function paint(txt){ el.textContent = txt; var c=document.createElement('span'); c.className='typed-cursor'; c.setAttribute('aria-hidden','true'); c.textContent='\u200E\u258D'; el.appendChild(c); }
+  function stop(){ if(timer){ clearTimeout(timer); timer=null; } }
+  function tick(){
+    if(mode==='type'){
+      i++; paint(target.slice(0, i));
+      if(i >= target.length){ mode='hold'; timer=setTimeout(function(){ mode='erase'; tick(); }, 1800); return; }
+      timer=setTimeout(tick, 34);
+    } else {
+      i-=3; if(i<0) i=0;
+      paint(target.slice(0, i));
+      if(i <= 0){ mode='type'; timer=setTimeout(tick, 500); return; }
+      timer=setTimeout(tick, 16);
+    }
+  }
   function run(){
-    if(timer){ clearInterval(timer); timer=null; }
-    if(reduce){ el.textContent = target; return; }
-    var i = 0;
-    el.textContent = '';
-    timer = setInterval(function(){
-      i++;
-      el.textContent = target.slice(0, i);
-      if(i >= target.length){ clearInterval(timer); timer=null; paint(target); }
-    }, 34);
+    stop(); i = 0; mode = 'type';
+    if(reduce){ paint(target); return; }
+    el.textContent=''; timer=setTimeout(tick, 250);
   }
   if(document.readyState === 'complete' || document.readyState === 'interactive') run();
   else window.addEventListener('DOMContentLoaded', run);
