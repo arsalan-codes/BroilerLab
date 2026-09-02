@@ -1386,14 +1386,15 @@ html[data-theme=light] .ws-card:hover{box-shadow:var(--sh-md)}
 .landing-hero-bg{position:absolute;inset:0;background:linear-gradient(180deg, transparent 40%, rgba(0,0,0,.22));pointer-events:none;z-index:0}
 .landing-hero-inner{position:relative;z-index:1;min-width:0;display:flex;flex-direction:column;gap:20px}
 .landing-hero-inner .landing-badge{margin:0}
-.landing-hero-inner .landing-title{margin:-6px 0 8px;display:flex;flex-direction:column;gap:6px}
+.landing-hero-inner .landing-title{margin:-6px 0 8px;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.landing-hero-inner .landing-title .brand-hero-sub{align-self:center}
 .landing-title .brand-hero{font-size:clamp(38px,7.2vw,72px);font-weight:1000;letter-spacing:-.024em;line-height:1.1;display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:.04em;text-wrap:balance}
 .landing-title .brand-hero [data-i18n="landing.heroPrefix"]{font-weight:1000;color:var(--tx)}
 .brand-hero-accent{position:relative;display:inline-block;padding:0 .01em .14em;color:transparent;background:linear-gradient(135deg,#19c39a 0%,#0ea5e9 48%,#7c3aed 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:1000;font-size:1.06em;letter-spacing:-.02em;filter:drop-shadow(0 2px 12px rgba(25,195,154,.22))}
 html[data-theme=dark] .brand-hero-accent{filter:drop-shadow(0 1px 8px rgba(25,195,154,.18))}
 .brand-hero-accent [data-i18n="brand.name"]{position:relative;z-index:1}
-.brand-hero-sub{font-size:clamp(10px,.92vw,12.5px);font-weight:500;color:var(--mut);opacity:.85;margin-top:5px;min-height:18px;display:block;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.typed-cursor{display:inline-block;width:2px;height:.95em;background:var(--acc);margin-inline-start:3px;vertical-align:-.08em;animation:cursorBlink 1s steps(1) infinite}
+.brand-hero-sub{font-size:var(--sub-fs,12.5px);line-height:1.5;font-weight:500;color:var(--mut);opacity:.9;margin-top:5px;min-height:18px;display:block;letter-spacing:.01em;white-space:nowrap;overflow:visible;max-width:100%;width:fit-content;margin-inline:auto}
+.typed-cursor{display:inline-block;width:2px;height:.95em;background:var(--acc);vertical-align:-.15em;animation:tcBlink 1s steps(1) infinite;margin-inline-start:2px}
 @keyframes cursorBlink{50%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.typed-cursor{animation:none}}
 @media(max-width:560px){.landing-title .brand-hero{font-size:clamp(30px,10vw,48px)}.brand-hero-sub{font-size:10.5px;min-height:16px}}
@@ -2644,12 +2645,12 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var target = el.getAttribute('data-text') || el.textContent || '';
   var timer = null, i = 0, mode = 'type';
-  function paint(txt){ el.textContent = txt; var c=document.createElement('span'); c.className='typed-cursor'; c.setAttribute('aria-hidden','true'); c.textContent='\u200E\u258D'; el.appendChild(c); }
+  function paint(txt){ el.textContent = txt; var c=document.createElement('span'); c.className='typed-cursor'; c.setAttribute('aria-hidden','true'); c.textContent=''; el.appendChild(c); }
   function stop(){ if(timer){ clearTimeout(timer); timer=null; } }
   function tick(){
     if(mode==='type'){
       i++; paint(target.slice(0, i));
-      if(i >= target.length){ mode='hold'; timer=setTimeout(function(){ mode='erase'; tick(); }, 1800); return; }
+      if(i >= target.length){ fitFont(); mode='hold'; timer=setTimeout(function(){ mode='erase'; tick(); }, 1800); return; }
       timer=setTimeout(tick, 34);
     } else {
       i-=3; if(i<0) i=0;
@@ -2658,6 +2659,31 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
       timer=setTimeout(tick, 16);
     }
   }
+  function fitFont(){
+    /* shrink-to-fit one line: measure at base size, scale down to container width */
+    try{
+      var title = el.closest('.landing-title') || el.parentElement;
+      var maxW = title.getBoundingClientRect().width || el.parentElement.getBoundingClientRect().width;
+      if (maxW < 100) return;                            /* layout not ready — skip */
+      var cs = getComputedStyle(el);
+      var base = 12.5;                                   /* desktop cap */
+      var vw = window.innerWidth;
+      if (vw <= 560) base = 11; else if (vw <= 860) base = 11.5;
+      /* measure with the FULL target text at base size */
+      el.style.fontSize = base + 'px';
+      var saved = el.textContent;
+      el.textContent = target || saved;
+      var w = el.scrollWidth;
+      var max = maxW - 4;
+      var fs = base;
+      if (w > max) fs = Math.max(9, Math.floor((base * max / w) * 10) / 10);
+      el.style.fontSize = fs + 'px';
+      el.textContent = saved;                            /* restore typed progress */
+    }catch(e){}
+  }
+  fitFont();
+  window.addEventListener('resize', function(){ fitFont(); });
+  window.addEventListener('rossim:lang', function(){ setTimeout(fitFont, 60); });
   function run(){
     stop(); i = 0; mode = 'type';
     if(reduce){ paint(target); return; }
