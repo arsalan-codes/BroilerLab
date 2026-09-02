@@ -1279,12 +1279,14 @@ html[data-theme=dark] .brand-hero-accent{filter:drop-shadow(0 1px 8px rgba(25,19
 @media(prefers-reduced-motion:reduce){}
 .landing-hero-inner .landing-cta{margin:0;display:flex;gap:12px;flex-wrap:wrap}
 .landing-hero-inner .landing-stats{margin:0}
-.landing-badge{align-self:flex-start;display:inline-flex;align-items:center;gap:9px;padding:7px 14px;border-radius:999px;background:rgba(25,195,154,.12);border:1px solid rgba(25,195,154,.22);color:var(--acc);font-size:12px;font-weight:700;backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(25,195,154,.12);flex-wrap:wrap;row-gap:4px}
+.landing-badge{align-self:flex-start;display:inline-flex;align-items:center;gap:9px;padding:7px 14px;border-radius:999px;background:color-mix(in srgb, var(--acc) 10%, transparent);border:1px solid color-mix(in srgb, var(--acc) 24%, transparent);color:var(--acc);font-size:12px;font-weight:700;backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(25,195,154,.12);flex-wrap:wrap;row-gap:4px}
 .landing-badge .lb-fact{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.landing-badge .lb-fact b{font-weight:900;color:var(--acc);font-size:13.5px;font-variant-numeric:tabular-nums;text-shadow:0 0 1px color-mix(in srgb, var(--acc) 35%, transparent)}
+.landing-badge .lb-fact b{font-weight:900;color:var(--acc2);font-size:13.5px;font-variant-numeric:tabular-nums;
+  text-shadow:0 0 1px color-mix(in srgb, var(--acc2) 30%, transparent)}
+html[data-theme=light] .landing-badge .lb-fact b{color:var(--acc2);text-shadow:none}
 .landing-badge .lb-fact i{font-size:11px;opacity:.9}
-.landing-badge .lb-sep{color:rgba(25,195,154,.45);font-weight:900}
-@media(max-width:560px){.landing-badge{border-radius:16px}.landing-badge .lb-sep{display:none}.landing-badge .lb-fact{padding:2px 8px;border-radius:999px;background:rgba(25,195,154,.08)}}
+.landing-badge .lb-sep{color:color-mix(in srgb, var(--acc) 45%, transparent);font-weight:900}
+@media(max-width:560px){.landing-badge{border-radius:16px}.landing-badge .lb-sep{display:none}.landing-badge .lb-fact{padding:2px 8px;border-radius:999px;background:color-mix(in srgb, var(--acc) 7%, transparent)}}
 .landing-title{margin:16px 0 10px;font-size:clamp(26px,4.2vw,38px);line-height:1.18;font-weight:900;letter-spacing:-.03em}
 .landing-title span{display:block;font-size:clamp(15px,1.8vw,19px);font-weight:700;color:var(--mut);margin-top:6px;min-height:26px}
 /* landing-desc-box removed — unused */
