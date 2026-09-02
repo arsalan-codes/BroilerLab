@@ -3,7 +3,7 @@
   "functions": {
     "api/index.py": {
       "maxDuration": 30,
-      "includeFiles": "../index.html;../app.js;../auth.js;../config.js;../router.js;../i18n.js;../shamsi.js;../dialog.js;../device-panel.js;../engine.js;../strains.js;../stats.js;../xlsx.js;../favicon.png;../assets/**;../fa/**;../logo_*.png;../logo_*.webp;../logo.svg;../data/**;../locales/**;../version.js;../components/**;../services/**;../utils/**"
+      "includeFiles": "../webapp/**"
     }
   },
   "rewrites": [
