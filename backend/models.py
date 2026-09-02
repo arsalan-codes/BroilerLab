@@ -147,7 +147,8 @@ def init_db():
       (no destructive recreation, no data loss).
     - Local/dev default: idempotent create_all for a zero-friction boot.
     """
-    if os.getenv("BROILER_DB_MIGRATE", "").lower() == "alembic":
+    mig = os.getenv("ARIAN_DB_MIGRATE") or os.getenv("BROILER_DB_MIGRATE")
+    if (mig or "").lower() == "alembic":
         _run_alembic_upgrade()
         return
     Base.metadata.create_all(engine)

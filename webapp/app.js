@@ -1198,7 +1198,7 @@ function tourPendingFlush(){
   else tourPlaceTip({left:r.left,top:r.top,bottom:r.bottom,width:r.width});
   TOUR.pending=false}
 function tourStart(force){
-  const KEY="broilerlab_tour_v2";
+  const KEY="arian_tour_v2";
   try{
     if(!force && localStorage.getItem(KEY)==="done") return;
   }catch(e){}
@@ -1211,7 +1211,7 @@ function tourEnd(finished){
   TOUR.active=false;TOUR.pending=false;
   tourClearSpot();
   document.body.classList.remove("tour-active");
-  try{ localStorage.setItem("broilerlab_tour_v2","done"); localStorage.setItem("rossim_tour","done"); }catch(e){}
+  try{ localStorage.setItem("arian_tour_v2","done"); localStorage.setItem("rossim_tour","done"); }catch(e){}
   if(finished) try{ toast(tr("tour.doneT")); }catch(e){}
 }
 function bindTour(){

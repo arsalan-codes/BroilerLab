@@ -1,17 +1,17 @@
 /* =====================================================================
    Arian — Centralized API client (services/api.js)
    Single source of truth for backend communication.
-   Depends on: config.js (window.BROILER_API)
+   Depends on: config.js (window.ARIAN_API)
    Loaded before: all page/component modules
    ===================================================================== */
 "use strict";
 (function () {
-  var base = (window.BROILER_API || "http://127.0.0.1:8755").replace(/\/+$/, "");
+  var base = (window.ARIAN_API || "http://127.0.0.1:8755").replace(/\/+$/, "");
   var wsBase = base.replace(/^http/, "ws");
 
   function authHeaders() {
     var tok;
-    try { tok = localStorage.getItem("broiler_token") || ""; } catch (e) { tok = ""; }
+    try { tok = localStorage.getItem("arian_token") || ""; } catch (e) { tok = ""; }
     return tok ? { "Authorization": "Bearer " + tok } : {};
   }
 
@@ -36,9 +36,9 @@
     return fetch(url, init).then(function (r) {
       if (r.status === 401) {
         // Fail-closed: clear stale auth, gate UI, notify
-        try { localStorage.removeItem("broiler_token"); localStorage.removeItem("broiler_user"); } catch (e) {}
-        window.BROILER_TOKEN = "";
-        window.BROILER_USER = null;
+        try { localStorage.removeItem("arian_token"); localStorage.removeItem("arian_user"); localStorage.removeItem("broiler_token"); localStorage.removeItem("broiler_user"); } catch (e) {}
+        window.ARIAN_TOKEN = "";
+        window.ARIAN_USER = null;
         if (typeof window.reportUnauthorized === "function") window.reportUnauthorized();
         var msg = "Unauthorized";
         return r.json().catch(function () { return {}; }).then(function (j) {
@@ -67,7 +67,7 @@
     },
     /* raw token from storage (for direct fetch calls outside this module) */
     token: function () {
-      try { return localStorage.getItem("broiler_token") || ""; } catch (e) { return ""; }
+      try { return localStorage.getItem("arian_token") || localStorage.getItem("broiler_token") || ""; } catch (e) { return ""; }
     },
   };
 })();

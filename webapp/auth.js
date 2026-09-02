@@ -5,29 +5,37 @@
  */
 (function () {
   "use strict";
-  var API = (window.API && window.API.base) || (window.BROILER_API || "http://127.0.0.1:8755").replace(/\/+$/, "");
-  function apiBase(){ return ((window.BROILER_API||"").replace(/\/+$/,"")) || API; }
-  var TOKEN_KEY = "broiler_token";
-  var USER_KEY = "broiler_user";
+  var API = (window.API && window.API.base) || (window.ARIAN_API || "http://127.0.0.1:8755").replace(/\/+$/, "");
+  function apiBase(){ return ((window.ARIAN_API||"").replace(/\/+$/,"")) || API; }
+  var TOKEN_KEY = "arian_token";
+  /* brand migration: lift credentials saved under the old broiler_* keys */
+  try {
+    if (!localStorage.getItem(TOKEN_KEY) && localStorage.getItem("broiler_token")) {
+      localStorage.setItem(TOKEN_KEY, localStorage.getItem("broiler_token"));
+      if (localStorage.getItem("broiler_user")) localStorage.setItem("arian_user", localStorage.getItem("broiler_user"));
+      localStorage.removeItem("broiler_token"); localStorage.removeItem("broiler_user");
+    }
+  } catch (e) {}
+  var USER_KEY = "arian_user";
 
   function getToken() { try { return localStorage.getItem(TOKEN_KEY) || ""; } catch(e){ return ""; } }
   function getUser() { try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch(e){ return null; } }
   function setAuth(token, user) {
     try { localStorage.setItem(TOKEN_KEY, token); localStorage.setItem(USER_KEY, JSON.stringify(user)); } catch(e){}
-    window.BROILER_TOKEN = token;
-    window.BROILER_USER = user;
+    window.ARIAN_TOKEN = token;
+    window.ARIAN_USER = user;
   }
   function clearAuth() {
     try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch(e){}
-    window.BROILER_TOKEN = "";
-    window.BROILER_USER = null;
+    window.ARIAN_TOKEN = "";
+    window.ARIAN_USER = null;
   }
   function authHeaders() {
     var t = getToken();
     return t ? { "Authorization": "Bearer " + t } : {};
   }
-  window.BROILER_TOKEN = getToken();
-  window.BROILER_USER = getUser();
+  window.ARIAN_TOKEN = getToken();
+  window.ARIAN_USER = getUser();
   window.Auth = { getToken, getUser, setAuth, clearAuth, authHeaders, showAuthModal, hideAuthModal };
   function isTokenValid(tok){
     if(!tok) return false;

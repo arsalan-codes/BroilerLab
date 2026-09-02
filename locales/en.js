@@ -159,7 +159,7 @@ window.I18N_EN={
 "dash.h.t": "Performance validation dashboard",
 "dash.p": "Full-cycle runs for every pen reconciled day-by-day against the active breeder catalog",
 "exp.h": "Design",
-"exp.h.t": "Broiler trial designer",
+"exp.h.t": "Arian trial designer",
 "exp.p": "Define pens, stocking and treatments — the basis for the farm map, biostatistics and exports",
 "farm.h": "Animation",
 "farm.h.t": "Live research-house map",

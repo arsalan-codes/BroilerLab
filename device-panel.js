@@ -5,12 +5,12 @@
  *   - shows per-cycle aggregate stats
  *   - live device event stream over WebSocket
  *
- * Backend base URL is overridable via window.BROILER_API (default dev port).
+ * Backend base URL is overridable via window.ARIAN_API (default dev port).
  */
 (function () {
   "use strict";
   // centralized API client (services/api.js) — loaded before this module
-  var API = (window.API && window.API.base) || (window.BROILER_API || "http://127.0.0.1:8755").replace(/\/+$/, "");
+  var API = (window.API && window.API.base) || (window.ARIAN_API || "http://127.0.0.1:8755").replace(/\/+$/, "");
   var WS = (window.API && window.API.wsBase) || API.replace(/^http/, "ws");
   var selectedCycle = null;
   var ws = null;
@@ -25,10 +25,10 @@
   // ---------- REST helpers ----------
   function api(path, opts) {
     opts = opts || {};
-    var authH = (window.Auth && window.Auth.authHeaders) ? window.Auth.authHeaders() : (window.BROILER_TOKEN ? { "Authorization": "Bearer " + window.BROILER_TOKEN } : {});
+    var authH = (window.Auth && window.Auth.authHeaders) ? window.Auth.authHeaders() : (window.ARIAN_TOKEN ? { "Authorization": "Bearer " + window.ARIAN_TOKEN } : {});
     // also try localStorage directly
-    if (!authH.Authorization) { try { var tk = localStorage.getItem("broiler_token"); if (tk) authH.Authorization = "Bearer " + tk; } catch(e){} }
-    return fetch(((window.BROILER_API||"").replace(/\/+$/,"")||API) + path, Object.assign({
+    if (!authH.Authorization) { try { var tk = localStorage.getItem("arian_token"); if (tk) authH.Authorization = "Bearer " + tk; } catch(e){} }
+    return fetch(((window.ARIAN_API||"").replace(/\/+$/,"")||API) + path, Object.assign({
       headers: Object.assign({ "Content-Type": "application/json" }, authH)
     }, opts)).then(function (r) {
       if (r.status === 401) {
@@ -309,7 +309,7 @@
     var form = $("cy-form");
     if (form) form.addEventListener("submit", function (e) { e.preventDefault(); createCycle(); });
     initCyStrain();
-    var authed2=false; try{ var tk2=localStorage.getItem("broiler_token"); authed2 = window.isTokenValid && window.isTokenValid(tk2); }catch(e){}
+    var authed2=false; try{ var tk2=localStorage.getItem("arian_token"); authed2 = window.isTokenValid && window.isTokenValid(tk2); }catch(e){}
     var curP=document.querySelector("section.view.on"); var onPub=curP && (curP.id==="v-landing" || curP.id==="v-about");
     if(authed2 || !onPub) loadCycles();
     connectWS();

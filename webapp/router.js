@@ -47,7 +47,7 @@
   function byView(v) { return ROUTES.filter(function (r) { return r.view === v; })[0] || null; }
   function tr(k, fb) { return (window.tr && window.tr(k)) || fb || k; }
   function isAuthed() {
-    return !!(window.isTokenValid && window.isTokenValid(localStorage.getItem("broiler_token")));
+    return !!(window.isTokenValid && window.isTokenValid(localStorage.getItem("arian_token")));
   }
   function isHome() { var h = location.hash; return !h || h === "#" || h === "#/"; }
   function parseHash() {
