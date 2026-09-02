@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.3"></script>
-<script src="services/api.js?v=1.8.3"></script>
+<script src="config.js?v=1.8.4"></script>
+<script src="services/api.js?v=1.8.4"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -1260,7 +1260,7 @@ html[data-theme=light] .ws-card:hover{box-shadow:var(--sh-md)}
   radial-gradient(640px 420px at 4% 102%, rgba(59,130,246,.13), transparent 60%),
   radial-gradient(500px 300px at 45% 45%, rgba(139,92,246,.08), transparent 70%),
   linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.015)), var(--card);
-  padding:32px;display:grid;grid-template-columns:1fr;gap:0;align-items:center;isolation:isolate}
+  padding:52px 32px 36px;display:grid;grid-template-columns:1fr;gap:0;align-items:center;isolation:isolate;margin-block-start:28px}
 .landing-hero::before{content:"";position:absolute;inset:0;background:
   linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px),
   linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px);
@@ -1269,12 +1269,15 @@ html[data-theme=light] .ws-card:hover{box-shadow:var(--sh-md)}
 .landing-hero-inner{position:relative;z-index:1;min-width:0;display:flex;flex-direction:column;gap:20px}
 .landing-hero-inner .landing-badge{margin:0}
 .landing-hero-inner .landing-title{margin:-6px 0 8px;display:flex;flex-direction:column;gap:6px}
-.landing-title .brand-hero{font-size:clamp(38px,7.2vw,72px);font-weight:1000;letter-spacing:-.024em;line-height:1.1;display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:.28em;text-wrap:balance}
+.landing-title .brand-hero{font-size:clamp(38px,7.2vw,72px);font-weight:1000;letter-spacing:-.024em;line-height:1.1;display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:.04em;text-wrap:balance}
 .landing-title .brand-hero [data-i18n="landing.heroPrefix"]{font-weight:1000;color:var(--tx)}
-.brand-hero-accent{position:relative;display:inline-block;padding:0 .06em .18em;color:transparent;background:linear-gradient(135deg,#19c39a 0%,#0ea5e9 48%,#7c3aed 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:1000;font-size:1.06em;letter-spacing:-.02em;filter:drop-shadow(0 2px 12px rgba(25,195,154,.22))}
+.brand-hero-accent{position:relative;display:inline-block;padding:0 .01em .14em;color:transparent;background:linear-gradient(135deg,#19c39a 0%,#0ea5e9 48%,#7c3aed 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:1000;font-size:1.06em;letter-spacing:-.02em;filter:drop-shadow(0 2px 12px rgba(25,195,154,.22))}
 html[data-theme=dark] .brand-hero-accent{filter:drop-shadow(0 1px 8px rgba(25,195,154,.18))}
 .brand-hero-accent [data-i18n="brand.name"]{position:relative;z-index:1}
 .brand-hero-sub{font-size:clamp(10px,.92vw,12.5px);font-weight:500;color:var(--mut);opacity:.85;margin-top:5px;min-height:18px;display:block;letter-spacing:.01em}
+.typed-cursor{display:inline-block;width:2px;height:.95em;background:var(--acc);margin-inline-start:3px;vertical-align:-.08em;animation:cursorBlink 1s steps(1) infinite}
+@keyframes cursorBlink{50%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.typed-cursor{animation:none}}
 @media(max-width:560px){.landing-title .brand-hero{font-size:clamp(30px,10vw,48px)}.brand-hero-sub{font-size:10.5px;min-height:16px}}
 @media(prefers-reduced-motion:reduce){}
 .landing-hero-inner .landing-cta{margin:0;display:flex;gap:12px;flex-wrap:wrap}
@@ -1310,7 +1313,7 @@ html[data-theme=light] .landing-badge .lb-fact b{color:var(--acc2);text-shadow:n
 .landing-foot{margin:8px 0 0;padding:16px;border-radius:16px;background:var(--card);border:1px dashed var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .landing-foot p{margin:0;color:var(--mut);font-size:12px;line-height:1.8;max-width:620px}
 @media(max-width:900px){.landing-hero{grid-template-columns:1fr}.landing-grid{grid-template-columns:repeat(2,1fr)}.landing-badge{align-self:center}.landing-cta{justify-content:center}}
-@media(max-width:560px){.landing-grid{grid-template-columns:1fr}.landing-hero{padding:22px 16px}.landing-badge{align-self:center}.landing-cta{justify-content:center}}
+@media(max-width:560px){.landing-grid{grid-template-columns:1fr}.landing-hero{padding:34px 16px 24px}.landing-badge{align-self:center}.landing-cta{justify-content:center}}
 html[data-theme=light] .landing-hero{background:radial-gradient(820px 520px at 72% -8%, rgba(25,195,154,.12), transparent 58%), radial-gradient(640px 420px at 4% 102%, rgba(59,130,246,.09), transparent 60%), linear-gradient(180deg, #fff, #f6f7f9);border-color:rgba(0,0,0,.06)}
 
 
@@ -1411,7 +1414,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <div class="topbar"><div class="topbar-in">
   <a class="brand" href="#">
     <span class="mark"><img src="logo_128.png" width="52" height="52" alt="آرین" data-alt-i18n="brand.name" style="object-fit:contain;display:block;border:none"></span>
-    <span><b data-i18n="brand.name">آرین</b><span class="tagline" data-i18n="app.tag">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی</span>
+    <span><b><span data-i18n="app.short">سامانه هوشمند</span> <span data-i18n="brand.name">آرین</span></b><span class="tagline" data-i18n="app.tag">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی</span>
 <span class="uni" data-i18n="app.uni">گروه علوم دامی، دانشگاه تربیت مدرس</span></span>
   </a>
   <div class="hspace"></div>
@@ -1531,9 +1534,9 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
         <span class="lb-sep" aria-hidden="true">·</span>
         <span class="lb-fact"><i class="fa-solid fa-database" aria-hidden="true"></i><b id="lb-points">۲٬۳۸۰</b>&nbsp;<span data-i18n="landing.fact.points">نقطه داده مرجع</span></span>
         <span class="lb-sep" aria-hidden="true">·</span>
-        <span class="lb-fact"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span data-i18n="landing.fact.verified">توسعه داده شده با مقالات و پژوهش‌های معتبر روز</span></span>
+        <span class="lb-fact"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span data-i18n="landing.fact.verified">توسعه داده شده با مقالات و پژوهش‌های معتبر</span></span>
       </div>
-      <h1 class="landing-title"><span class="brand-hero"><span data-i18n="landing.heroPrefix">سامانه پایش هوشمند</span> <span class="brand-hero-accent"><span data-i18n="brand.name">آرین</span></span></span><span id="landing-typed" class="brand-hero-sub">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی</span></h1>
+      <h1 class="landing-title"><span class="brand-hero"><span data-i18n="landing.heroPrefix">سامانه پایش هوشمند</span><span class="brand-hero-accent"><span data-i18n="brand.name">آرین</span></span></span><span id="landing-typed" class="brand-hero-sub" data-text="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی" aria-label="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی<span class="typed-cursor" aria-hidden="true"></span></span></h1>
       <div class="landing-cta">
         <button class="btn primary lg" id="landing-login"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="landing.login">ورود به پنل</span></button>
         <button class="btn ghost lg" id="landing-register" data-i18n="landing.register">ثبت‌نام رایگان</button>
@@ -2429,23 +2432,23 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.8.3" defer></script>
-<script src="engine.js?v=1.8.3" defer></script>
-<script src="xlsx.js?v=1.8.3" defer></script>
-<script src="stats.js?v=1.8.3" defer></script>
-<script src="version.js?v=1.8.3" defer></script>
-  <script src="locales/fa.js?v=1.8.3" defer></script>
-<script src="locales/en.js?v=1.8.3" defer></script>
-<script src="i18n.js?v=1.8.3" defer></script>
-<script src="utils/formatters.js?v=1.8.3" defer></script>
-<script src="shamsi.js?v=1.8.3" defer></script>
-<script src="auth.js?v=1.8.3" defer></script>
-<script src="device-panel.js?v=1.8.3" defer></script>
-<script src="dialog.js?v=1.8.3" defer></script>
-<script src="router.js?v=1.8.3" defer></script>
-<script src="components/chart.js?v=1.8.3" defer></script>
-<script src="services/export.js?v=1.8.3" defer></script>
-<script src="app.js?v=1.8.3" defer></script>
+<script src="strains.js?v=1.8.4" defer></script>
+<script src="engine.js?v=1.8.4" defer></script>
+<script src="xlsx.js?v=1.8.4" defer></script>
+<script src="stats.js?v=1.8.4" defer></script>
+<script src="version.js?v=1.8.4" defer></script>
+  <script src="locales/fa.js?v=1.8.4" defer></script>
+<script src="locales/en.js?v=1.8.4" defer></script>
+<script src="i18n.js?v=1.8.4" defer></script>
+<script src="utils/formatters.js?v=1.8.4" defer></script>
+<script src="shamsi.js?v=1.8.4" defer></script>
+<script src="auth.js?v=1.8.4" defer></script>
+<script src="device-panel.js?v=1.8.4" defer></script>
+<script src="dialog.js?v=1.8.4" defer></script>
+<script src="router.js?v=1.8.4" defer></script>
+<script src="components/chart.js?v=1.8.4" defer></script>
+<script src="services/export.js?v=1.8.4" defer></script>
+<script src="app.js?v=1.8.4" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
@@ -2511,6 +2514,32 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   if(document.readyState==='complete') tryFill();
   else window.addEventListener('load', tryFill);   /* deferred strains.js must be ready */
   window.addEventListener('rossim:lang', fill);    /* re-render digits per locale */
+})();
+(function(){
+  /* hero subtitle typer — respects prefers-reduced-motion, replays on language switch */
+  var el = document.getElementById('landing-typed');
+  if(!el) return;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var target = el.getAttribute('data-text') || el.textContent || '';
+  var timer = null;
+  function paint(txt){ el.textContent = txt; var c=document.createElement('span'); c.className='typed-cursor'; c.setAttribute('aria-hidden','true'); c.textContent='\u200E\u258D'; el.appendChild(c); }
+  function run(){
+    if(timer){ clearInterval(timer); timer=null; }
+    if(reduce){ el.textContent = target; return; }
+    var i = 0;
+    el.textContent = '';
+    timer = setInterval(function(){
+      i++;
+      el.textContent = target.slice(0, i);
+      if(i >= target.length){ clearInterval(timer); timer=null; paint(target); }
+    }, 34);
+  }
+  if(document.readyState === 'complete' || document.readyState === 'interactive') run();
+  else window.addEventListener('DOMContentLoaded', run);
+  window.addEventListener('rossim:lang', function(){
+    target = el.getAttribute('data-text') || target;
+    run();
+  });
 })();
 </script>
 <!-- Material Dialog -->
