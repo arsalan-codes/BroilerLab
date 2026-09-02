@@ -129,7 +129,12 @@ def _run_alembic_upgrade():
     """Apply schema migrations via Alembic (production path)."""
     import os
     from sqlalchemy.engine import make_url
-    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    here = os.path.dirname(os.path.abspath(__file__))
+    # candidate roots: repo root (dev) and the function dir (Vercel may flatten includeFiles here)
+    roots = [os.path.dirname(os.path.dirname(here)), os.path.dirname(here), here]
+    base = next((r for r in roots
+                 if os.path.isfile(os.path.join(r, "alembic.ini"))
+                 and os.path.isdir(os.path.join(r, "migrations"))), roots[0])
     os.environ.setdefault("ALEMBIC_CONFIG", os.path.join(base, "alembic.ini"))
     from alembic.config import Config
     from alembic import command
