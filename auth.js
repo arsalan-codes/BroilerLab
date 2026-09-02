@@ -139,7 +139,7 @@
         }
       }
     } else {
-      var loginBtnHtml = '<button class="btn btn-primary auth-login-btn" id="btn-open-auth" aria-label="'+(window.tr?(window.tr("landing.login")+" / "+window.tr("auth.registerTab")):"ورود / ثبت‌نام")+'"><i class="fa-solid fa-kiwi-bird" aria-hidden="true"></i><span class="auth-btn-label"> '+(window.tr?(window.tr("landing.login")+" / "+window.tr("auth.registerTab")):"ورود / ثبت‌نام")+'</span></button>';
+      var loginBtnHtml = '<button class="btn btn-primary auth-login-btn" id="btn-open-auth" aria-label="'+(window.tr?(window.tr("landing.login")+" / "+window.tr("auth.registerTab")):"ورود / ثبت‌نام")+'"><i class="fa-solid fa-user" aria-hidden="true"></i><span class="auth-btn-label"> '+(window.tr?(window.tr("landing.login")+" / "+window.tr("auth.registerTab")):"ورود / ثبت‌نام")+'</span></button>';
       area.innerHTML = loginBtnHtml;
       if (areaD) {
         areaD.innerHTML = loginBtnHtml.replace('id="btn-open-auth"', 'id="btn-open-auth-drawer"');
