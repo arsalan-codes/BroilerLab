@@ -21,8 +21,18 @@ import auth as authmod
 from logging_config import setup_logging, get_logger, redact, new_request_id
 _ROOTS = [os.path.dirname(os.path.dirname(os.path.abspath(__file__))),  # repo/dev root
           os.path.dirname(os.path.abspath(__file__))]                    # vendored api/ layout
-WEBAPP_DIR = next((os.path.join(r, "webapp") for r in _ROOTS if os.path.isdir(os.path.join(r, "webapp"))),
-                  os.path.join(_ROOTS[0], "webapp"))
+def _resolve_webapp_dir() -> str:
+    """webapp/ subdir (dev) or flat layout (Vercel includeFiles copies assets
+    next to index.py). Fall back to the first root that actually has index.html."""
+    for r in _ROOTS:
+        w = os.path.join(r, "webapp")
+        if os.path.isdir(w) and os.path.isfile(os.path.join(w, "index.html")):
+            return w
+    for r in _ROOTS:
+        if os.path.isfile(os.path.join(r, "index.html")):
+            return r
+    return os.path.join(_ROOTS[0], "webapp")
+WEBAPP_DIR = _resolve_webapp_dir()
 _db_state = {"ok": False, "error": None}
 
 @asynccontextmanager
@@ -108,7 +118,7 @@ app.add_middleware(CORSMiddleware, allow_origins=_CORS_ORIGINS, allow_methods=["
 @app.get("/")
 def index():
     return FileResponse(os.path.join(WEBAPP_DIR, "index.html"), headers={"Cache-Control":"no-cache"})
-_STATIC_FILES = ("app.js","device-panel.js","auth.js","i18n.js","engine.js","strains.js","stats.js","xlsx.js","shamsi.js","dialog.js","router.js","config.js","favicon.png","logo_32.png","logo_128.png","logo_180.png","logo_192.png","logo_256.png","logo_512.png","fa/all.min.css","fa/fa-solid-900.woff2","fa/fa-solid-900.ttf","fa/fa-regular-400.woff2","fa/fa-regular-400.ttf","fa/fa-brands-400.woff2","fa/fa-brands-400.ttf","logo.svg","logo_1024.png","logo_128.webp","logo_512.webp","logo_256.webp",)
+_STATIC_FILES = ("app.js","device-panel.js","auth.js","i18n.js","engine.js","strains.js","stats.js","xlsx.js","shamsi.js","dialog.js","router.js","config.js","version.js","favicon.png","logo_32.png","logo_128.png","logo_180.png","logo_192.png","logo_256.png","logo_512.png","fa/all.min.css","fa/fa-solid-900.woff2","fa/fa-solid-900.ttf","fa/fa-regular-400.woff2","fa/fa-regular-400.ttf","fa/fa-brands-400.woff2","fa/fa-brands-400.ttf","logo.svg","logo_1024.png","logo_128.webp","logo_512.webp","logo_256.webp","locales/fa.js","locales/en.js",)
 for _f in _STATIC_FILES:
     _path = os.path.join(WEBAPP_DIR, _f)
     if os.path.exists(_path):
