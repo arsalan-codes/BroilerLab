@@ -25,6 +25,35 @@ if DATABASE_URL.startswith("postgres://"):
 if DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
+
+def _prefer_ipv4(url: str) -> str:
+    """Vercel lambdas may attempt IPv6 first and fail with 'Cannot assign
+    requested address'. Resolve the A record and pass it via hostaddr so
+    psycopg dials IPv4 while `host` still drives SNI/TLS verification."""
+    if "hostaddr=" in url or "@" not in url:
+        return url
+    try:
+        import socket
+        from urllib.parse import urlsplit, urlunsplit, parse_qs, urlencode
+        parts = urlsplit(url)
+        host = parts.hostname
+        if not host:
+            return url
+        infos = [i for i in socket.getaddrinfo(host, None, family=socket.AF_INET) if i[0] == socket.AF_INET]
+        if not infos:
+            return url
+        ip = infos[0][4][0]
+        q = parse_qs(parts.query)
+        q["hostaddr"] = [ip]
+        new_query = urlencode({k: v[-1] for k, v in q.items()})
+        netloc = parts.netloc.replace(host, host, 1)  # keep host (SNI) intact
+        return urlunsplit((parts.scheme, parts.netloc, parts.path, new_query, parts.fragment))
+    except Exception:
+        return url
+
+
+DATABASE_URL = _prefer_ipv4(DATABASE_URL)
+
 # MQTT — device publishes JSON telemetry to this topic prefix.
 MQTT_BROKER = os.getenv("BROILER_MQTT_HOST", "127.0.0.1")
 MQTT_PORT = int(os.getenv("BROILER_MQTT_PORT", "1883"))
