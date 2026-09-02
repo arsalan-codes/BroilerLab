@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.5"></script>
-<script src="services/api.js?v=1.8.5"></script>
+<script src="config.js?v=1.8.6"></script>
+<script src="services/api.js?v=1.8.6"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -68,7 +68,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);
 .topbar-in>*{flex:none}
 .topbar-in .hspace{flex:1 1 auto}
 .topbar-in .brand{align-self:center}
-.topbar-in .hctl,.topbar-in .auth-area,.topbar-in .hsettings,.topbar-in #auth-area{display:flex;align-items:center;justify-content:center}
+.topbar-in .hctl,.topbar-in .auth-area,.topbar-in #auth-area{display:flex;align-items:center;justify-content:center}
 .topbar-in .hgroup,.topbar-in .topclock{display:flex;align-items:center}
 /* .dhead is drawer-only (display:none on desktop per header-drawer rules below);
    never force it visible from the centering block */
@@ -428,6 +428,16 @@ body.drawer-open .topbar{z-index:220}
   html[dir=rtl] .hctl{transform:translateX(-112%)}
   html[dir=ltr] .hctl{transform:translateX(112%)}
   html[dir=rtl] .hctl.open,html[dir=ltr] .hctl.open{transform:none;visibility:visible}
+  /* compact bar: everything fits, no overflow */
+  .topbar-in{gap:8px}
+  .topbar-in .brand{min-width:0;flex:0 1 auto}
+  .topbar-in .brand>span:last-child{min-width:0}
+  .topbar-in .brand b{font-size:14.5px;white-space:nowrap}
+  #auth-area{margin-inline-start:auto;min-width:0}
+  #auth-area .auth-login-btn{min-width:0;padding:9px 12px;font-size:12px;white-space:nowrap}
+  #auth-area .auth-user{max-width:150px}
+  #auth-area .auth-name{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
   /* mobile nav: full-width evenly-spread tabs, bigger touch targets, snap */
   nav#mainnav{position:sticky;top:0;height:auto;flex-wrap:wrap;justify-content:center;
     gap:6px;padding:8px 10px 10px;overflow-x:visible}
@@ -1033,6 +1043,11 @@ html[dir=ltr] body{font-family:"IBM Plex Sans","Vazirmatn",system-ui,sans-serif}
 .card,.tbl-scroll,.chart-box,.feedwrap{max-width:100%}
 .busyrow{flex-wrap:wrap;row-gap:5px}
 @media(max-width:620px){
+  .hsettings{display:none!important}   /* gear = drawer duplicate; kills the ≤430 overflow */
+  .topbar-in .mark{width:40px;height:40px;border-radius:11px}
+  .topbar-in .brand b{font-size:13.5px}
+  #auth-area .auth-login-btn{padding:8px 10px;font-size:11.5px}
+  #auth-area .auth-name{max-width:72px}
   .busyrow .bp{flex-basis:100%;order:3}
   .busyrow b.num,.busyrow .dm{width:auto!important;flex:0 0 auto}
   .busyrow>.tag:first-child{flex:1 1 auto;text-align:center}
@@ -2440,23 +2455,23 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.8.5" defer></script>
-<script src="engine.js?v=1.8.5" defer></script>
-<script src="xlsx.js?v=1.8.5" defer></script>
-<script src="stats.js?v=1.8.5" defer></script>
-<script src="version.js?v=1.8.5" defer></script>
-  <script src="locales/fa.js?v=1.8.5" defer></script>
-<script src="locales/en.js?v=1.8.5" defer></script>
-<script src="i18n.js?v=1.8.5" defer></script>
-<script src="utils/formatters.js?v=1.8.5" defer></script>
-<script src="shamsi.js?v=1.8.5" defer></script>
-<script src="auth.js?v=1.8.5" defer></script>
-<script src="device-panel.js?v=1.8.5" defer></script>
-<script src="dialog.js?v=1.8.5" defer></script>
-<script src="router.js?v=1.8.5" defer></script>
-<script src="components/chart.js?v=1.8.5" defer></script>
-<script src="services/export.js?v=1.8.5" defer></script>
-<script src="app.js?v=1.8.5" defer></script>
+<script src="strains.js?v=1.8.6" defer></script>
+<script src="engine.js?v=1.8.6" defer></script>
+<script src="xlsx.js?v=1.8.6" defer></script>
+<script src="stats.js?v=1.8.6" defer></script>
+<script src="version.js?v=1.8.6" defer></script>
+  <script src="locales/fa.js?v=1.8.6" defer></script>
+<script src="locales/en.js?v=1.8.6" defer></script>
+<script src="i18n.js?v=1.8.6" defer></script>
+<script src="utils/formatters.js?v=1.8.6" defer></script>
+<script src="shamsi.js?v=1.8.6" defer></script>
+<script src="auth.js?v=1.8.6" defer></script>
+<script src="device-panel.js?v=1.8.6" defer></script>
+<script src="dialog.js?v=1.8.6" defer></script>
+<script src="router.js?v=1.8.6" defer></script>
+<script src="components/chart.js?v=1.8.6" defer></script>
+<script src="services/export.js?v=1.8.6" defer></script>
+<script src="app.js?v=1.8.6" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
