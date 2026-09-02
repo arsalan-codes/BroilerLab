@@ -76,6 +76,7 @@
   function renderAuthArea() {
     var area = document.getElementById("auth-area");
     if (!area) return;
+    var areaD = document.getElementById("auth-area-drawer");
     var user = getUser();
     var token = getToken();
     if (user && token) {
@@ -109,10 +110,42 @@
       setTimeout(function(){
         document.addEventListener("click", function closeDD(e){
           if (!area.contains(e.target)) dd.hidden = true;
+          if (areaD && !areaD.contains(e.target)) { var dd2=document.getElementById("auth-dropdown-drawer"); if (dd2) dd2.hidden = true; }
         }, { once: false });
       }, 100);
+      /* mirror into the mobile drawer (only exists ≤992px, but render regardless) */
+      if (areaD) {
+        areaD.innerHTML = area.innerHTML
+          .replace('id="auth-user-btn"', 'id="auth-user-btn-drawer"')
+          .replace('id="auth-dropdown"', 'id="auth-dropdown-drawer"')
+          .replace('id="btn-workspace"', 'id="btn-workspace-drawer"')
+          .replace('id="btn-change-pass"', 'id="btn-change-pass-drawer"')
+          .replace('id="btn-logout"', 'id="btn-logout-drawer"')
+          .replace('class="auth-user"', 'class="auth-user auth-user--drawer"');
+        var chipD = document.getElementById("auth-user-btn-drawer");
+        var ddD = document.getElementById("auth-dropdown-drawer");
+        if (chipD && ddD) {
+          chipD.addEventListener("click", function(e){ e.stopPropagation(); ddD.hidden = !ddD.hidden; });
+          var wD = document.getElementById("btn-workspace-drawer");
+          var cD = document.getElementById("btn-change-pass-drawer");
+          var lD = document.getElementById("btn-logout-drawer");
+          if (wD) wD.addEventListener("click", function(){ ddD.hidden=true; openWorkspace(); });
+          if (cD) cD.addEventListener("click", function(){ ddD.hidden=true; showChangePassModal(); });
+          if (lD) lD.addEventListener("click", function(){
+            ddD.hidden=true; clearAuth(); renderAuthArea(); setGated(true);
+            if(window.Router){ window.Router.go("v-landing"); }
+            if(window.toast) toast(window.tr?window.tr("auth.loggedOut"):"خارج شدید");
+          });
+        }
+      }
     } else {
-      area.innerHTML = '<button class="btn btn-primary auth-login-btn" id="btn-open-auth"><i class="fa-solid fa-user"></i> '+(window.tr?(window.tr("landing.login")+" / "+window.tr("auth.registerTab")):"ورود / ثبت‌نام")+'</button>';
+      var loginBtnHtml = '<button class="btn btn-primary auth-login-btn" id="btn-open-auth"><i class="fa-solid fa-user"></i> '+(window.tr?(window.tr("landing.login")+" / "+window.tr("auth.registerTab")):"ورود / ثبت‌نام")+'</button>';
+      area.innerHTML = loginBtnHtml;
+      if (areaD) {
+        areaD.innerHTML = loginBtnHtml.replace('id="btn-open-auth"', 'id="btn-open-auth-drawer"');
+        var obd = document.getElementById("btn-open-auth-drawer");
+        if (obd) obd.addEventListener("click", function(){ closeDrawer(); showAuthModal("login"); });
+      }
       var ob = document.getElementById("btn-open-auth");
       if (ob) ob.addEventListener("click", function(){ showAuthModal("login"); });
       updateLandingCTA();

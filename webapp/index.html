@@ -413,6 +413,7 @@ body.drawer-open .topbar{z-index:220}
      never contributes to the page's horizontal scrollable area */
   html,body{overflow-x:hidden;overflow-x:clip}
   html[dir] .icon-btn.burger{display:inline-flex;font-size:16px}
+  .topbar-in > #auth-area{display:none}
   .dhead{display:flex;align-items:center;justify-content:space-between;
     padding-bottom:10px;border-bottom:1px solid var(--line);
     position:absolute;top:0;left:0;right:0;background:inherit;
@@ -428,6 +429,13 @@ body.drawer-open .topbar{z-index:220}
   html[dir=rtl] .hctl{transform:translateX(-112%)}
   html[dir=ltr] .hctl{transform:translateX(112%)}
   html[dir=rtl] .hctl.open,html[dir=ltr] .hctl.open{transform:none;visibility:visible}
+  /* drawer auth mount: replaces the topbar auth controls ≤992px */
+  .auth-area-drawer{width:100%}
+  .auth-area-drawer .auth-login-btn{width:100%;min-height:46px;justify-content:center;font-size:13.5px}
+  .auth-area-drawer .auth-user{width:100%;max-width:none!important;justify-content:flex-start;padding:10px 12px}
+  .auth-area-drawer .auth-dropdown{position:static;width:100%;box-shadow:none;margin-top:8px}
+  .auth-area-drawer .auth-name{max-width:none}
+
   /* compact bar: everything fits, no overflow */
   .topbar-in{gap:8px}
   .topbar-in .brand{min-width:0;flex:0 1 auto}
@@ -1452,6 +1460,8 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
       <button id="drawer-close" class="icon-btn" aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
     </div>
 
+    <div id="auth-area-drawer" class="auth-area-drawer"></div>
+
     <div class="hgroup">
       <span class="hlabel" data-i18n="hdr.lang">زبان</span>
       <div class="langseg" role="group" aria-label="Language">
@@ -2465,7 +2475,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <script src="i18n.js?v=1.8.6" defer></script>
 <script src="utils/formatters.js?v=1.8.6" defer></script>
 <script src="shamsi.js?v=1.8.6" defer></script>
-<script src="auth.js?v=1.8.6" defer></script>
+<script src="auth.js?v=1.8.8" defer></script>
 <script src="device-panel.js?v=1.8.6" defer></script>
 <script src="dialog.js?v=1.8.6" defer></script>
 <script src="router.js?v=1.8.6" defer></script>
