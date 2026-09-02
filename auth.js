@@ -28,7 +28,7 @@
   }
   window.BROILER_TOKEN = getToken();
   window.BROILER_USER = getUser();
-  window.Auth = { getToken, getUser, setAuth, clearAuth, authHeaders };
+  window.Auth = { getToken, getUser, setAuth, clearAuth, authHeaders, showAuthModal, hideAuthModal };
   function isTokenValid(tok){
     if(!tok) return false;
     try{
