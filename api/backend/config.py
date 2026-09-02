@@ -72,6 +72,6 @@ VISIT_QUEUE_TIMEOUT_S = 90.0  # co-feeding give-up threshold
 
 # ---- Auth / JWT ----
 # No usable default in the repo: empty forces env var; dev-only fallback random per-boot.
-JWT_SECRET = os.getenv("BROILER_JWT_SECRET") or ("dev-" + secrets.token_hex(16))
+JWT_SECRET = (os.getenv("ARIAN_JWT_SECRET") or os.getenv("BROILER_JWT_SECRET") or ("dev-" + secrets.token_hex(16)))
 JWT_ALG = "HS256"
-JWT_EXPIRE_MIN = int(__import__("os").getenv("BROILER_JWT_EXPIRE_MIN", "1440"))  # 24h
+JWT_EXPIRE_MIN = int(__import__("os").getenv("ARIAN_JWT_EXPIRE_MIN") or os.getenv("BROILER_JWT_EXPIRE_MIN") or "1440")  # 24h

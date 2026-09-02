@@ -78,7 +78,8 @@ def _check_rate_limit(ip: str, max_requests: int = 10, window_s: int = 60) -> bo
 @app.middleware("http")
 async def _security_headers(request, call_next):
     # Rate-limit auth endpoints (per IP, 10 req/min)
-    if request.url.path.startswith("/api/auth/"):
+    _RL_PATHS = ("/api/auth/login", "/api/auth/register", "/api/auth/change-password")
+    if request.url.path in _RL_PATHS or request.url.path.startswith("/api/auth/login") or request.url.path.startswith("/api/auth/register") or request.url.path.startswith("/api/auth/change-password"):
         client_ip = request.client.host if request.client else "unknown"
         if not _check_rate_limit(client_ip):
             from fastapi.responses import JSONResponse

@@ -310,10 +310,11 @@
 
       // validate silently in background (refresh user data, catch expiry)
       fetch(apiBase()+"/api/auth/me",{headers:{"Authorization":"Bearer "+tok}})
-        .then(function(r){ if(!r.ok) throw new Error(); return r.json(); })
+        .then(function(r){ if(r.status===401) throw {auth:true}; if(!r.ok) throw {soft:true}; return r.json(); })
         .then(function(u){ setAuth(tok,u); renderAuthArea(); })
-        .catch(function(){
-          if(!isTokenValid(getToken())){ clearAuth(); renderAuthArea(); setGated(true); ensureModal(); showAuthModal("login", {gated:true}); }
+        .catch(function(err){
+          /* real 401 = stale token → logout; 429/network = transient → keep session */
+          if(err && err.auth){ clearAuth(); renderAuthArea(); setGated(true); ensureModal(); showAuthModal("login", {gated:true}); }
         });
       revealBody();
       return;
@@ -321,9 +322,12 @@
     if(tok && validLocal){
       setGated(false);
       fetch(apiBase()+"/api/auth/me",{headers:{"Authorization":"Bearer "+tok}})
-        .then(function(r){ if(!r.ok) throw new Error(); return r.json(); })
+        .then(function(r){ if(r.status===401) throw {auth:true}; if(!r.ok) throw {soft:true}; return r.json(); })
         .then(function(u){ setAuth(tok,u); renderAuthArea(); })
-        .catch(function(){ clearAuth(); renderAuthArea(); setGated(true); ensureModal(); showAuthModal("login", {gated:true}); revealBody(); });
+        .catch(function(err){
+          if(err && err.auth){ clearAuth(); renderAuthArea(); setGated(true); ensureModal(); showAuthModal("login", {gated:true}); }
+          revealBody();
+        });
       revealBody();
       return;
     }
