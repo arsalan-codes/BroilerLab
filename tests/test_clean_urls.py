@@ -106,3 +106,11 @@ def test_mobile_avatar_opens_drawer():
 def test_deploy_mirror_parity():
     for name in ("router.js", "index.html", "auth.js"):
         assert read(WEBAPP / name) == webapp_src(name), f"mirror drift: {name}"
+
+
+def test_deploy_root_parity():
+    # Vercel CDN serves the REPO ROOT files (index.html references
+    # root-relative router.js/auth.js/version.js), NOT webapp/. A drift
+    # here once shipped v1.8.23 JS under ?v=1.8.25 URLs (hash router live).
+    for name in ("router.js", "auth.js", "version.js"):
+        assert read(ROOT / name) == webapp_src(name), f"root drift: {name}"
