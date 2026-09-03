@@ -98,19 +98,27 @@
       var dd = document.getElementById("auth-dropdown");
       if (btn && dd) {
         // Mobile topbar shows a round avatar whose dropdown is hidden by CSS:
-        // tapping it must open the drawer (full user menu lives there) instead.
-        var openMobileDrawer = function(){
+        // tapping it opens the drawer AND auto-expands the mirrored user
+        // panel there (nav-burger stays the entry point for the nav menu).
+        var openMobileDrawer = function(e){
           try {
             if (window.matchMedia && window.matchMedia("(max-width:992px)").matches
                 && typeof window.openDrawer === "function") {
+              if (e && e.stopPropagation) e.stopPropagation();
               window.openDrawer();
+              var ddD = document.getElementById("auth-dropdown-drawer");
+              if (ddD) ddD.hidden = false;
+              var chipD = document.getElementById("auth-user-btn-drawer");
+              if (chipD) chipD.setAttribute("aria-expanded", "true");
+              var areaD = document.getElementById("auth-area-drawer");
+              if (areaD && areaD.scrollIntoView) { try { areaD.scrollIntoView({ block: "start" }); } catch (e2) {} }
               return true;
             }
           } catch (e) {}
           return false;
         };
-        btn.addEventListener("click", function(e){ if (openMobileDrawer()) return; e.stopPropagation(); dd.hidden = !dd.hidden; });
-        btn.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); if (openMobileDrawer()) return; dd.hidden=!dd.hidden; }});
+        btn.addEventListener("click", function(e){ if (openMobileDrawer(e)) return; e.stopPropagation(); dd.hidden = !dd.hidden; });
+        btn.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); if (openMobileDrawer(e)) return; dd.hidden=!dd.hidden; }});
       }
       updateLandingCTA();
       var lo = document.getElementById("btn-logout");
@@ -137,7 +145,7 @@
         var chipD = document.getElementById("auth-user-btn-drawer");
         var ddD = document.getElementById("auth-dropdown-drawer");
         if (chipD && ddD) {
-          chipD.addEventListener("click", function(e){ e.stopPropagation(); ddD.hidden = !ddD.hidden; });
+          chipD.addEventListener("click", function(e){ e.stopPropagation(); ddD.hidden = !ddD.hidden; chipD.setAttribute("aria-expanded", String(!ddD.hidden)); });
           var wD = document.getElementById("btn-workspace-drawer");
           var cD = document.getElementById("btn-change-pass-drawer");
           var lD = document.getElementById("btn-logout-drawer");

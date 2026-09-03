@@ -103,6 +103,51 @@ def test_mobile_avatar_opens_drawer():
     ), "documents WHY the drawer path is needed (topbar dd is CSS-hidden on mobile)"
 
 
+def test_mobile_avatar_opens_user_area_expanded():
+    # Avatar tap must land on the USER panel, not just the nav drawer:
+    # the mirrored dropdown inside the drawer must auto-expand + reveal.
+    js = webapp_src("auth.js")
+    i = js.find("window.openDrawer()")
+    assert i != -1, "mobile avatar path must open the drawer"
+    branch = js[i:i + 900]
+    assert "auth-dropdown-drawer" in branch, "avatar path must expand the mirrored user panel"
+    assert ".hidden = false" in branch or ".hidden=false" in branch, \
+        "mirrored user dropdown must auto-expand (hidden=false) on avatar tap"
+    assert "scrollIntoView" in branch, "user area must scroll into view on avatar tap"
+
+
+def test_mobile_avatar_click_does_not_rebubble():
+    # The document-level outside-click closer re-hides the mirrored panel;
+    # the avatar handler must stopPropagation or the panel closes instantly.
+    js = webapp_src("auth.js")
+    m = re.search(r"var openMobileDrawer = function\(e\)\{(.*?)\n        \};", js, re.S)
+    assert m, "openMobileDrawer must take the event"
+    assert "stopPropagation" in m.group(1), "must stop bubbling or closer re-hides the panel"
+    assert js.count("openMobileDrawer(e)") >= 2, "click + keydown must pass the event"
+
+
+def test_drawer_user_mount_hidden_only_on_desktop():
+    # CSS cascade regression: a GLOBAL `.auth-area-drawer{display:none}` beats
+    # the ≤992px `display:block` (same specificity, later in source) and hides
+    # the user panel on mobile forever. The hide rule must live ONLY inside
+    # `@media(min-width:993px)`.
+    html = webapp_src("index.html")
+    css = html  # <style> is inline in index.html
+    desktop_blocks = re.findall(
+        r"@media\s*\(\s*min-width\s*:\s*993px\s*\)\s*\{(?:[^{}]|\{[^{}]*\})*\}",
+        css)
+    assert desktop_blocks, "desktop media block missing"
+    rest = re.sub(
+        r"@media\s*\(\s*min-width\s*:\s*993px\s*\)\s*\{(?:[^{}]|\{[^{}]*\})*\}",
+        "", css)
+    rest_nospace = re.sub(r"\s+", "", rest)
+    assert ".auth-area-drawer{display:none}" not in rest_nospace, \
+        "global hide rule would override the mobile display:block"
+    joined = "".join(desktop_blocks)
+    assert ".auth-area-drawer" in re.sub(r"\s+", "", joined), \
+        "desktop must explicitly hide the drawer user mount"
+
+
 def test_deploy_mirror_parity():
     for name in ("router.js", "index.html", "auth.js"):
         assert read(WEBAPP / name) == webapp_src(name), f"mirror drift: {name}"
