@@ -942,7 +942,8 @@ function openDrawer(mode){
   if(!hc)return;
   hc.classList.add("open");if(bd)bd.classList.add("on");
   document.body.classList.add("drawer-open");
-  /* two entries: avatar → full-screen user sheet; burger → nav menu */
+  /* single entry: burger → nav menu. The user panel lives in the topbar
+     dropdown exactly like desktop — avatar never opens the drawer. */
   document.body.classList.toggle("drawer-user",mode==="user");
   document.body.classList.toggle("drawer-nav",mode!=="user");
   if(bg)bg.setAttribute("aria-expanded","true");
