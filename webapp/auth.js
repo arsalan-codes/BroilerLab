@@ -98,8 +98,8 @@
       var dd = document.getElementById("auth-dropdown");
       if (btn && dd) {
         // Mobile topbar shows a round avatar whose dropdown is hidden by CSS:
-        // tapping it opens the drawer AND auto-expands the mirrored user
-        // panel there (nav-burger stays the entry point for the nav menu).
+        // tapping it opens the LEFT slide-in user sheet AND auto-expands the
+        // mirrored user panel there (nav-burger stays the entry for nav menu).
         var openMobileDrawer = function(e){
           try {
             if (window.matchMedia && window.matchMedia("(max-width:992px)").matches

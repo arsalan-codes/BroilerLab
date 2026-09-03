@@ -157,8 +157,18 @@ def test_drawer_has_separate_user_and_nav_modes():
     assert re.search(r"""openDrawer\(\s*['"]nav['"]\s*\)""", app), "burger must open the nav menu"
     assert re.search(r"""openDrawer\(\s*['"]user['"]\s*\)""", webapp_src("auth.js")), "avatar must open the user sheet"
     css = webapp_src("index.html")
-    assert re.search(r"body\.drawer-user\s+\.hctl\s*\{[^}]*width\s*:\s*100%", css), \
-        "user sheet must be full-screen"
+    m = re.search(r"body\.drawer-user\s+\.hctl\s*\{([^}]*)\}", css)
+    assert m, "left user-sheet rule missing"
+    sheet = m.group(1)
+    assert re.search(r"left\s*:\s*0", sheet), \
+        "user sheet must dock to the physical LEFT edge"
+    assert re.search(r"min\(340px,88vw\)", sheet), \
+        "user sheet must be a narrow side panel, not full-screen"
+    assert re.search(r"translateX\(-112%\)", sheet), \
+        "user sheet must hide off-canvas to the left (slides in from left)"
+    assert re.search(
+        r"body\.drawer-user\s+\.hctl\s+#auth-area-drawer\s+\.auth-user--drawer",
+        css), "user sheet must style the friendly profile header"
     for sel in (r"body\.drawer-user\s+\.hctl\s+\.hgroup",
                 r"body\.drawer-user\s+\.hctl\s+#btn-help",
                 r"body\.drawer-user\s+\.hctl\s+\.hpills"):
