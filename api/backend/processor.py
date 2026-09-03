@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 
 from config import (
     RAW_WEIGHT_SIGMA, EMA_ALPHA,
-    BIN_REFILL_THRESHOLD_KG, BIN_CAPACITY_KG, VISIT_QUEUE_TIMEOUT_S,
+    BIN_CAPACITY_KG, VISIT_QUEUE_TIMEOUT_S,
 )
 from models import SessionLocal, Cycle, Visit, DeviceLog
 
@@ -100,7 +100,8 @@ class CycleProcessor:
         is_end = False
         if bird_id and ctx is None:
             is_start = True
-            ctx = self._open_visit(bird_id, ts, sensor_id, rssi, weight_g, age_day)
+            ctx = self._open_visit(bird_id, ts, sensor_id, rssi, weight_g,
+                                   age_day, bin_kg)
         elif ctx is not None:
             # continuation or end
             dt_last = ctx["last_ts"]
@@ -111,10 +112,17 @@ class CycleProcessor:
             closing_row = (weight_g is None and raw is None
                            and feed_delta is not None)
             if gap > VISIT_QUEUE_TIMEOUT_S or explicit_end or closing_row:
-                self._close_visit(ctx, ts, weight_g, temp_c, humidity)
+                # The closing row belongs to the ENDING visit: credit its intake
+                # before closing so the last delta is never lost.
+                end_inc = _intake_increment(ctx, bin_kg, feed_delta)
+                ctx["intake"] += end_inc
+                if bin_kg is not None:
+                    ctx["bin_prev"] = bin_kg
+                self._close_visit(ctx, ts, weight_g, temp_c, humidity,
+                                  final_inc=end_inc)
                 is_start = True
                 ctx = self._open_visit(bird_id, ts, sensor_id, rssi,
-                                       weight_g, age_day)
+                                       weight_g, age_day, bin_kg)
             else:
                 # mid or end: update bin intake + weight EMA
                 self._step(ctx, ts, raw, weight_g, bin_kg, feed_delta,
@@ -134,11 +142,24 @@ class CycleProcessor:
             )
             s.add(log)
             s.commit()
-            log_d = _log_to_dict(log)
+            # realtime-table context: elapsed seconds since visit start and
+            # feed consumed so far in this visit (0 for fresh start rows).
+            if ctx and ctx.get("start"):
+                try:
+                    elapsed = max(0.0, (ts - ctx["start"]).total_seconds())
+                except Exception:
+                    elapsed = 0.0
+            else:
+                elapsed = 0.0
+            log_d = _log_to_dict(log, {
+                "elapsed_s": round(elapsed, 1),
+                "visit_feed_g": round(ctx["intake"] if ctx else 0.0, 1),
+            })
         return log_d
 
     # ---- internal state machine ----
-    def _open_visit(self, bird_id, ts, sensor, rssi, weight_g, age_day):
+    def _open_visit(self, bird_id, ts, sensor, rssi, weight_g, age_day,
+                    bin_kg=None):
         ema_w = weight_g
         with SessionLocal() as s:
             v = Visit(
@@ -152,7 +173,7 @@ class CycleProcessor:
         ctx = {
             "visit_id": vid, "start": ts, "init_w": weight_g,
             "sensor": sensor, "rssi": rssi, "read_ok": bird_id is not None,
-            "last_ts": ts, "intake": 0.0, "bin_prev": None,
+            "last_ts": ts, "intake": 0.0, "bin_prev": bin_kg,
             "last_raw": weight_g, "ema_w": ema_w, "age_day": age_day,
         }
         self.open[bird_id] = ctx
@@ -164,37 +185,32 @@ class CycleProcessor:
         if weight_g is not None:
             ctx["ema_w"] = _ema(ctx["ema_w"], weight_g)
             ctx["last_raw"] = weight_g
-        # feed intake: prefer explicit feed_delta (already computed by device);
+        # feed intake increment for THIS row — one rule shared by the in-memory
+        # ctx and the DB persist below, so the two can never diverge.
+        # Prefer explicit positive feed_delta (already computed by device);
         # else derive from bin mass drop when bin_kg is present.
-        if feed_delta is not None and feed_delta > 0:
-            ctx["intake"] += feed_delta
-        elif bin_kg is not None:
-            if ctx["bin_prev"] is not None:
-                drop = ctx["bin_prev"] - bin_kg
-                if drop > 0:
-                    ctx["intake"] += drop
-                elif drop < -BIN_REFILL_THRESHOLD_KG:  # refill event
-                    ctx["intake"] += 0.0  # reset baseline; refill ignored
+        inc = _intake_increment(ctx, bin_kg, feed_delta)
+        ctx["intake"] += inc
+        if bin_kg is not None:
             ctx["bin_prev"] = bin_kg
         # persist incremental intake on the visit
         with SessionLocal() as s:
             v = s.get(Visit, ctx["visit_id"])
             if v:
-                v.feed_intake_g = (v.feed_intake_g or 0) + (feed_delta or 0)
-                if bin_kg is not None and ctx["bin_prev"] is not None:
-                    drop = ctx["bin_prev"] - bin_kg
-                    if drop > 0:
-                        v.feed_intake_g = (v.feed_intake_g or 0) + drop
+                v.feed_intake_g = (v.feed_intake_g or 0) + inc
                 v.final_weight_g = ctx["ema_w"]
                 v.temp_c = temp_c
                 v.humidity = humidity
                 s.commit()
+        return inc
 
-    def _close_visit(self, ctx, end_ts, weight_g, temp_c, humidity):
+    def _close_visit(self, ctx, end_ts, weight_g, temp_c, humidity,
+                     final_inc=0.0):
         with SessionLocal() as s:
             v = s.get(Visit, ctx["visit_id"])
             if v:
                 v.visit_end = end_ts
+                v.feed_intake_g = (v.feed_intake_g or 0) + (final_inc or 0)
                 v.final_weight_g = ctx["ema_w"] if weight_g is None else weight_g
                 v.temp_c = temp_c
                 v.humidity = humidity
@@ -249,8 +265,25 @@ def _to_int(v):
         return None
 
 
-def _log_to_dict(log):
-    return {
+def _intake_increment(ctx, bin_kg, feed_delta):
+    """Single intake rule shared by the in-memory ctx and the DB persist.
+
+    Prefer explicit positive feed_delta (already computed by device, in grams);
+    else derive from bin mass drop when bin_kg is present (bin readings are in
+    kilograms, so the drop is converted to grams). A refill (large negative
+    drop) contributes 0 — it only resets the baseline.
+    """
+    if feed_delta is not None and feed_delta > 0:
+        return feed_delta
+    if bin_kg is not None and ctx.get("bin_prev") is not None:
+        drop = ctx["bin_prev"] - bin_kg
+        if drop > 0:
+            return drop * 1000.0
+    return 0.0
+
+
+def _log_to_dict(log, extra=None):
+    d = {
         "id": log.id, "cycle_id": log.cycle_id, "timestamp": _iso(log.timestamp),
         "flock_id": log.flock_id, "bird_id": log.bird_id,
         "sensor_id": log.sensor_id, "age_day": log.age_day,
@@ -258,7 +291,11 @@ def _log_to_dict(log):
         "feed_bin_kg": log.feed_bin_kg, "feed_delta_g": log.feed_delta_g,
         "temp_c": log.temp_c, "humidity": log.humidity, "rssi": log.rssi,
         "visit_id": log.visit_id, "is_visit_start": log.is_visit_start,
+        "is_visit_end": log.is_visit_end,
     }
+    if extra:
+        d.update(extra)
+    return d
 
 
 def _iso(dt):

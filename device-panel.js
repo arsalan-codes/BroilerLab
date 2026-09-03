@@ -186,16 +186,19 @@
       }
     }
     var w = d.initial_weight_g != null ? d.initial_weight_g : d.weight_g;
+    var feed = d.visit_feed_g != null ? d.visit_feed_g : d.feed_intake_g;
+    var elap = d.elapsed_s;
+    var dtJoin = (datePart && timePart) ? datePart + " " + timePart : (datePart || timePart || "—");
 
     var row = document.createElement("div");
     row.className = "reg-row new";
     row.innerHTML =
-      '<span class="reg-cell reg-cell--tag">' + esc(d.bird_id || "—") + '</span>' +
+      '<span class="reg-cell reg-cell--feed">' + (feed != null ? lnum(feed) : "—") + '<span class="reg-unit">g</span></span>' +
       '<span class="reg-cell reg-cell--w">' + (w != null ? lnum(w) : "—") + '<span class="reg-unit">g</span></span>' +
-      '<span class="reg-cell reg-cell--date">' + esc(datePart || "—") + '</span>' +
-      '<span class="reg-cell reg-cell--time">' + esc(timePart || "—") + '</span>' +
-      '<span class="reg-cell reg-cell--sensor">' + esc(d.sensor_id || "—") + '</span>' +
-      '<span class="reg-cell reg-cell--rssi">' + (d.rssi != null ? lnum(d.rssi) : "—") + '</span>';
+      '<span class="reg-cell reg-cell--elapsed">' + (elap != null ? lnum(elap) : "—") + '<span class="reg-unit">' + tr("dev.reg.sec", "s") + '</span></span>' +
+      '<span class="reg-cell reg-cell--dt">' + esc(dtJoin) + '</span>' +
+      '<span class="reg-cell reg-cell--tag">' + esc(d.bird_id || "—") + '</span>' +
+      '<span class="reg-cell reg-cell--sensor">' + esc(d.sensor_id || "—") + '</span>';
     body.insertBefore(row, body.firstChild);
     while (body.childNodes.length > regMax) body.removeChild(body.lastChild);
     // remove flash class after animation
@@ -226,13 +229,15 @@
           datePart = datePart.slice(0, 10);
           timePart = (r.registered_at || "").slice(11, 19);
         }
+        var dtJoin = (datePart && timePart) ? datePart + " " + timePart : (datePart || timePart || "—");
+        var w = r.initial_weight_g != null ? r.initial_weight_g : r.final_weight_g;
         row.innerHTML =
+          '<span class="reg-cell reg-cell--feed">' + (r.feed_intake_g != null ? lnum(r.feed_intake_g) : "—") + '<span class="reg-unit">g</span></span>' +
+          '<span class="reg-cell reg-cell--w">' + (w != null ? lnum(w) : "—") + '<span class="reg-unit">g</span></span>' +
+          '<span class="reg-cell reg-cell--elapsed">' + (r.elapsed_s != null ? lnum(r.elapsed_s) : "—") + '<span class="reg-unit">' + tr("dev.reg.sec", "s") + '</span></span>' +
+          '<span class="reg-cell reg-cell--dt">' + esc(dtJoin) + '</span>' +
           '<span class="reg-cell reg-cell--tag">' + esc(r.bird_id || "—") + '</span>' +
-          '<span class="reg-cell reg-cell--w">' + (r.initial_weight_g != null ? lnum(r.initial_weight_g) : "—") + '<span class="reg-unit">g</span></span>' +
-          '<span class="reg-cell reg-cell--date">' + esc(datePart || "—") + '</span>' +
-          '<span class="reg-cell reg-cell--time">' + esc(timePart || "—") + '</span>' +
-          '<span class="reg-cell reg-cell--sensor">' + esc(r.sensor_id || "—") + '</span>' +
-          '<span class="reg-cell reg-cell--rssi">' + (r.rssi != null ? lnum(r.rssi) : "—") + '</span>';
+          '<span class="reg-cell reg-cell--sensor">' + esc(r.sensor_id || "—") + '</span>';
         body.appendChild(row);
       });
     }).catch(function () {});

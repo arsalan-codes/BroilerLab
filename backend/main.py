@@ -163,6 +163,7 @@ class IngestIn(BaseModel):
     model_config = {"extra": "allow"}
     timestamp: str | None = None
     kind: str | None = None
+    event: str | None = None
     bird_id: str | None = None
     sensor_id: str | None = None
     flock_id: str | None = None
@@ -333,10 +334,31 @@ def recent_visits(cycle_id: int, limit: int = 50, current: User = Depends(authmo
         return [_visit_to_dict(v) for v in rows]
 @app.get("/api/cycles/{cycle_id}/registrations")
 def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends(authmod.get_current_user)):
+    """Realtime registration table: one row per bird visit.
+
+    Covers the six device-table parameters: feed consumed (g), bird weight (g),
+    elapsed time (s), datetime, bird id, device id. For still-open visits
+    (visit_end NULL) elapsed is measured up to now.
+    """
     with SessionLocal() as s:
         _require_owner_cycle(s, cycle_id, current)
         rows = (s.query(Visit).filter(Visit.cycle_id == cycle_id, Visit.bird_id.isnot(None)).order_by(Visit.visit_start.desc()).limit(limit).all())
-        return [{"bird_id": v.bird_id, "initial_weight_g": v.initial_weight_g, "registered_at": _iso(v.visit_start), "age_day": v.age_day, "sensor_id": v.sensor_id, "rssi": v.rssi, "read_ok": v.read_ok} for v in rows]
+        now = datetime.now(timezone.utc)
+        out = []
+        for v in rows:
+            end = v.visit_end or now
+            try:
+                elapsed = max(0.0, (end - v.visit_start).total_seconds()) if v.visit_start else 0.0
+            except Exception:
+                elapsed = 0.0
+            out.append({"bird_id": v.bird_id, "initial_weight_g": v.initial_weight_g,
+                        "final_weight_g": v.final_weight_g,
+                        "feed_intake_g": round(v.feed_intake_g or 0, 1),
+                        "elapsed_s": round(elapsed, 1),
+                        "registered_at": _iso(v.visit_start), "visit_end": _iso(v.visit_end),
+                        "age_day": v.age_day, "sensor_id": v.sensor_id,
+                        "rssi": v.rssi, "read_ok": v.read_ok})
+        return out
 @app.post("/api/cycles/{cycle_id}/ingest")
 def ingest_event(cycle_id: int, payload: IngestIn, current: User = Depends(authmod.get_current_user)):
     with SessionLocal() as s:
