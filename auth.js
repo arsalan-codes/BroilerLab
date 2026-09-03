@@ -105,7 +105,7 @@
             if (window.matchMedia && window.matchMedia("(max-width:992px)").matches
                 && typeof window.openDrawer === "function") {
               if (e && e.stopPropagation) e.stopPropagation();
-              window.openDrawer();
+              window.openDrawer('user');
               var ddD = document.getElementById("auth-dropdown-drawer");
               if (ddD) ddD.hidden = false;
               var chipD = document.getElementById("auth-user-btn-drawer");

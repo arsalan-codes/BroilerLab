@@ -937,22 +937,25 @@ function setTheme(t){
 }
 /* ---------------- header drawer (tablet & below) ---------------- */
 function drawerOpen(){return document.querySelector(".hctl")?.classList.contains("open")}
-function openDrawer(){
+function openDrawer(mode){
   const hc=document.querySelector(".hctl"),bd=$("backdrop"),bg=$("nav-burger");
   if(!hc)return;
   hc.classList.add("open");if(bd)bd.classList.add("on");
   document.body.classList.add("drawer-open");
+  /* two entries: avatar → full-screen user sheet; burger → nav menu */
+  document.body.classList.toggle("drawer-user",mode==="user");
+  document.body.classList.toggle("drawer-nav",mode!=="user");
   if(bg)bg.setAttribute("aria-expanded","true");
   document.body.style.overflow="hidden"}
 function closeDrawer(){
   const hc=document.querySelector(".hctl"),bd=$("backdrop"),bg=$("nav-burger");
   if(!hc)return;
   hc.classList.remove("open");if(bd)bd.classList.remove("on");
-  document.body.classList.remove("drawer-open");
+  document.body.classList.remove("drawer-open","drawer-user","drawer-nav");
   if(bg)bg.setAttribute("aria-expanded","false");
   document.body.style.overflow=""}
 function bindDrawer(){
-  on("nav-burger","click",()=>drawerOpen()?closeDrawer():openDrawer());
+  on("nav-burger","click",()=>drawerOpen()?closeDrawer():openDrawer("nav"));
   on("backdrop","click",closeDrawer);
   document.addEventListener("keydown",e=>{
     if(e.key==="Escape"&&drawerOpen())closeDrawer()});

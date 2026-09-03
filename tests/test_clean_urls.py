@@ -107,8 +107,9 @@ def test_mobile_avatar_opens_user_area_expanded():
     # Avatar tap must land on the USER panel, not just the nav drawer:
     # the mirrored dropdown inside the drawer must auto-expand + reveal.
     js = webapp_src("auth.js")
-    i = js.find("window.openDrawer()")
+    i = js.find("window.openDrawer(")
     assert i != -1, "mobile avatar path must open the drawer"
+    assert re.search(r"""['"]user['"]""", js[i:i + 40]), "avatar must open the drawer in user-sheet mode"
     branch = js[i:i + 900]
     assert "auth-dropdown-drawer" in branch, "avatar path must expand the mirrored user panel"
     assert ".hidden = false" in branch or ".hidden=false" in branch, \
@@ -146,6 +147,25 @@ def test_drawer_user_mount_hidden_only_on_desktop():
     joined = "".join(desktop_blocks)
     assert ".auth-area-drawer" in re.sub(r"\s+", "", joined), \
         "desktop must explicitly hide the drawer user mount"
+
+
+def test_drawer_has_separate_user_and_nav_modes():
+    # Avatar → full-screen user sheet; burger → nav menu with lang/theme/help.
+    app = webapp_src("app.js")
+    assert re.search(r"function openDrawer\s*\(\s*mode", app), "openDrawer must take a mode"
+    assert "drawer-user" in app and "drawer-nav" in app, "both modes must be tracked"
+    assert re.search(r"""openDrawer\(\s*['"]nav['"]\s*\)""", app), "burger must open the nav menu"
+    assert re.search(r"""openDrawer\(\s*['"]user['"]\s*\)""", webapp_src("auth.js")), "avatar must open the user sheet"
+    css = webapp_src("index.html")
+    assert re.search(r"body\.drawer-user\s+\.hctl\s*\{[^}]*width\s*:\s*100%", css), \
+        "user sheet must be full-screen"
+    for sel in (r"body\.drawer-user\s+\.hctl\s+\.hgroup",
+                r"body\.drawer-user\s+\.hctl\s+#btn-help",
+                r"body\.drawer-user\s+\.hctl\s+\.hpills"):
+        assert re.search(sel, css), f"user sheet must hide nav controls ({sel})"
+    assert re.search(
+        r"body\.drawer-nav\s+\.hctl\s+#auth-area-drawer:has\(\.auth-user\)\s*\{\s*display\s*:\s*none",
+        css), "nav menu must not show the logged-in user panel"
 
 
 def test_deploy_mirror_parity():
