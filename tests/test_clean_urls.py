@@ -89,48 +89,42 @@ def test_pages_spa_fallback_exists_and_matches():
     assert read(fallback) == root_html, "404.html must mirror index.html"
 
 
-def test_mobile_avatar_toggles_desktop_dropdown():
-    # Mobile behaves exactly like desktop: the topbar button toggles the same
-    # absolute dropdown card — no drawer sheet for the user panel.
+def test_mobile_avatar_opens_drawer():
     js = webapp_src("auth.js")
-    assert "openMobileDrawer" not in js, "avatar must not route through a mobile drawer handler"
-    assert "openDrawer('user')" not in js and 'openDrawer("user")' not in js, \
-        "avatar must not open a user sheet"
-    assert re.search(r"dd\.hidden\s*=\s*!dd\.hidden", js), \
-        "avatar click must toggle the topbar dropdown directly"
+    assert "openMobileDrawer" in js, "topbar avatar needs the mobile drawer handler"
+    assert "matchMedia" in js and "(max-width:992px)" in js
+    assert 'window.openDrawer' in js, "handler must call the global drawer opener"
+    app = webapp_src("app.js")
+    assert re.search(r"function openDrawer\s*\(", app), "openDrawer must exist globally"
     css = webapp_src("index.html")
-    nospace = re.sub(r"\s+", "", css)
-    assert "#auth-area.auth-dropdown{display:none}" not in nospace, \
-        "topbar dropdown must not be force-hidden on mobile"
-    assert "#auth-area.auth-dropdown[hidden]{display:none!important}" in nospace, \
-        "hidden attribute must still hide the dropdown"
+    assert re.search(
+        r"#auth-area\s+\.auth-dropdown\s*\{\s*display\s*:\s*none",
+        css,
+    ), "documents WHY the drawer path is needed (topbar dd is CSS-hidden on mobile)"
 
 
-def test_mobile_auth_button_matches_desktop():
-    # The mobile button must be the desktop pill (avatar + name + chevron),
-    # not a round icon: name/chevron must not be display:none'd.
-    css = webapp_src("index.html")
-    nospace = re.sub(r"\s+", "", css)
-    assert "#auth-area.auth-user.auth-name,#auth-area.auth-user.auth-chevron{display:none}" not in nospace, \
-        "mobile must show the name + chevron like desktop"
-    m = re.search(r"#auth-area\.auth-dropdown\{([^}]*)\}", nospace)
-    assert m, "mobile dropdown card rule missing"
-    card = m.group(1)
-    assert "position:absolute" in card, "dropdown must float like desktop, not push layout"
-    assert "min-width:200px" in card, "dropdown must keep the desktop card width"
-    assert "body.drawer-user.hctl" not in nospace, \
-        "left user-sheet mode must be gone"
+def test_mobile_avatar_opens_user_area_expanded():
+    # Avatar tap must land on the USER panel, not just the nav drawer:
+    # the mirrored dropdown inside the drawer must auto-expand + reveal.
+    js = webapp_src("auth.js")
+    i = js.find("window.openDrawer(")
+    assert i != -1, "mobile avatar path must open the drawer"
+    assert re.search(r"""['"]user['"]""", js[i:i + 40]), "avatar must open the drawer in user-sheet mode"
+    branch = js[i:i + 900]
+    assert "auth-dropdown-drawer" in branch, "avatar path must expand the mirrored user panel"
+    assert ".hidden = false" in branch or ".hidden=false" in branch, \
+        "mirrored user dropdown must auto-expand (hidden=false) on avatar tap"
+    assert "scrollIntoView" in branch, "user area must scroll into view on avatar tap"
 
 
 def test_mobile_avatar_click_does_not_rebubble():
-    # The document-level outside-click closer re-hides the dropdown;
+    # The document-level outside-click closer re-hides the mirrored panel;
     # the avatar handler must stopPropagation or the panel closes instantly.
     js = webapp_src("auth.js")
-    i = js.find('getElementById("auth-user-btn")')
-    assert i != -1, "topbar user button wiring missing"
-    branch = js[i:i + 1200]
-    assert "stopPropagation" in branch, "must stop bubbling or closer re-hides the panel"
-    assert re.search(r"dd\.hidden\s*=\s*!dd\.hidden", branch), "click must toggle the dropdown"
+    m = re.search(r"var openMobileDrawer = function\(e\)\{(.*?)\n        \};", js, re.S)
+    assert m, "openMobileDrawer must take the event"
+    assert "stopPropagation" in m.group(1), "must stop bubbling or closer re-hides the panel"
+    assert js.count("openMobileDrawer(e)") >= 2, "click + keydown must pass the event"
 
 
 def test_drawer_user_mount_hidden_only_on_desktop():
@@ -155,17 +149,33 @@ def test_drawer_user_mount_hidden_only_on_desktop():
         "desktop must explicitly hide the drawer user mount"
 
 
-def test_drawer_is_nav_only__burger_opens_nav():
-    # Mobile behaves exactly like desktop: avatar toggles the topbar dropdown
-    # card; the drawer has ONE entry (burger → nav menu with lang/theme/help).
+def test_drawer_has_separate_user_and_nav_modes():
+    # Avatar → full-screen user sheet; burger → nav menu with lang/theme/help.
     app = webapp_src("app.js")
+    assert re.search(r"function openDrawer\s*\(\s*mode", app), "openDrawer must take a mode"
+    assert "drawer-user" in app and "drawer-nav" in app, "both modes must be tracked"
     assert re.search(r"""openDrawer\(\s*['"]nav['"]\s*\)""", app), "burger must open the nav menu"
-    assert "openDrawer('user')" not in webapp_src("auth.js") and 'openDrawer("user")' not in webapp_src("auth.js"), \
-        "avatar must not open a user sheet"
+    assert re.search(r"""openDrawer\(\s*['"]user['"]\s*\)""", webapp_src("auth.js")), "avatar must open the user sheet"
     css = webapp_src("index.html")
-    nospace = re.sub(r"\s+", "", css)
-    assert "body.drawer-user.hctl" not in nospace, \
-        "left user-sheet mode must stay gone (desktop dropdown instead)"
+    m = re.search(r"body\.drawer-user\s+\.hctl\s*\{([^}]*)\}", css)
+    assert m, "left user-sheet rule missing"
+    sheet = m.group(1)
+    assert re.search(r"left\s*:\s*0", sheet), \
+        "user sheet must dock to the physical LEFT edge"
+    assert re.search(r"min\(340px,88vw\)", sheet), \
+        "user sheet must be a narrow side panel, not full-screen"
+    assert re.search(r"translateX\(-112%\)", sheet), \
+        "user sheet must hide off-canvas to the left (slides in from left)"
+    assert re.search(
+        r"body\.drawer-user\s+\.hctl\s+#auth-area-drawer\s+\.auth-user--drawer",
+        css), "user sheet must style the friendly profile header"
+    for sel in (r"body\.drawer-user\s+\.hctl\s+\.hgroup",
+                r"body\.drawer-user\s+\.hctl\s+#btn-help",
+                r"body\.drawer-user\s+\.hctl\s+\.hpills"):
+        assert re.search(sel, css), f"user sheet must hide nav controls ({sel})"
+    assert re.search(
+        r"body\.drawer-nav\s+\.hctl\s+#auth-area-drawer:has\(\.auth-user\)\s*\{\s*display\s*:\s*none",
+        css), "nav menu must not show the logged-in user panel"
 
 
 def test_deploy_mirror_parity():

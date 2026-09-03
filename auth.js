@@ -97,10 +97,28 @@
       var btn = document.getElementById("auth-user-btn");
       var dd = document.getElementById("auth-dropdown");
       if (btn && dd) {
-        // Mobile behaves exactly like desktop: the topbar button toggles the
-        // same absolute dropdown card (the drawer is burger/nav-only).
-        btn.addEventListener("click", function(e){ e.stopPropagation(); dd.hidden = !dd.hidden; });
-        btn.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); dd.hidden=!dd.hidden; }});
+        // Mobile topbar shows a round avatar whose dropdown is hidden by CSS:
+        // tapping it opens the LEFT slide-in user sheet AND auto-expands the
+        // mirrored user panel there (nav-burger stays the entry for nav menu).
+        var openMobileDrawer = function(e){
+          try {
+            if (window.matchMedia && window.matchMedia("(max-width:992px)").matches
+                && typeof window.openDrawer === "function") {
+              if (e && e.stopPropagation) e.stopPropagation();
+              window.openDrawer('user');
+              var ddD = document.getElementById("auth-dropdown-drawer");
+              if (ddD) ddD.hidden = false;
+              var chipD = document.getElementById("auth-user-btn-drawer");
+              if (chipD) chipD.setAttribute("aria-expanded", "true");
+              var areaD = document.getElementById("auth-area-drawer");
+              if (areaD && areaD.scrollIntoView) { try { areaD.scrollIntoView({ block: "start" }); } catch (e2) {} }
+              return true;
+            }
+          } catch (e) {}
+          return false;
+        };
+        btn.addEventListener("click", function(e){ if (openMobileDrawer(e)) return; e.stopPropagation(); dd.hidden = !dd.hidden; });
+        btn.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); if (openMobileDrawer(e)) return; dd.hidden=!dd.hidden; }});
       }
       updateLandingCTA();
       var lo = document.getElementById("btn-logout");

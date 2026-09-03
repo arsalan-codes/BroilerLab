@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.30"></script>
-<script src="services/api.js?v=1.8.30"></script>
+<script src="config.js?v=1.8.31"></script>
+<script src="services/api.js?v=1.8.31"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -449,34 +449,44 @@ body.drawer-open .topbar{z-index:220}
   html[dir=rtl] .hctl{transform:translateX(-112%)}
   html[dir=ltr] .hctl{transform:translateX(112%)}
   html[dir=rtl] .hctl.open,html[dir=ltr] .hctl.open{transform:none;visibility:visible}
-  /* mobile auth = desktop: full pill button + the SAME absolute dropdown card
-     under it (no round-icon trigger, no drawer sheet, no status ring) */
-  .topbar-in > #auth-area{display:flex;align-items:center;margin-inline-start:auto;position:relative}
-  #auth-area .auth-user{width:auto;height:auto;max-width:150px;border-radius:10px;
-    padding:6px 10px;justify-content:flex-start;gap:8px;cursor:pointer;user-select:none;
-    background:rgba(255,255,255,.06);border:1px solid var(--line);box-shadow:none;
-    animation:none;transition:background .15s}
+  /* mobile: topbar shows ONLY a round avatar icon as the drawer trigger (no burger, no text) */
+  .topbar-in > #auth-area{display:block;margin-inline-start:auto}
+  /* round user button — visually distinct from burger (gradient ring, no bg fill) */
+  #auth-area .auth-user,#auth-area .auth-login-btn{width:42px;height:42px;max-width:none;
+    border-radius:999px;padding:0;justify-content:center;cursor:pointer;
+    background:linear-gradient(135deg, color-mix(in srgb, var(--acc) 18%, transparent),
+                                         color-mix(in srgb, var(--acc2) 18%, transparent));
+    border:1.5px solid color-mix(in srgb, var(--acc) 55%, transparent);
+    box-shadow:0 2px 10px color-mix(in srgb, var(--acc) 22%, transparent);
+    transition:filter .2s, box-shadow .2s}
 .auth-login-btn .auth-btn-label{display:inline}
-  #auth-area .auth-user:hover{background:rgba(255,255,255,.1);box-shadow:none;filter:none}
-  #auth-area .auth-user .auth-name{display:block;font-size:12.5px;font-weight:600;color:var(--txt);
-    max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #auth-area .auth-user .auth-chevron{display:block;font-size:10px;color:var(--mut)}
-  #auth-area .auth-user .auth-avatar{width:28px;height:28px;font-size:13px;font-weight:800;
-    border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;
-    display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  #auth-area .auth-login-btn .auth-btn-label{display:inline}
-  #auth-area .auth-login-btn i{font-size:inherit;color:inherit}
-  /* same dropdown card as desktop, clamped so it never overflows small screens */
-  #auth-area .auth-dropdown{position:absolute;top:calc(100% + 8px);inset-inline-end:0;
-    min-width:200px;max-width:calc(100vw - 24px);
-    background:var(--card);border:1px solid var(--line);border-radius:12px;
-    box-shadow:var(--sh-lg);padding:8px;z-index:80}
-  #auth-area .auth-dropdown[hidden]{display:none !important}
-  /* desktop has no status dot / wave on the user panel */
-  #auth-area::after{display:none !important}
-  #auth-area.is-logged-in .auth-user,#auth-area.is-logged-in .auth-login-btn,
+  #auth-area .auth-user:hover,#auth-area .auth-login-btn:hover{filter:brightness(1.08);
+    box-shadow:0 3px 14px color-mix(in srgb, var(--acc) 35%, transparent)}
+  #auth-area .auth-user .auth-name,#auth-area .auth-user .auth-chevron{display:none}
+  #auth-area .auth-user .auth-avatar{background:linear-gradient(135deg,var(--acc),var(--acc2));
+    color:#fff;font-size:15px;font-weight:900;width:30px;height:30px;border-radius:999px;
+    display:grid;place-items:center}
+  #auth-area .auth-login-btn .auth-btn-label{display:none}
+  #auth-area .auth-login-btn i{font-size:17px;color:var(--acc)}
+  #auth-area .auth-dropdown{display:none}
+  /* status ring: green = logged in, red = logged out; animated wave */
+  #auth-area{position:relative}
+  #auth-area::after{content:"";position:absolute;inset-inline-start:auto;
+    inset-block-start:-3px;inset-inline-end:-3px;width:12px;height:12px;border-radius:999px;
+    background:var(--ring,#ef4444);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring,#ef4444) 25%, transparent);
+    animation:ringPulse 2s ease-in-out infinite;z-index:2}
+  @keyframes ringPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:.75}}
+  #auth-area.is-logged-in::after{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.25)}
+  #auth-area.is-logged-out::after{background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.25)}
+  #auth-area.is-logged-in .auth-user,#auth-area.is-logged-in .auth-login-btn{
+    border-color:#22c55e;
+    box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:waveGreen 2.2s ease-out infinite}
   #auth-area.is-logged-out .auth-user,#auth-area.is-logged-out .auth-login-btn{
-    border-color:var(--line);box-shadow:none;animation:none}
+    border-color:#ef4444;
+    box-shadow:0 0 0 0 rgba(239,68,68,.5);animation:waveRed 2.2s ease-out infinite}
+  @keyframes waveGreen{0%{box-shadow:0 0 0 0 rgba(34,197,94,.45)}70%{box-shadow:0 0 0 12px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+  @keyframes waveRed{0%{box-shadow:0 0 0 0 rgba(239,68,68,.45)}70%{box-shadow:0 0 0 12px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+  /* drawer trigger on avatar: open drawer instead of dropdown */
   .topbar-in > #auth-area .auth-user{cursor:pointer}
 
   /* drawer auth mount: replaces the topbar auth controls ≤992px */
@@ -493,9 +503,56 @@ body.drawer-open .topbar{z-index:220}
   .auth-area-drawer .auth-dropdown{position:static;width:100%;box-shadow:none;margin-top:8px}
   .auth-area-drawer .auth-name{max-width:none}
 
-  /* drawer (tablet & below) is nav-only: burger opens the nav menu. The user
-     panel lives in the topbar dropdown exactly like desktop — no sheet mode. */
+  /* drawer modes (tablet & below): avatar → user panel sliding from the LEFT,
+     burger → nav menu (language/theme/help live ONLY there) */
+  html[dir] body.drawer-user .hctl{
+    width:min(340px,88vw);max-width:88vw;
+    /* physical left-dock: base inset-inline-end:0 already maps to left in
+       RTL; in LTR the over-constrained right is ignored per CSS 2.1 §10.3.7.
+       (Do NOT add inset-inline-* here: logical auto beats physical 0 and
+       drops the sheet to its static position.) */
+    left:0;right:auto;
+    border-left:none;border-right:1px solid var(--line);
+    border-radius:0 18px 18px 0;
+    box-shadow:24px 0 60px rgba(0,0,0,.35);
+    transform:translateX(-112%)}
+  html[dir] body.drawer-user .hctl.open{transform:none}
+  body.drawer-user .hctl .hgroup,
+  body.drawer-user .hctl #btn-help,
+  body.drawer-user .hctl #btn-reset,
+  body.drawer-user .hctl .hpills,
+  body.drawer-user .hctl .topclock{display:none}
   body.drawer-nav .hctl #auth-area-drawer:has(.auth-user){display:none}
+  /* friendly profile header in the left user sheet */
+  body.drawer-user .hctl .dhead{border:none;padding:0 0 2px}
+  body.drawer-user .hctl .dhead-brand,
+  body.drawer-user .hctl .dhead-clock{display:none}
+  body.drawer-user .hctl #auth-area-drawer .auth-user--drawer{
+    flex-direction:column;justify-content:center;text-align:center;gap:9px;
+    padding:22px 14px 18px;border-radius:18px;
+    background:linear-gradient(135deg,
+      color-mix(in srgb, var(--acc) 24%, transparent),
+      color-mix(in srgb, var(--acc2) 16%, transparent));
+    border:1px solid color-mix(in srgb, var(--acc) 34%, transparent)}
+  body.drawer-user .hctl #auth-area-drawer .auth-user--drawer .auth-avatar{
+    width:58px;height:58px;font-size:23px;font-weight:900}
+  body.drawer-user .hctl #auth-area-drawer .auth-user--drawer .auth-name{
+    font-size:15px;font-weight:800;max-width:none}
+  body.drawer-user .hctl #auth-area-drawer .auth-user--drawer .auth-chevron{display:none}
+  body.drawer-user .hctl #auth-area-drawer .auth-dropdown{
+    display:flex;flex-direction:column;gap:8px;background:none;border:none}
+  body.drawer-user .hctl #auth-area-drawer .auth-dropdown-head{
+    border:none;margin:2px 0 0;padding:2px 4px;text-align:center}
+  body.drawer-user .hctl #auth-area-drawer .auth-dropdown-head b{display:none}
+  body.drawer-user .hctl #auth-area-drawer .auth-dropdown-head span{font-size:11.5px;margin:0}
+  body.drawer-user .hctl #auth-area-drawer .auth-dropdown-item{
+    min-height:52px;padding:10px 14px;border-radius:14px;
+    font-size:13.5px;font-weight:700;gap:11px;
+    background:color-mix(in srgb, var(--txt) 5%, transparent);
+    border:1px solid var(--line)}
+  body.drawer-user .hctl #auth-area-drawer .auth-dropdown-item:hover{filter:brightness(1.06)}
+  body.drawer-user .hctl #auth-area-drawer .auth-dropdown-item i{font-size:15px;color:var(--acc)}
+  body.drawer-user .hctl #auth-area-drawer .auth-dropdown-item.danger i{color:var(--bad)}
 
   /* compact bar: everything fits, no overflow */
   .topbar-in{gap:8px}
@@ -2564,23 +2621,23 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.8.30" defer></script>
-<script src="engine.js?v=1.8.30" defer></script>
-<script src="xlsx.js?v=1.8.30" defer></script>
-<script src="stats.js?v=1.8.30" defer></script>
-<script src="version.js?v=1.8.30" defer></script>
-  <script src="locales/fa.js?v=1.8.30" defer></script>
-<script src="locales/en.js?v=1.8.30" defer></script>
-<script src="i18n.js?v=1.8.30" defer></script>
-<script src="utils/formatters.js?v=1.8.30" defer></script>
-<script src="shamsi.js?v=1.8.30" defer></script>
-<script src="auth.js?v=1.8.30" defer></script>
-<script src="device-panel.js?v=1.8.30" defer></script>
-<script src="dialog.js?v=1.8.30" defer></script>
-<script src="router.js?v=1.8.30" defer></script>
-<script src="components/chart.js?v=1.8.30" defer></script>
-<script src="services/export.js?v=1.8.30" defer></script>
-<script src="app.js?v=1.8.30" defer></script>
+<script src="strains.js?v=1.8.31" defer></script>
+<script src="engine.js?v=1.8.31" defer></script>
+<script src="xlsx.js?v=1.8.31" defer></script>
+<script src="stats.js?v=1.8.31" defer></script>
+<script src="version.js?v=1.8.31" defer></script>
+  <script src="locales/fa.js?v=1.8.31" defer></script>
+<script src="locales/en.js?v=1.8.31" defer></script>
+<script src="i18n.js?v=1.8.31" defer></script>
+<script src="utils/formatters.js?v=1.8.31" defer></script>
+<script src="shamsi.js?v=1.8.31" defer></script>
+<script src="auth.js?v=1.8.31" defer></script>
+<script src="device-panel.js?v=1.8.31" defer></script>
+<script src="dialog.js?v=1.8.31" defer></script>
+<script src="router.js?v=1.8.31" defer></script>
+<script src="components/chart.js?v=1.8.31" defer></script>
+<script src="services/export.js?v=1.8.31" defer></script>
+<script src="app.js?v=1.8.31" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
