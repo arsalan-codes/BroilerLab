@@ -71,10 +71,15 @@ def test_brand_link_is_clean():
 def test_vercel_spa_rewrite():
     cfg = json.loads(read(ROOT / "vercel.json"))
     rewrites = cfg.get("rewrites", [])
-    assert any(
-        r.get("destination") == "/index.html" and "api" in r.get("source", "")
-        for r in rewrites
-    ), "vercel.json must rewrite extension-less deep paths to /index.html"
+    dests = {r.get("source"): r.get("destination") for r in rewrites}
+    # Every canonical client route must resolve to the app shell (explicit
+    # sources only — Vercel's matcher is RE2-based, so no lookaheads).
+    for p in ("/feed", "/dashboard", "/trial", "/farm", "/live", "/scenarios",
+              "/device", "/methodology", "/science", "/workspace",
+              "/about", "/products", "/404"):
+        assert dests.get(p) == "/index.html", f"vercel.json must map {p} to /index.html"
+    for r in rewrites:
+        assert "(?!" not in r.get("source", ""), "no lookahead: RE2 does not support it"
 
 
 def test_pages_spa_fallback_exists_and_matches():

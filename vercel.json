@@ -16,7 +16,55 @@
       "destination": "/api/index.py"
     },
     {
-      "source": "/((?!api/|ws/|.*\\..*).*)",
+      "source": "/feed",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/trial",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/farm",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/live",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/scenarios",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/device",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/methodology",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/science",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/workspace",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/products",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/404",
       "destination": "/index.html"
     }
   ],
