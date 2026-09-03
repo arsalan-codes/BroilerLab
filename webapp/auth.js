@@ -97,8 +97,20 @@
       var btn = document.getElementById("auth-user-btn");
       var dd = document.getElementById("auth-dropdown");
       if (btn && dd) {
-        btn.addEventListener("click", function(e){ e.stopPropagation(); dd.hidden = !dd.hidden; });
-        btn.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); dd.hidden=!dd.hidden; }});
+        // Mobile topbar shows a round avatar whose dropdown is hidden by CSS:
+        // tapping it must open the drawer (full user menu lives there) instead.
+        var openMobileDrawer = function(){
+          try {
+            if (window.matchMedia && window.matchMedia("(max-width:992px)").matches
+                && typeof window.openDrawer === "function") {
+              window.openDrawer();
+              return true;
+            }
+          } catch (e) {}
+          return false;
+        };
+        btn.addEventListener("click", function(e){ if (openMobileDrawer()) return; e.stopPropagation(); dd.hidden = !dd.hidden; });
+        btn.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); if (openMobileDrawer()) return; dd.hidden=!dd.hidden; }});
       }
       updateLandingCTA();
       var lo = document.getElementById("btn-logout");

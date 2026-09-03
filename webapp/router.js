@@ -1,9 +1,14 @@
 /* =====================================================================
-   Arian Router — centralized hash-based SPA routing
+   Arian Router — centralized History-API SPA routing (clean URLs)
    Owns: route table, guards (public/protected), redirects, 404,
          history (back/forward), deep links, active-nav sync,
          per-route document title. Locale stays OUT of the URL
          (localStorage rossim_lang) — language switch never breaks route.
+
+   URLs are clean paths (e.g. /feed), no '#'. Legacy '#/...' links are
+   migrated to the clean form on sight (replace, no extra history entry).
+   BASE detects the GitHub-Pages subpath (/BroilerLab) vs root hosting
+   (Vercel / local server). file:// falls back to hash routing.
    ===================================================================== */
 "use strict";
 (function () {
@@ -42,6 +47,19 @@
   var current = null;         // active route object
   var pending = null;         // intended destination while unauthenticated
 
+  /* ---- hosting base + transport ----
+     GitHub Pages serves under /BroilerLab; Vercel/local serve at root.
+     file:// cannot pushState -> stay on hash transport there. */
+  var BASE = (function () {
+    try {
+      var m = location.pathname.match(/^\/BroilerLab(?=\/|$)/);
+      return m ? m[0] : "";
+    } catch (e) { return ""; }
+  })();
+  var HASH_FALLBACK = (function () {
+    try { return location.protocol === "file:"; } catch (e) { return false; }
+  })();
+
   /* ---- helpers ---- */
   function byPath(p) { return ROUTES.filter(function (r) { return r.path === p; })[0] || null; }
   function byView(v) { return ROUTES.filter(function (r) { return r.view === v; })[0] || null; }
@@ -49,31 +67,72 @@
   function isAuthed() {
     return !!(window.isTokenValid && window.isTokenValid(localStorage.getItem("arian_token")));
   }
-  function isHome() { var h = location.hash; return !h || h === "#" || h === "#/"; }
-  function parseHash() {
-    var h = location.hash.replace(/^#/, "") || "/";
-    if (h.charAt(0) !== "/") h = "/" + h;          // tolerate "#dashboard"
-    var qi = h.indexOf("?");
+  function stripTrail(p) {
+    if (p.length > 1 && p.charAt(p.length - 1) === "/") return p.slice(0, -1);
+    return p;
+  }
+  function parseQuery(qs) {
     var query = {};
-    if (qi > -1) {
-      h.slice(qi + 1).split("&").forEach(function (kv) {
-        if (!kv) return;
-        var eq = kv.indexOf("="), k = decodeURIComponent(eq < 0 ? kv : kv.slice(0, eq)),
-            v = eq < 0 ? "" : decodeURIComponent(kv.slice(eq + 1));
-        query[k] = v;
-      });
-      h = h.slice(0, qi);
+    if (!qs) return query;
+    qs.split("&").forEach(function (kv) {
+      if (!kv) return;
+      var eq = kv.indexOf("="), k = decodeURIComponent(eq < 0 ? kv : kv.slice(0, eq)),
+          v = eq < 0 ? "" : decodeURIComponent(kv.slice(eq + 1));
+      query[k] = v;
+    });
+    return query;
+  }
+  /* canonical {path, query} from the address bar (both transports) */
+  function getPath() {
+    if (HASH_FALLBACK) {
+      var h = location.hash.replace(/^#/, "") || "/";
+      if (h.charAt(0) !== "/") h = "/" + h;          // tolerate "#dashboard"
+      var qi = h.indexOf("?");
+      var query = {};
+      if (qi > -1) { query = parseQuery(h.slice(qi + 1)); h = h.slice(0, qi); }
+      return { path: stripTrail(h), query: query };
     }
-    if (h.length > 1 && h.charAt(h.length - 1) === "/") h = h.slice(0, -1);
-    return { path: h, query: query };
+    var p = location.pathname;
+    if (BASE && p.indexOf(BASE) === 0) p = p.slice(BASE.length) || "/";
+    var q = location.search ? parseQuery(location.search.replace(/^\?/, "")) : {};
+    return { path: stripTrail(p) || "/", query: q };
+  }
+  function setURL(path, replaceFlag) {
+    if (HASH_FALLBACK) {
+      var t = "#" + path;
+      if (replaceFlag || location.hash === t) history.replaceState(null, "", t);
+      else location.hash = t;                                   // hashchange -> resolve
+      return;
+    }
+    var url = BASE + path;
+    if (replaceFlag) history.replaceState(null, "", url);
+    else history.pushState(null, "", url);
+  }
+  /* migrate a legacy '#/...' address to its clean form (replace, no loop) */
+  function migrateLegacyHash() {
+    var h = location.hash;
+    if (!h || h === "#") return false;
+    var temp = h.replace(/^#/, "") || "/";
+    if (temp.charAt(0) !== "/") temp = "/" + temp;
+    var qi = temp.indexOf("?");
+    var clean = qi > -1 ? temp.slice(0, qi) : temp;
+    var suffix = qi > -1 ? temp.slice(qi) : "";
+    clean = stripTrail(clean);
+    history.replaceState(null, "", BASE + clean + suffix);
+    return true;
   }
 
-  /* ---- query params API (e.g. #/dashboard?tab=x) ---- */
+  /* ---- query params API (e.g. /dashboard?tab=x) ---- */
   function setQuery(path, params) {
     var qs = Object.keys(params || {}).map(function (k) {
       return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]);
     }).join("&");
     go(qs ? path + "?" + qs : path, true);
+  }
+  function splitQuery(path) {
+    var qi = path.indexOf("?");
+    if (qi < 0) return { path: path, suffix: "" };
+    return { path: path.slice(0, qi), suffix: path.slice(qi) };
   }
 
   /* ---- view activation (single switcher — old duplicated logic removed) ---- */
@@ -109,7 +168,7 @@
 
   /* ---- guard + resolve ---- */
   function resolve(push) {
-    var parsed = parseHash(), path = parsed.path;
+    var parsed = getPath(), path = parsed.path;
     if (ALIASES[path] != null) { replace(ALIASES[path]); return; }        // legacy redirect (replace, no loop)
     var route = byPath(path);
     if (!route) { replace("/404"); return; }                              // unknown -> 404
@@ -131,38 +190,33 @@
     activate(route);
   }
   function go(path, replaceFlag) {
-    /* Home uses the clean root URL "/" (no hash). All other routes live on #/... */
-    if (path === "/") {
-      var alreadyHome = isHome() && (location.hash === "" ? true : false);
-      if (replaceFlag) {
-        if (location.hash) history.replaceState(null, "", "/");           // strip "#/" -> clean "/"
-        resolve(false); return;
-      }
-      if (location.hash === "") { resolve(false); return; }               // already on clean home
-      if (window.history.pushState) { history.pushState(null, "", "/"); resolve(false); }
-      else { location.hash = "/"; }
-      return;
-    }
-    var target = "#" + path;
-    if (replaceFlag || location.hash === target) {
-      if (location.hash === target) { resolve(false); return; }
-      history.replaceState(null, "", target); resolve(false);
-    } else { location.hash = target; }                                    // hashchange -> resolve
+    var parts = splitQuery(path);
+    path = parts.path;
+    var cur = getPath().path;
+    if (cur === path && !parts.suffix) { resolve(false); return; }
+    setURL(path + parts.suffix, replaceFlag);
+    /* hash transport resolves async via hashchange; history transport resolves now */
+    if (HASH_FALLBACK && !replaceFlag) return;
+    resolve(false);
   }
   function replace(path) {
-    if (path === "/") { history.replaceState(null, "", "/"); resolve(false); return; }  // keep home clean
-    history.replaceState(null, "", "#" + path); resolve(false);
+    var parts = splitQuery(path);
+    setURL(parts.path + parts.suffix, true);
+    if (HASH_FALLBACK) return;                                            // hashchange -> resolve
+    resolve(false);
   }
 
   /* ---- public API (central helpers: no raw hashes elsewhere) ---- */
   window.Router = {
-    go: function (v) {                       // accepts view id OR path
-      var r = v && v.charAt(0) === "/" ? byPath(v) : byView(v);
+    go: function (v) {                       // accepts view id OR path (incl. slash aliases)
+      var r;
+      if (v && v.charAt(0) === "/") r = byPath(v) || (ALIASES[v] != null ? byPath(ALIASES[v]) : null);
+      else r = byView(v);
       go(r ? r.path : "/404");
     },
     goPath: go,
     setQuery: setQuery,
-    query: function () { return parseHash().query; },
+    query: function () { return getPath().query; },
     current: function () { return current ? current.path : "/"; },
     isPublic: function (view) { var r = byView(view); return !!(r && r.public); },
     syncTitle: function () {
@@ -178,9 +232,12 @@
     resolve: resolve
   };
 
-  /* ---- browser history: back/forward + manual hash edit ---- */
-  window.addEventListener("hashchange", function () { resolve(false); });
-  window.addEventListener("popstate", function () { resolve(false); });   // back/forward over pushed home URL
+  /* ---- browser history: back/forward + legacy hash migration ---- */
+  window.addEventListener("popstate", function () { resolve(false); });
+  window.addEventListener("hashchange", function () {
+    if (!HASH_FALLBACK && location.hash && location.hash !== "#") { migrateLegacyHash(); resolve(false); return; }
+    resolve(false);
+  });
   window.addEventListener("rossim:lang", function () { setTimeout(function () { if (window.Router && window.Router.syncTitle) window.Router.syncTitle(); }, 0); });
 
   /* ---- wire ALL navigation elements through the router ---- */
@@ -192,12 +249,25 @@
       if (v && v.charAt(0) === "v") { e.preventDefault(); window.Router.go(v); }
       return;
     }
+    // same-origin route anchors (e.g. brand href="/") -> SPA navigation
+    var a = e.target.closest("a[href]");
+    if (a && !a.hasAttribute("target") && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+      var href = a.getAttribute("href");
+      if (href && href.charAt(0) === "/" && href.charAt(1) !== "/") {
+        var ap = href.split("?")[0];
+        var rel = BASE ? (ap.indexOf(BASE) === 0 ? ap.slice(BASE.length) || "/" : null) : ap;
+        if (rel && (byPath(rel) || ALIASES[rel] != null)) { e.preventDefault(); go(rel); return; }
+      }
+    }
     // landing guest -> scroll (not navigation)
   }, false);
 
   /* ---- boot: deep link / refresh / direct URL ---- */
   function boot() {
-    if (location.hash === "#" || location.hash === "#/") history.replaceState(null, "", "/");  // clean canonical home
+    if (!HASH_FALLBACK && location.hash && location.hash !== "#") migrateLegacyHash();
+    else if (location.hash === "#" || location.hash === "#/") {
+      try { history.replaceState(null, "", BASE + "/"); } catch (err) { /* file: w/o history */ }
+    }
     resolve(false);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
