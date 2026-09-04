@@ -935,37 +935,15 @@ function setTheme(t){
   refreshChartTheme();applyThemeButtons();
   requestAnimationFrame(()=>repaintView(CUR_VIEW));
 }
-/* ---------------- header drawer (tablet & below) ---------------- */
-function drawerOpen(){return document.querySelector(".hctl")?.classList.contains("open")}
-function openDrawer(mode){
-  const hc=document.querySelector(".hctl"),bd=$("backdrop"),bg=$("nav-burger");
-  if(!hc)return;
-  hc.classList.add("open");if(bd)bd.classList.add("on");
-  document.body.classList.add("drawer-open");
-  /* single entry: burger → nav menu. The user account lives in the bottom
-     sheet (window.openAccountSheet in auth.js) — avatar never opens
-     the drawer. drawer-user class kept retired (no CSS targets it). */
-  document.body.classList.toggle("drawer-user",mode==="user");
-  document.body.classList.toggle("drawer-nav",mode!=="user");
-  if(bg)bg.setAttribute("aria-expanded","true");
-  document.body.style.overflow="hidden"}
-function closeDrawer(){
-  const hc=document.querySelector(".hctl"),bd=$("backdrop"),bg=$("nav-burger");
-  if(!hc)return;
-  hc.classList.remove("open");if(bd)bd.classList.remove("on");
-  document.body.classList.remove("drawer-open","drawer-user","drawer-nav");
-  if(bg)bg.setAttribute("aria-expanded","false");
-  document.body.style.overflow=""}
-function bindDrawer(){
-  on("nav-burger","click",()=>drawerOpen()?closeDrawer():openDrawer("nav"));
-  on("backdrop","click",closeDrawer);
-  document.addEventListener("keydown",e=>{
-    if(e.key==="Escape"&&drawerOpen())closeDrawer()});
-  /* auto-close after choosing something inside the drawer */
-  on("drawer-close","click",closeDrawer);
+/* ---------------- header controls: hamburger REMOVED (v1.8.35) ------------
+   The burger button + slide-in drawer are gone everywhere. Desktop keeps
+   its inline .hctl controls; on mobile .hctl is display:none and every
+   drawer entry (language/theme/help/reset) lives in the user menu
+   (topbar dropdown + bottom sheet in auth.js). */
+function bindHeaderResize(){
+  // repaint charts after real layout changes (kept from the old drawer binder)
   let rw=innerWidth;
   window.addEventListener("resize",()=>{
-    if(innerWidth>992&&drawerOpen())closeDrawer();
     if(rw!==innerWidth){rw=innerWidth;
       requestAnimationFrame(()=>repaintView(CUR_VIEW))}});
   /* keep chicks' floor metrics fresh after layout changes */
@@ -1577,16 +1555,19 @@ function resetAll(){
 var resetArmed=0,resetTimer=null;
 function bindReset(){
   var btn=$("btn-reset");if(!btn)return;
+  // BUGFIX: the old flow overwrote the button's text with emoji,
+  // destroying the icon+label children and reintroducing removed emoji.
+  // Now the .armed class (red styling) is the only visual state.
   btn.addEventListener("click",function(){
     if(resetArmed){
       resetArmed=0;clearTimeout(resetTimer);
-      btn.classList.remove("armed");btn.textContent="\u267b\ufe0f";
-      if(window.MDialog){ MDialog.confirm({title:"\u0628\u0627\u0632\u0646\u0634\u0627\u0646\u06cc \u06a9\u0627\u0645\u0644 \u062f\u0627\u062f\u0647\u200c\u0647\u0627", message:"\u0622\u06cc\u0627 \u0627\u0632 \u0628\u0627\u0632\u0646\u0634\u0627\u0646\u06cc \u06a9\u0627\u0645\u0644 \u0627\u0637\u0645\u06cc\u0646\u0627\u0646 \u062f\u0627\u0631\u06cc\u062f\u061f\u000a\u000a\u062a\u0645\u0627\u0645 \u062f\u0627\u062f\u0647\u200c\u0647\u0627\u06cc \u062f\u0627\u0634\u0628\u0648\u0631\u062f \u0627\u0639\u062a\u0628\u0627\u0631\u0633\u0646\u062c\u06cc\u060c \u0637\u0631\u062d \u0622\u0632\u0645\u0627\u06cc\u0634\u060c \u0646\u0642\u0634\u0647 \u0641\u0627\u0631\u0645\u060c \u0634\u0628\u06cc\u0647\u200c\u0633\u0627\u0632\u06cc \u0632\u0646\u062f\u0647 \u0648 \u0633\u0646\u0627\u0631\u06cc\u0648\u0647\u0627 \u0628\u0631\u0627\u06cc \u062d\u0633\u0627\u0628 \u0634\u0645\u0627 \u0628\u0647\u200c\u0637\u0648\u0631 \u06a9\u0627\u0645\u0644 \u067e\u0627\u06a9 \u062e\u0648\u0627\u0647\u062f \u0634\u062f \u0648 \u0642\u0627\u0628\u0644 \u0628\u0627\u0632\u06af\u0634\u062a \u0646\u06cc\u0633\u062a\u002e\u000a\u0622\u06cc\u0627 \u0627\u062f\u0627\u0645\u0647 \u0645\u06cc\u200c\u062f\u0647\u064a\u062f\u061f", icon:"danger", danger:true, confirmText:"\u0628\u0627\u0632\u0646\u0634\u0627\u0646\u06cc", cancelText:"\u0627\u0646\u0635\u0631\u0627\u0641"}).then(function(ok){ if(!ok){ toast("\u0644\u063a\u0648 \u0634\u062f"); return; } resetAll(); }); } else { var ok=confirm("\u0622\u06cc\u0627 \u0627\u0632 \u0628\u0627\u0632\u0646\u0634\u0627\u0646\u06cc \u06a9\u0627\u0645\u0644 \u0627\u0637\u0645\u06cc\u0646\u0627\u0646 \u062f\u0627\u0631\u06cc\u062f\u061f"); if(!ok){ toast("\u0644\u063a\u0648 \u0634\u062f"); return; } resetAll(); }
+      btn.classList.remove("armed");
+      if(window.MDialog){ MDialog.confirm({title:"بازنشانی کامل داده‌ها", message:"آیا از بازنشانی کامل اطمینان دارید؟\n\nتمام داده‌های داشبورد اعتبارسنجی، طرح آزمایش، نقشه فارم، شبیه‌سازی زنده و سناریوها برای حساب شما به‌طور کامل پاک خواهد شد و قابل بازگشت نیست.\nآیا ادامه می‌دهید؟", icon:"danger", danger:true, confirmText:"بازنشانی", cancelText:"انصراف"}).then(function(ok){ if(!ok){ toast("لغو شد"); return; } resetAll(); }); } else { var ok=confirm("آیا از بازنشانی کامل اطمینان دارید؟"); if(!ok){ toast("لغو شد"); return; } resetAll(); }
     }else{
-      resetArmed=1;btn.classList.add("armed");btn.textContent="\u2757";
+      resetArmed=1;btn.classList.add("armed");
       toast(tr("dyn.resetArmed"));
       resetTimer=setTimeout(function(){
-        resetArmed=0;btn.classList.remove("armed");btn.textContent="\u267b\ufe0f";
+        resetArmed=0;btn.classList.remove("armed");
       },3000);
     }
   });
@@ -1604,7 +1585,7 @@ document.addEventListener("keydown",e=>{
   setTheme(THEME==="dark"?"light":"dark")});
 document.addEventListener("DOMContentLoaded",()=>{
   expLoad();initStrain();bindLang();bindTheme();applyLang();scnFill();
-  bindReset();bindDrawer();bindExportCenter();bindTour();bindSettingsDropdown();
+  bindReset();bindHeaderResize();bindExportCenter();bindTour();bindSettingsDropdown();
   markTabs();
   document.documentElement.setAttribute("data-theme",THEME==="light"?"light":"dark");
   refreshChartTheme();

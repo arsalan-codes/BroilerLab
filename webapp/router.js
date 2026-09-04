@@ -158,10 +158,6 @@
     var paint = function () { if (typeof window.repaintView === "function") window.repaintView(route.view); };
     if (window.requestIdleCallback) requestIdleCallback(paint, { timeout: 120 }); else requestAnimationFrame(paint);
     if (window.scrollTo) window.scrollTo({ top: 0, behavior: "auto" });
-    // close mobile drawer + feed dropdown after navigation
-    var hc = document.querySelector(".hctl"), bd = document.getElementById("backdrop");
-    if (hc && hc.classList.contains("open") && typeof window.closeDrawer === "function") window.closeDrawer();
-    if (bd) bd.classList.remove("on");
     current = route;
     document.dispatchEvent(new CustomEvent("arian:route", { detail: { path: route.path, view: route.view } }));
   }

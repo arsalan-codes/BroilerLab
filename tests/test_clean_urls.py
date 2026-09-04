@@ -106,14 +106,17 @@ def test_account_sheet_content_and_actions():
     js = webapp_src("auth.js")
     for sid in ("account-sheet", "sheet-backdrop", "sheet-user-name",
                 "sheet-view-profile", "sheet-profile-item", "sheet-settings-item",
-                "sheet-lang-item", "sheet-help-item", "sheet-about-item",
+                "sheet-help-item", "sheet-about-item", "sheet-reset-item",
+                "sheet-segcard", "sheet-lang-fa", "sheet-lang-en",
                 "sheet-logout", "sheet-theme-switch"):
         assert sid in js, f"sheet must render #{sid}"
     assert "sheet-handle" in js, "sheet needs the drag handle"
     assert "openWorkspace()" in js, "profile rows must open the workspace"
     assert "showChangePassModal()" in js, "settings row must open change-password"
-    assert 'openDrawer("nav")' in js or "openDrawer('nav')" in js, \
-        "language row must open the nav drawer (lang/theme live there)"
+    assert "window.setLang" in js, \
+        "sheet language card must call the existing setLang (no drawer)"
+    assert '"btn-reset"' in js and "rb.click()" in js, \
+        "reset rows must reuse the existing armed reset flow"
     assert "showHelp()" in js, "help row must start the existing tour"
     assert 'go("v-about")' in js or "go('v-about')" in js, \
         "about row must route to the existing about view"
@@ -138,32 +141,21 @@ def test_mobile_avatar_click_does_not_rebubble():
         "desktop path must still toggle the dropdown"
 
 
-def test_drawer_user_mount_hidden_only_on_desktop():
-    # CSS cascade regression: a GLOBAL `.auth-area-drawer{display:none}` beats
-    # the ≤992px `display:block` (same specificity, later in source) and hides
-    # the user panel on mobile forever. The hide rule must live ONLY inside
-    # `@media(min-width:993px)`.
+def test_drawer_mount_removed_with_hamburger():
+    # The drawer + its auth mirror are gone (v1.8.35): no mount markup,
+    # no mount CSS, no mirror rendering — the user menu owns everything.
     html = webapp_src("index.html")
-    css = html  # <style> is inline in index.html
-    desktop_blocks = re.findall(
-        r"@media\s*\(\s*min-width\s*:\s*993px\s*\)\s*\{(?:[^{}]|\{[^{}]*\})*\}",
-        css)
-    assert desktop_blocks, "desktop media block missing"
-    rest = re.sub(
-        r"@media\s*\(\s*min-width\s*:\s*993px\s*\)\s*\{(?:[^{}]|\{[^{}]*\})*\}",
-        "", css)
-    rest_nospace = re.sub(r"\s+", "", rest)
-    assert ".auth-area-drawer{display:none}" not in rest_nospace, \
-        "global hide rule would override the mobile display:block"
-    joined = "".join(desktop_blocks)
-    assert ".auth-area-drawer" in re.sub(r"\s+", "", joined), \
-        "desktop must explicitly hide the drawer user mount"
+    assert "auth-area-drawer" not in html, "drawer auth mount must be gone"
+    assert "auth-dropdown-drawer" not in webapp_src("auth.js"), \
+        "mirror rendering must be gone"
 
 
 def test_drawer_is_nav_only__sheet_is_bottom():
-    # Burger → nav drawer; avatar → bottom sheet (no drawer user mode).
-    app = webapp_src("app.js")
-    assert re.search(r"""openDrawer\(\s*['"]nav['"]\s*\)""", app), "burger must open the nav menu"
+    # No burger, no drawer modes — avatar → bottom sheet only.
+    for name in ("app.js", "auth.js", "router.js"):
+        js = webapp_src(name)
+        assert "openDrawer" not in js and "closeDrawer" not in js, \
+            f"drawer system must be gone from {name}"
     css = webapp_src("index.html")
     nospace = re.sub(r"\s+", "", css)
     assert "body.drawer-user.hctl" not in nospace, \

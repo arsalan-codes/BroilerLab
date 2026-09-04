@@ -76,7 +76,6 @@
   function renderAuthArea() {
     var area = document.getElementById("auth-area");
     if (!area) return;
-    var areaD = document.getElementById("auth-area-drawer");
     var user = getUser();
     var token = getToken();
     if (user && token) {
@@ -93,6 +92,11 @@
         + '<button class=\"auth-dropdown-item\" id=\"btn-workspace\" role=\"menuitem\"><i class=\"fa-solid fa-table-columns\"></i> '+(window.tr?window.tr("auth.workspace"):"مدیریت محیط کاربری")+'</button>'
         + '<button class=\"auth-dropdown-item\" id=\"btn-change-pass\" role=\"menuitem\"><i class=\"fa-solid fa-key\"></i> '+(window.tr?window.tr("auth.changePass"):"تغییر رمز")+'</button>'
         + '<button class=\"auth-dropdown-item danger\" id=\"btn-logout\" role=\"menuitem\"><i class=\"fa-solid fa-right-from-bracket\"></i> '+(window.tr?window.tr("auth.logout"):"خروج از حساب")+'</button>'
+        + '<div class="auth-sep" aria-hidden="true"></div>'
+        + '<div class="auth-seg-row"><span>'+(window.tr?window.tr("hdr.lang"):"زبان")+'</span><div class="auth-seg" role="group"><button id="dd-lang-fa" lang="fa">فا</button><button id="dd-lang-en" lang="en">EN</button></div></div>'
+        + '<div class="auth-seg-row"><span>'+(window.tr?window.tr("hdr.theme"):"پوسته")+'</span><div class="auth-seg" role="group"><button id="dd-theme-dark" aria-label="dark"><i class="fa-solid fa-moon" aria-hidden="true"></i></button><button id="dd-theme-light" aria-label="light"><i class="fa-solid fa-sun" aria-hidden="true"></i></button></div></div>'
+        + '<button class=\"auth-dropdown-item\" id=\"dd-help\" role=\"menuitem\"><i class=\"fa-solid fa-circle-question\"></i> '+(window.tr?window.tr("hdr.help"):"آموزش سریع")+'</button>'
+        + '<button class=\"auth-dropdown-item\" id=\"dd-reset\" role=\"menuitem\"><i class=\"fa-solid fa-rotate-left\"></i> '+(window.tr?window.tr("btn.resetCycle"):"بازنشانی داده‌های دوره")+'</button>'
         + '</div>';
       var btn = document.getElementById("auth-user-btn");
       var dd = document.getElementById("auth-dropdown");
@@ -121,46 +125,36 @@
       var cp = document.getElementById("btn-change-pass");
       var wsb=document.getElementById("btn-workspace"); if(wsb) wsb.addEventListener("click", function(){ dd.hidden=true; openWorkspace(); });
       if (cp) cp.addEventListener("click", function(){ dd.hidden=true; showChangePassModal(); });
+      /* hamburger contents merged here (v1.8.35): language / theme / help / reset */
+      var curLang = "fa";
+      try { curLang = document.documentElement.getAttribute("lang") || "fa"; } catch (e) {}
+      var lf = document.getElementById("dd-lang-fa"), le = document.getElementById("dd-lang-en");
+      if (lf) { lf.classList.toggle("on", curLang !== "en"); lf.setAttribute("aria-pressed", curLang !== "en" ? "true" : "false"); }
+      if (le) { le.classList.toggle("on", curLang === "en"); le.setAttribute("aria-pressed", curLang === "en" ? "true" : "false"); }
+      var setLangGo = function(l){ dd.hidden = true; if (typeof window.setLang === "function") window.setLang(l); renderAuthArea(); };
+      if (lf) lf.addEventListener("click", function(){ setLangGo("fa"); });
+      if (le) le.addEventListener("click", function(){ setLangGo("en"); });
+      var darkNow = false;
+      try { darkNow = document.documentElement.getAttribute("data-theme") === "dark"; } catch (e2) {}
+      var td = document.getElementById("dd-theme-dark"), tl = document.getElementById("dd-theme-light");
+      if (td) { td.classList.toggle("on", darkNow); td.setAttribute("aria-pressed", darkNow ? "true" : "false"); }
+      if (tl) { tl.classList.toggle("on", !darkNow); tl.setAttribute("aria-pressed", !darkNow ? "true" : "false"); }
+      var setThemeGo = function(t){ dd.hidden = true; if (typeof window.setTheme === "function") window.setTheme(t); renderAuthArea(); };
+      if (td) td.addEventListener("click", function(){ setThemeGo("dark"); });
+      if (tl) tl.addEventListener("click", function(){ setThemeGo("light"); });
+      var dh = document.getElementById("dd-help");
+      if (dh) dh.addEventListener("click", function(){ dd.hidden = true; if (typeof window.showHelp === "function") window.showHelp(); });
+      var dr = document.getElementById("dd-reset");
+      if (dr) dr.addEventListener("click", function(){ dd.hidden = true; var rb = document.getElementById("btn-reset"); if (rb) rb.click(); });
       // close on outside click
       setTimeout(function(){
         document.addEventListener("click", function closeDD(e){
           if (!area.contains(e.target)) dd.hidden = true;
-          if (areaD && !areaD.contains(e.target)) { var dd2=document.getElementById("auth-dropdown-drawer"); if (dd2) dd2.hidden = true; }
         }, { once: false });
       }, 100);
-      /* mirror into the mobile drawer (only exists ≤992px, but render regardless) */
-      if (areaD) {
-        areaD.innerHTML = area.innerHTML
-          .replace('id="auth-user-btn"', 'id="auth-user-btn-drawer"')
-          .replace('id="auth-dropdown"', 'id="auth-dropdown-drawer"')
-          .replace('id="btn-workspace"', 'id="btn-workspace-drawer"')
-          .replace('id="btn-change-pass"', 'id="btn-change-pass-drawer"')
-          .replace('id="btn-logout"', 'id="btn-logout-drawer"')
-          .replace('class="auth-user"', 'class="auth-user auth-user--drawer"');
-        var chipD = document.getElementById("auth-user-btn-drawer");
-        var ddD = document.getElementById("auth-dropdown-drawer");
-        if (chipD && ddD) {
-          chipD.addEventListener("click", function(e){ e.stopPropagation(); ddD.hidden = !ddD.hidden; chipD.setAttribute("aria-expanded", String(!ddD.hidden)); });
-          var wD = document.getElementById("btn-workspace-drawer");
-          var cD = document.getElementById("btn-change-pass-drawer");
-          var lD = document.getElementById("btn-logout-drawer");
-          if (wD) wD.addEventListener("click", function(){ ddD.hidden=true; openWorkspace(); });
-          if (cD) cD.addEventListener("click", function(){ ddD.hidden=true; showChangePassModal(); });
-          if (lD) lD.addEventListener("click", function(){
-            ddD.hidden=true; clearAuth(); renderAuthArea(); setGated(true);
-            if(window.Router){ window.Router.go("v-landing"); }
-            if(window.toast) toast(window.tr?window.tr("auth.loggedOut"):"خارج شدید");
-          });
-        }
-      }
     } else {
       var loginBtnHtml = '<button class="btn btn-primary auth-login-btn" id="btn-open-auth" aria-label="'+(window.tr?(window.tr("landing.login")+" / "+window.tr("auth.registerTab")):"ورود / ثبت‌نام")+'"><i class="fa-solid fa-user" aria-hidden="true"></i><span class="auth-btn-label"> '+(window.tr?(window.tr("landing.login")+" / "+window.tr("auth.registerTab")):"ورود / ثبت‌نام")+'</span></button>';
       area.innerHTML = loginBtnHtml;
-      if (areaD) {
-        areaD.innerHTML = loginBtnHtml.replace('id="btn-open-auth"', 'id="btn-open-auth-drawer"');
-        var obd = document.getElementById("btn-open-auth-drawer");
-        if (obd) obd.addEventListener("click", function(){ closeDrawer(); showAuthModal("login"); });
-      }
       var ob = document.getElementById("btn-open-auth");
       if (ob) ob.addEventListener("click", function(){ showAuthModal("login"); });
       updateLandingCTA();
@@ -210,10 +204,11 @@
       + '<div class="sheet-menu" role="menu" aria-label="' + sheetT("sheet.account", "حساب کاربری") + '">'
       + '<button class="sheet-item" id="sheet-profile-item" role="menuitem"><i class="fa-solid fa-user" aria-hidden="true"></i><span>' + sheetT("sheet.profile", "پروفایل کاربری") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
       + '<button class="sheet-item" id="sheet-settings-item" role="menuitem"><i class="fa-solid fa-gear" aria-hidden="true"></i><span>' + sheetT("sheet.accountSettings", "تنظیمات حساب") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
-      + '<button class="sheet-item" id="sheet-lang-item" role="menuitem"><i class="fa-solid fa-globe" aria-hidden="true"></i><span>' + sheetT("sheet.langTheme", "زبان و قالب") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
       + '<button class="sheet-item" id="sheet-help-item" role="menuitem"><i class="fa-solid fa-headset" aria-hidden="true"></i><span>' + sheetT("sheet.help", "راهنما و پشتیبانی") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
       + '<button class="sheet-item" id="sheet-about-item" role="menuitem"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>' + sheetT("sheet.about", "درباره ما") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
+      + '<button class="sheet-item" id="sheet-reset-item" role="menuitem"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i><span>' + sheetT("btn.resetCycle", "بازنشانی داده‌های دوره") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
       + '</div>'
+      + '<div class="sheet-segcard"><span>' + sheetT("hdr.lang", "زبان") + '</span><div class="sheet-seg" role="group"><button id="sheet-lang-fa" lang="fa">فا</button><button id="sheet-lang-en" lang="en">EN</button></div></div>'
       + '<button class="sheet-logout" id="sheet-logout"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> ' + sheetT("sheet.logout", "خروج از حساب کاربری") + '</button>'
       + '<div class="sheet-util"><span class="sheet-ver">' + sheetT("sheet.version", "نسخه") + ' ' + esc(ver) + '</span>'
       + '<span class="sheet-theme"><span>' + sheetT("sheet.darkMode", "حالت تیره") + '</span>'
@@ -224,9 +219,20 @@
     on("sheet-view-profile", function(){ openWorkspace(); });
     on("sheet-profile-item", function(){ openWorkspace(); });
     on("sheet-settings-item", function(){ showChangePassModal(); });
-    on("sheet-lang-item", function(){ if (typeof window.openDrawer === "function") window.openDrawer("nav"); });
     on("sheet-help-item", function(){ if (typeof window.showHelp === "function") window.showHelp(); });
     on("sheet-about-item", function(){ if (window.Router) window.Router.go("v-about"); });
+    on("sheet-reset-item", function(){ var rb = document.getElementById("btn-reset"); if (rb) rb.click(); });
+    var curLang = "fa";
+    try { curLang = document.documentElement.getAttribute("lang") || "fa"; } catch (e4) {}
+    var slf = document.getElementById("sheet-lang-fa"), sle = document.getElementById("sheet-lang-en");
+    var paintLang = function(){
+      try { curLang = document.documentElement.getAttribute("lang") || "fa"; } catch (e5) {}
+      if (slf) { slf.classList.toggle("on", curLang !== "en"); slf.setAttribute("aria-pressed", curLang !== "en" ? "true" : "false"); }
+      if (sle) { sle.classList.toggle("on", curLang === "en"); sle.setAttribute("aria-pressed", curLang === "en" ? "true" : "false"); }
+    };
+    paintLang();
+    if (slf) slf.addEventListener("click", function(){ closeAccountSheet(); if (typeof window.setLang === "function") window.setLang("fa"); renderAuthArea(); });
+    if (sle) sle.addEventListener("click", function(){ closeAccountSheet(); if (typeof window.setLang === "function") window.setLang("en"); renderAuthArea(); });
     var lo = document.getElementById("sheet-logout");
     if (lo) lo.addEventListener("click", function(){ closeAccountSheet(); doLogout(); });
     var sw = document.getElementById("sheet-theme-switch");
