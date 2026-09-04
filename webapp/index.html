@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.35"></script>
-<script src="services/api.js?v=1.8.35"></script>
+<script src="config.js?v=1.8.36"></script>
+<script src="services/api.js?v=1.8.36"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -399,7 +399,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 .hctl .vbadge{align-self:center;display:inline-flex;align-items:center}
 .hpills{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.35).
+/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.36).
    .hctl (desktop inline controls) is display:none on mobile; every drawer
    entry lives in the user menu (dropdown + bottom sheet). ---------- */
 @media(max-width:992px){
@@ -467,8 +467,13 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
     box-shadow:0 -18px 60px rgba(0,0,0,.35);
     transform:translateY(105%);transition:transform .3s cubic-bezier(.32,.72,.24,1);
     overflow-y:auto;overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
     padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
   #account-sheet.open.show{transform:none}
+  /* BUGFIX: flex column children shrink by default, so on short screens the
+     content squished instead of overflowing — the sheet never scrolled.
+     Pin children to natural height so overflow-y can actually scroll. */
+  #account-sheet.open > *{flex-shrink:0}
   #account-sheet .sheet-handle{width:60px;height:6px;border-radius:999px;flex-shrink:0;
     background:color-mix(in srgb, var(--txt) 18%, transparent);margin:16px auto 2px}
   #account-sheet .sheet-profile{display:flex;align-items:center;gap:16px;padding:12px 20px 6px}
@@ -1278,7 +1283,7 @@ html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
   padding:8px 10px;border-radius:8px;border:none;background:transparent;color:var(--txt);cursor:pointer;font-family:inherit;font-size:12.5px}
 .auth-dropdown-item:hover{background:var(--bg2)}
 .auth-dropdown-item.danger{color:var(--bad)}
-/* merged hamburger entries (v1.8.35): divider + language/theme segments */
+/* merged hamburger entries (v1.8.36): divider + language/theme segments */
 .auth-sep{border-top:1px solid var(--line);margin:6px 2px}
 .auth-seg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:6px 10px;font-size:12px;color:var(--mut);font-weight:600}
@@ -2581,23 +2586,23 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.8.35" defer></script>
-<script src="engine.js?v=1.8.35" defer></script>
-<script src="xlsx.js?v=1.8.35" defer></script>
-<script src="stats.js?v=1.8.35" defer></script>
-<script src="version.js?v=1.8.35" defer></script>
-  <script src="locales/fa.js?v=1.8.35" defer></script>
-<script src="locales/en.js?v=1.8.35" defer></script>
-<script src="i18n.js?v=1.8.35" defer></script>
-<script src="utils/formatters.js?v=1.8.35" defer></script>
-<script src="shamsi.js?v=1.8.35" defer></script>
-<script src="auth.js?v=1.8.35" defer></script>
-<script src="device-panel.js?v=1.8.35" defer></script>
-<script src="dialog.js?v=1.8.35" defer></script>
-<script src="router.js?v=1.8.35" defer></script>
-<script src="components/chart.js?v=1.8.35" defer></script>
-<script src="services/export.js?v=1.8.35" defer></script>
-<script src="app.js?v=1.8.35" defer></script>
+<script src="strains.js?v=1.8.36" defer></script>
+<script src="engine.js?v=1.8.36" defer></script>
+<script src="xlsx.js?v=1.8.36" defer></script>
+<script src="stats.js?v=1.8.36" defer></script>
+<script src="version.js?v=1.8.36" defer></script>
+  <script src="locales/fa.js?v=1.8.36" defer></script>
+<script src="locales/en.js?v=1.8.36" defer></script>
+<script src="i18n.js?v=1.8.36" defer></script>
+<script src="utils/formatters.js?v=1.8.36" defer></script>
+<script src="shamsi.js?v=1.8.36" defer></script>
+<script src="auth.js?v=1.8.36" defer></script>
+<script src="device-panel.js?v=1.8.36" defer></script>
+<script src="dialog.js?v=1.8.36" defer></script>
+<script src="router.js?v=1.8.36" defer></script>
+<script src="components/chart.js?v=1.8.36" defer></script>
+<script src="services/export.js?v=1.8.36" defer></script>
+<script src="app.js?v=1.8.36" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">

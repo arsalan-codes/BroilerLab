@@ -84,3 +84,14 @@ def test_touch_scrolling_tuned_for_mobile():
         "tap delay / double-tap zoom must go on controls"
     assert "touch-action:pan-y" in css, \
         "scroll containers must declare vertical panning"
+
+
+def test_sheet_children_never_shrink():
+    # Bug: #account-sheet is a flex column, so its children shrank to fit
+    # short screens instead of overflowing — finger scroll did nothing.
+    css = re.sub(r"\s+", "", src("index.html"))
+    assert "#account-sheet.open>*{flex-shrink:0}" in css, \
+        "sheet children must keep natural height so the sheet can scroll"
+    m = re.search(r"#account-sheet\.open\{([^}]*)\}", css)
+    assert m, "bottom-sheet rule missing"
+    assert "overflow-y:auto" in m.group(1), "sheet must own its scroll"
