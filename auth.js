@@ -97,28 +97,23 @@
       var btn = document.getElementById("auth-user-btn");
       var dd = document.getElementById("auth-dropdown");
       if (btn && dd) {
-        // Mobile topbar shows a round avatar whose dropdown is hidden by CSS:
-        // tapping it opens the LEFT slide-in user sheet AND auto-expands the
-        // mirrored user panel there (nav-burger stays the entry for nav menu).
-        var openMobileDrawer = function(e){
+        // Mobile (≤992px): avatar opens the account bottom sheet sliding
+        // from the bottom; desktop toggles the same topbar dropdown card
+        // (burger stays the only entry to the nav drawer).
+        var openSheetMobile = function(e){
           try {
             if (window.matchMedia && window.matchMedia("(max-width:992px)").matches
-                && typeof window.openDrawer === "function") {
+                && typeof window.openAccountSheet === "function") {
               if (e && e.stopPropagation) e.stopPropagation();
-              window.openDrawer('user');
-              var ddD = document.getElementById("auth-dropdown-drawer");
-              if (ddD) ddD.hidden = false;
-              var chipD = document.getElementById("auth-user-btn-drawer");
-              if (chipD) chipD.setAttribute("aria-expanded", "true");
-              var areaD = document.getElementById("auth-area-drawer");
-              if (areaD && areaD.scrollIntoView) { try { areaD.scrollIntoView({ block: "start" }); } catch (e2) {} }
+              if (e && e.preventDefault) e.preventDefault();
+              window.openAccountSheet();
               return true;
             }
-          } catch (e) {}
+          } catch (e2) {}
           return false;
         };
-        btn.addEventListener("click", function(e){ if (openMobileDrawer(e)) return; e.stopPropagation(); dd.hidden = !dd.hidden; });
-        btn.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); if (openMobileDrawer(e)) return; dd.hidden=!dd.hidden; }});
+        btn.addEventListener("click", function(e){ if (openSheetMobile(e)) return; e.stopPropagation(); dd.hidden = !dd.hidden; });
+        btn.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ if (openSheetMobile(e)) return; e.preventDefault(); dd.hidden=!dd.hidden; }});
       }
       updateLandingCTA();
       var lo = document.getElementById("btn-logout");
@@ -180,6 +175,130 @@
       }
     } catch (e) {}
   }
+
+  /* ---------- MobileAccountSheet: bottom sheet for the user account ------
+     Mobile-only (≤992px, CSS-gated). Avatar tap renders the sheet fresh from
+     the current session (name/email/theme/version) and slides it up over a
+     dimmed dashboard. Every row maps to an EXISTING action — no new routes,
+     no new backend, desktop and burger behavior untouched. */
+  function sheetT(k, fb){ return (window.tr ? window.tr(k) : fb); }
+  function doLogout(){
+    clearAuth(); renderAuthArea(); setGated(true);
+    if (window.Router) { window.Router.go("v-landing"); }
+    else { var land = document.querySelector('.tab[data-v="v-landing"]'); if (land) land.click(); }
+    if (window.toast) toast(sheetT("auth.loggedOut", "خارج شدید"));
+  }
+  function sheetThemeIsDark(){
+    try { return document.documentElement.getAttribute("data-theme") === "dark"; }
+    catch (e) { return false; }
+  }
+  function renderAccountSheet(){
+    var sheet = document.getElementById("account-sheet");
+    if (!sheet) return null;
+    var user = getUser();
+    if (!user || !isTokenValid(getToken())) { sheet.innerHTML = ""; return null; }
+    var initials = (user.full_name || user.username || user.email || "U").trim().charAt(0).toUpperCase();
+    var display = esc(user.full_name || user.username || user.email.split("@")[0]);
+    var ver = window.SITE_VERSION || "";
+    var dark = sheetThemeIsDark();
+    sheet.innerHTML =
+      '<span class="sheet-handle" aria-hidden="true"></span>'
+      + '<div class="sheet-profile"><span class="sheet-avatar">' + esc(initials) + '</span>'
+      + '<div class="sheet-user"><b id="sheet-user-name">' + display + '</b><span>' + esc(user.email) + '</span>'
+      + '<button class="sheet-profile-btn" id="sheet-view-profile"><i class="fa-solid fa-user" aria-hidden="true"></i> ' + sheetT("sheet.viewProfile", "مشاهده پروفایل") + '</button>'
+      + '</div></div>'
+      + '<div class="sheet-menu" role="menu" aria-label="' + sheetT("sheet.account", "حساب کاربری") + '">'
+      + '<button class="sheet-item" id="sheet-profile-item" role="menuitem"><i class="fa-solid fa-user" aria-hidden="true"></i><span>' + sheetT("sheet.profile", "پروفایل کاربری") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
+      + '<button class="sheet-item" id="sheet-settings-item" role="menuitem"><i class="fa-solid fa-gear" aria-hidden="true"></i><span>' + sheetT("sheet.accountSettings", "تنظیمات حساب") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
+      + '<button class="sheet-item" id="sheet-lang-item" role="menuitem"><i class="fa-solid fa-globe" aria-hidden="true"></i><span>' + sheetT("sheet.langTheme", "زبان و قالب") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
+      + '<button class="sheet-item" id="sheet-help-item" role="menuitem"><i class="fa-solid fa-headset" aria-hidden="true"></i><span>' + sheetT("sheet.help", "راهنما و پشتیبانی") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
+      + '<button class="sheet-item" id="sheet-about-item" role="menuitem"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>' + sheetT("sheet.about", "درباره ما") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
+      + '</div>'
+      + '<button class="sheet-logout" id="sheet-logout"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> ' + sheetT("sheet.logout", "خروج از حساب کاربری") + '</button>'
+      + '<div class="sheet-util"><span class="sheet-ver">' + sheetT("sheet.version", "نسخه") + ' ' + esc(ver) + '</span>'
+      + '<span class="sheet-theme"><span>' + sheetT("sheet.darkMode", "حالت تیره") + '</span>'
+      + '<button class="sheet-switch" id="sheet-theme-switch" role="switch" aria-checked="' + (dark ? "true" : "false") + '" aria-label="' + sheetT("sheet.darkMode", "حالت تیره") + '"></button>'
+      + '</span></div>';
+    var closeFirst = function(fn){ return function(){ closeAccountSheet(); if (fn) fn(); }; };
+    var on = function(id, fn){ var el = document.getElementById(id); if (el) el.addEventListener("click", closeFirst(fn)); };
+    on("sheet-view-profile", function(){ openWorkspace(); });
+    on("sheet-profile-item", function(){ openWorkspace(); });
+    on("sheet-settings-item", function(){ showChangePassModal(); });
+    on("sheet-lang-item", function(){ if (typeof window.openDrawer === "function") window.openDrawer("nav"); });
+    on("sheet-help-item", function(){ if (typeof window.showHelp === "function") window.showHelp(); });
+    on("sheet-about-item", function(){ if (window.Router) window.Router.go("v-about"); });
+    var lo = document.getElementById("sheet-logout");
+    if (lo) lo.addEventListener("click", function(){ closeAccountSheet(); doLogout(); });
+    var sw = document.getElementById("sheet-theme-switch");
+    if (sw) sw.addEventListener("click", function(e){
+      e.stopPropagation();
+      var isDark = sheetThemeIsDark();
+      var target = document.getElementById(isDark ? "theme-light" : "theme-dark");
+      if (target) { target.click(); }
+      else {
+        try { localStorage.setItem("rossim_theme", isDark ? "light" : "dark"); } catch (e2) {}
+        try { document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark"); } catch (e3) {}
+      }
+      sw.setAttribute("aria-checked", sheetThemeIsDark() ? "true" : "false");
+    });
+    return sheet;
+  }
+  function wireSheetSwipe(sheet){
+    if (!sheet || sheet.__swipeWired) return;
+    sheet.__swipeWired = true;
+    var startY = 0, dy = 0, dragging = false;
+    sheet.addEventListener("touchstart", function(e){
+      if (sheet.scrollTop > 0) return;
+      dragging = true; startY = e.touches[0].clientY; dy = 0;
+    }, { passive: true });
+    sheet.addEventListener("touchmove", function(e){
+      if (!dragging) return;
+      dy = e.touches[0].clientY - startY;
+      if (dy > 0) sheet.style.transform = "translateY(" + dy + "px)";
+    }, { passive: true });
+    sheet.addEventListener("touchend", function(){
+      if (!dragging) return;
+      dragging = false; sheet.style.transform = "";
+      if (dy > 110) closeAccountSheet();
+      dy = 0;
+    });
+  }
+  function openAccountSheet(){
+    var sheet = renderAccountSheet();
+    if (!sheet) { showAuthModal("login"); return false; }
+    var bd = document.getElementById("sheet-backdrop");
+    sheet.hidden = false; sheet.classList.add("open");
+    if (bd) { bd.hidden = false; bd.classList.add("open"); }
+    try { document.body.style.overflow = "hidden"; } catch (e) {}
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      sheet.classList.add("show"); if (bd) bd.classList.add("show");
+    }); });
+    wireSheetSwipe(sheet);
+    try { sheet.setAttribute("tabindex", "-1"); sheet.focus({ preventScroll: true }); } catch (e2) {}
+    return true;
+  }
+  function closeAccountSheet(){
+    var sheet = document.getElementById("account-sheet");
+    if (!sheet || !sheet.classList.contains("open")) return;
+    var bd = document.getElementById("sheet-backdrop");
+    sheet.classList.remove("show"); if (bd) bd.classList.remove("show");
+    try { document.body.style.overflow = ""; } catch (e) {}
+    setTimeout(function(){
+      sheet.classList.remove("open"); sheet.hidden = true;
+      if (bd) { bd.classList.remove("open"); bd.hidden = true; }
+    }, 300);
+  }
+  window.openAccountSheet = openAccountSheet;
+  window.closeAccountSheet = closeAccountSheet;
+  (function initSheetDismiss(){
+    if (window.__sheetDismissInit) return;
+    window.__sheetDismissInit = true;
+    var bd = document.getElementById("sheet-backdrop");
+    if (bd) bd.addEventListener("click", function(){ closeAccountSheet(); });
+    document.addEventListener("keydown", function(e){
+      if (e.key === "Escape") closeAccountSheet();
+    });
+  })();
 
   // ---- Modal ----
   function ensureModal() {

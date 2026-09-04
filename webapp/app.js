@@ -942,7 +942,9 @@ function openDrawer(mode){
   if(!hc)return;
   hc.classList.add("open");if(bd)bd.classList.add("on");
   document.body.classList.add("drawer-open");
-  /* two entries: avatar → full-screen user sheet; burger → nav menu */
+  /* single entry: burger → nav menu. The user account lives in the bottom
+     sheet (window.openAccountSheet in auth.js) — avatar never opens
+     the drawer. drawer-user class kept retired (no CSS targets it). */
   document.body.classList.toggle("drawer-user",mode==="user");
   document.body.classList.toggle("drawer-nav",mode!=="user");
   if(bg)bg.setAttribute("aria-expanded","true");

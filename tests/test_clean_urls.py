@@ -89,42 +89,53 @@ def test_pages_spa_fallback_exists_and_matches():
     assert read(fallback) == root_html, "404.html must mirror index.html"
 
 
-def test_mobile_avatar_opens_drawer():
+def test_mobile_avatar_opens_account_sheet():
+    # Avatar tap (<=992px) opens the MobileAccountSheet bottom sheet —
+    # never the side drawer in user mode.
     js = webapp_src("auth.js")
-    assert "openMobileDrawer" in js, "topbar avatar needs the mobile drawer handler"
+    assert "openAccountSheet" in js, "avatar path needs the bottom-sheet opener"
     assert "matchMedia" in js and "(max-width:992px)" in js
-    assert 'window.openDrawer' in js, "handler must call the global drawer opener"
-    app = webapp_src("app.js")
-    assert re.search(r"function openDrawer\s*\(", app), "openDrawer must exist globally"
-    css = webapp_src("index.html")
-    assert re.search(
-        r"#auth-area\s+\.auth-dropdown\s*\{\s*display\s*:\s*none",
-        css,
-    ), "documents WHY the drawer path is needed (topbar dd is CSS-hidden on mobile)"
+    assert "openMobileDrawer" not in js, "left-sheet drawer routing must be gone"
+    assert "openDrawer('user')" not in js and 'openDrawer("user")' not in js, \
+        "avatar must not open any drawer user mode"
 
 
-def test_mobile_avatar_opens_user_area_expanded():
-    # Avatar tap must land on the USER panel, not just the nav drawer:
-    # the mirrored dropdown inside the drawer must auto-expand + reveal.
+def test_account_sheet_content_and_actions():
+    # The sheet renders identity + menu + logout + utility, every row wired
+    # to an EXISTING action (no new routes/backend).
     js = webapp_src("auth.js")
-    i = js.find("window.openDrawer(")
-    assert i != -1, "mobile avatar path must open the drawer"
-    assert re.search(r"""['"]user['"]""", js[i:i + 40]), "avatar must open the drawer in user-sheet mode"
-    branch = js[i:i + 900]
-    assert "auth-dropdown-drawer" in branch, "avatar path must expand the mirrored user panel"
-    assert ".hidden = false" in branch or ".hidden=false" in branch, \
-        "mirrored user dropdown must auto-expand (hidden=false) on avatar tap"
-    assert "scrollIntoView" in branch, "user area must scroll into view on avatar tap"
+    for sid in ("account-sheet", "sheet-backdrop", "sheet-user-name",
+                "sheet-view-profile", "sheet-profile-item", "sheet-settings-item",
+                "sheet-lang-item", "sheet-help-item", "sheet-about-item",
+                "sheet-logout", "sheet-theme-switch"):
+        assert sid in js, f"sheet must render #{sid}"
+    assert "sheet-handle" in js, "sheet needs the drag handle"
+    assert "openWorkspace()" in js, "profile rows must open the workspace"
+    assert "showChangePassModal()" in js, "settings row must open change-password"
+    assert 'openDrawer("nav")' in js or "openDrawer('nav')" in js, \
+        "language row must open the nav drawer (lang/theme live there)"
+    assert "showHelp()" in js, "help row must start the existing tour"
+    assert 'go("v-about")' in js or "go('v-about')" in js, \
+        "about row must route to the existing about view"
+    assert "touchstart" in js and "touchend" in js, "sheet needs swipe-to-dismiss"
+    assert "translateY(" in js, "swipe must drag the sheet vertically"
+    html = webapp_src("index.html")
+    assert 'id="account-sheet"' in html and 'id="sheet-backdrop"' in html, \
+        "sheet containers must exist in static markup"
+    assert 'role="dialog"' in html, "sheet must expose dialog semantics"
 
 
 def test_mobile_avatar_click_does_not_rebubble():
-    # The document-level outside-click closer re-hides the mirrored panel;
+    # The document-level outside-click closer re-hides the desktop dropdown;
     # the avatar handler must stopPropagation or the panel closes instantly.
     js = webapp_src("auth.js")
-    m = re.search(r"var openMobileDrawer = function\(e\)\{(.*?)\n        \};", js, re.S)
-    assert m, "openMobileDrawer must take the event"
-    assert "stopPropagation" in m.group(1), "must stop bubbling or closer re-hides the panel"
-    assert js.count("openMobileDrawer(e)") >= 2, "click + keydown must pass the event"
+    i = js.find('getElementById("auth-user-btn")')
+    assert i != -1, "topbar user button wiring missing"
+    branch = js[i:i + 1400]
+    assert "stopPropagation" in branch, "must stop bubbling or closer re-hides the panel"
+    assert "openAccountSheet" in branch, "mobile path must open the bottom sheet"
+    assert re.search(r"dd\.hidden\s*=\s*!dd\.hidden", branch), \
+        "desktop path must still toggle the dropdown"
 
 
 def test_drawer_user_mount_hidden_only_on_desktop():
@@ -149,33 +160,38 @@ def test_drawer_user_mount_hidden_only_on_desktop():
         "desktop must explicitly hide the drawer user mount"
 
 
-def test_drawer_has_separate_user_and_nav_modes():
-    # Avatar → full-screen user sheet; burger → nav menu with lang/theme/help.
+def test_drawer_is_nav_only__sheet_is_bottom():
+    # Burger → nav drawer; avatar → bottom sheet (no drawer user mode).
     app = webapp_src("app.js")
-    assert re.search(r"function openDrawer\s*\(\s*mode", app), "openDrawer must take a mode"
-    assert "drawer-user" in app and "drawer-nav" in app, "both modes must be tracked"
     assert re.search(r"""openDrawer\(\s*['"]nav['"]\s*\)""", app), "burger must open the nav menu"
-    assert re.search(r"""openDrawer\(\s*['"]user['"]\s*\)""", webapp_src("auth.js")), "avatar must open the user sheet"
     css = webapp_src("index.html")
-    m = re.search(r"body\.drawer-user\s+\.hctl\s*\{([^}]*)\}", css)
-    assert m, "left user-sheet rule missing"
+    nospace = re.sub(r"\s+", "", css)
+    assert "body.drawer-user.hctl" not in nospace, \
+        "left side-sheet mode must stay gone"
+    m = re.search(r"#account-sheet\.open\{([^}]*)\}", nospace)
+    assert m, "bottom-sheet rule missing"
     sheet = m.group(1)
-    assert re.search(r"left\s*:\s*0", sheet), \
-        "user sheet must dock to the physical LEFT edge"
-    assert re.search(r"min\(340px,88vw\)", sheet), \
-        "user sheet must be a narrow side panel, not full-screen"
-    assert re.search(r"translateX\(-112%\)", sheet), \
-        "user sheet must hide off-canvas to the left (slides in from left)"
-    assert re.search(
-        r"body\.drawer-user\s+\.hctl\s+#auth-area-drawer\s+\.auth-user--drawer",
-        css), "user sheet must style the friendly profile header"
-    for sel in (r"body\.drawer-user\s+\.hctl\s+\.hgroup",
-                r"body\.drawer-user\s+\.hctl\s+#btn-help",
-                r"body\.drawer-user\s+\.hctl\s+\.hpills"):
-        assert re.search(sel, css), f"user sheet must hide nav controls ({sel})"
-    assert re.search(
-        r"body\.drawer-nav\s+\.hctl\s+#auth-area-drawer:has\(\.auth-user\)\s*\{\s*display\s*:\s*none",
-        css), "nav menu must not show the logged-in user panel"
+    assert "position:fixed" in sheet and "bottom:0" in sheet, \
+        "sheet must dock to the viewport bottom"
+    assert "border-radius:30px30px00" in sheet, \
+        "sheet needs the 30px top rounding"
+    assert "translateY(105%)" in sheet, \
+        "sheet must hide below the viewport (slides up on open)"
+    assert "max-height:78" in sheet, "sheet must cap at ~78% viewport height"
+    assert "#sheet-backdrop.open" in nospace, "sheet needs its dimming overlay"
+    assert "rgba(0,0,0,.45)" in nospace, "overlay must dim the dashboard"
+
+
+def test_account_sheet_i18n_keys():
+    # Every sheet label must exist in BOTH locales (bilingual, no fallback gaps).
+    keys = ("sheet.profile", "sheet.accountSettings", "sheet.langTheme",
+            "sheet.help", "sheet.about", "sheet.viewProfile", "sheet.logout",
+            "sheet.darkMode", "sheet.version", "sheet.account", "sheet.close")
+    fa = read(DEPLOY_WEBAPP / "locales" / "fa.js")
+    en = read(DEPLOY_WEBAPP / "locales" / "en.js")
+    for k in keys:
+        assert '"%s"' % k in fa, f"missing fa key {k}"
+        assert '"%s"' % k in en, f"missing en key {k}"
 
 
 def test_deploy_mirror_parity():
