@@ -39,6 +39,11 @@ def test_mobile_clock_only_stacked():
         ".hctl must stay mounted on mobile for the clock"
     for sel in [".hctl.hgroup", "#btn-help", "#btn-reset", ".hctl.hpills"]:
         assert sel in css, f"mobile must hide {sel}"
+    # mobile clock is chrome-free: no live dot, no pill border/background
+    assert ".topclock::before{display:none}" in css, \
+        "mobile clock must hide the green pulse dot"
+    assert ".topclock{background:none;border:none;box-shadow:none;" in css, \
+        "mobile clock must drop the pill chrome"
     # stacked clock, separator gone, floor-respecting small type
     assert ".topbar-in>.hctl.topclock{flex-direction:column;" in css, \
         "mobile clock must stack date over time"
