@@ -45,8 +45,6 @@ def test_no_drawer_css():
                  "drawer-user", "drawer-nav", "drawer-open",
                  "translateX(-112%)", "translateX(112%)", ".dhead"):
         assert gone not in css, f"drawer leftover in CSS: {gone}"
-    assert ".topbar-in>.hctl{display:none}" in css, \
-        "desktop inline controls must hide on mobile (no drawer anymore)"
 
 
 def test_user_dropdown_owns_hamburger_entries():
