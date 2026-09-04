@@ -77,6 +77,16 @@ def test_brand_name_gap():
         "brand spans need a guaranteed gap"
 
 
+def test_hero_prefix_accent_gap():
+    # Landing hero: "سامانه پایش هوشمند" + "آرین" are two flex children of
+    # .brand-hero — the column gap (.04em) does nothing horizontally, so the
+    # words rendered glued. A real column gap (.22em) is the fix; row gap
+    # stays .04em for the wrapped mobile line.
+    css = re.sub(r"\s+", "", webapp_src("index.html"))
+    assert ".brand-hero{" in css and "gap:.04em.22em;" in css, \
+        "brand-hero needs a real horizontal gap between prefix and accent"
+
+
 def test_vercel_spa_rewrite():
     cfg = json.loads(read(ROOT / "vercel.json"))
     rewrites = cfg.get("rewrites", [])
