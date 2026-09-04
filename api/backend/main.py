@@ -315,6 +315,19 @@ def delete_cycle(cycle_id: int, current: User = Depends(authmod.get_current_user
         c = _require_owner_cycle(s, cycle_id, current)
         s.delete(c); s.commit()
         return {"deleted": cycle_id}
+@app.delete("/api/cycles/{cycle_id}/data")
+def reset_cycle_data(cycle_id: int, current: User = Depends(authmod.get_current_user)):
+    """Clear ONE cycle's device data (visits + device logs) but keep the cycle.
+
+    Fail-closed like every other cycle route: auth required, non-owners get
+    404 via _require_owner_cycle (never leaks existence across tenants).
+    """
+    with SessionLocal() as s:
+        _require_owner_cycle(s, cycle_id, current)
+        v = s.query(Visit).filter(Visit.cycle_id == cycle_id).delete(synchronize_session=False)
+        l = s.query(DeviceLog).filter(DeviceLog.cycle_id == cycle_id).delete(synchronize_session=False)
+        s.commit()
+        return {"cycle_id": cycle_id, "visits_deleted": v, "logs_deleted": l}
 @app.get("/api/cycles/{cycle_id}/stats")
 def cycle_stats(cycle_id: int, current: User = Depends(authmod.get_current_user)):
     with SessionLocal() as s:

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.36"></script>
-<script src="services/api.js?v=1.8.36"></script>
+<script src="config.js?v=1.8.37"></script>
+<script src="services/api.js?v=1.8.37"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -399,7 +399,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 .hctl .vbadge{align-self:center;display:inline-flex;align-items:center}
 .hpills{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.36).
+/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.37).
    .hctl (desktop inline controls) is display:none on mobile; every drawer
    entry lives in the user menu (dropdown + bottom sheet). ---------- */
 @media(max-width:992px){
@@ -639,8 +639,12 @@ select:focus,input:focus{outline:none;border-color:rgba(25,195,154,.55);
 /* ---------- guided tour — modern glass + progress ---------- */
 #tour-shade{position:fixed;inset:0;z-index:298;display:none;pointer-events:none;background:rgba(4,7,12,.58);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
 #tour-shade.on{display:block;pointer-events:auto}
-.tour-spot{position:relative!important;z-index:301!important;border-radius:12px!important;box-shadow:0 0 0 2px #19c39a, 0 0 0 6px rgba(25,195,154,.18), 0 0 0 9999px rgba(4,7,12,.62), 0 12px 32px rgba(0,0,0,.35)!important;transition:box-shadow .28s ease;animation:tourPulse 1.6s ease-in-out 2}
-@keyframes tourPulse{0%,100%{box-shadow:0 0 0 2px #19c39a, 0 0 0 6px rgba(25,195,154,.18), 0 0 0 9999px rgba(4,7,12,.62), 0 12px 32px rgba(0,0,0,.35)}50%{box-shadow:0 0 0 3px #19c39a, 0 0 0 12px rgba(25,195,154,.30), 0 0 0 9999px rgba(4,7,12,.62), 0 12px 32px rgba(0,0,0,.35)}}
+/* spotlight hole around the tour target: the shade never covers what the
+   tip describes, so ancestors' stacking contexts can't trap the target
+   under the blur (the old z-index + giant-shadow trick did exactly that) */
+#tour-shade.holed{clip-path:polygon(evenodd,0 0,100% 0,100% 100%,0 100%,0 0,var(--thx,0px) var(--thy,0px),calc(var(--thx,0px) + var(--thw,0px)) var(--thy,0px),calc(var(--thx,0px) + var(--thw,0px)) calc(var(--thy,0px) + var(--thh,0px)),var(--thx,0px) calc(var(--thy,0px) + var(--thh,0px)),var(--thx,0px) var(--thy,0px))}
+.tour-spot{border-radius:12px!important;box-shadow:0 0 0 2px #19c39a, 0 0 0 6px rgba(25,195,154,.18), 0 12px 32px rgba(0,0,0,.35)!important;transition:box-shadow .28s ease;animation:tourPulse 1.6s ease-in-out 2}
+@keyframes tourPulse{0%,100%{box-shadow:0 0 0 2px #19c39a, 0 0 0 6px rgba(25,195,154,.18), 0 12px 32px rgba(0,0,0,.35)}50%{box-shadow:0 0 0 3px #19c39a, 0 0 0 12px rgba(25,195,154,.30), 0 12px 32px rgba(0,0,0,.35)}}
 #tour-tip{position:fixed;z-index:302;width:min(420px,92vw);display:none;background:rgba(22,30,46,.96);backdrop-filter:blur(18px) saturate(1.25);-webkit-backdrop-filter:blur(18px) saturate(1.25);border:1px solid rgba(255,255,255,.10);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06) inset;padding:0;overflow:hidden}
 html[data-theme=light] #tour-tip{background:rgba(255,255,255,.97);border-color:rgba(0,0,0,.08)}
 #tour-tip .tt-progress{height:3px;background:rgba(255,255,255,.10);position:relative;overflow:hidden}
@@ -1283,7 +1287,7 @@ html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
   padding:8px 10px;border-radius:8px;border:none;background:transparent;color:var(--txt);cursor:pointer;font-family:inherit;font-size:12.5px}
 .auth-dropdown-item:hover{background:var(--bg2)}
 .auth-dropdown-item.danger{color:var(--bad)}
-/* merged hamburger entries (v1.8.36): divider + language/theme segments */
+/* merged hamburger entries (v1.8.37): divider + language/theme segments */
 .auth-sep{border-top:1px solid var(--line);margin:6px 2px}
 .auth-seg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:6px 10px;font-size:12px;color:var(--mut);font-weight:600}
@@ -1380,6 +1384,28 @@ html[data-theme=light] .auth-modal{background:rgba(255,255,255,.72);backdrop-fil
 .ws-stat{padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:var(--card);text-align:center;box-shadow:var(--sh-sm)}
 .ws-stat b{font-size:clamp(19px,2vw,23px);font-weight:900;display:block;line-height:1}
 .ws-stat span{font-size:11px;color:var(--mut);letter-spacing:.04em}
+.ws-stat-btn{cursor:pointer;transition:border-color .18s,transform .18s}
+.ws-stat-btn:hover{border-color:rgba(25,195,154,.45);transform:translateY(-2px)}
+.ws-stat-btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+#ws-cycles-panel{margin-top:14px;border:1px solid var(--line);border-radius:18px;background:var(--card);padding:14px 16px}
+#ws-cycles-panel[hidden]{display:none}
+.ws-cy-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.ws-cy-head b{font-size:14px;font-weight:900}
+.ws-cy-head .icon-btn{width:32px;height:32px;border-radius:9px;flex:none}
+.ws-cy-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:13px;margin-top:8px;flex-wrap:wrap}
+.ws-cy-row:first-of-type{margin-top:0}
+.ws-cy-info{flex:1;min-width:140px}
+.ws-cy-info b{font-size:13px;font-weight:800;display:block}
+.ws-cy-info span{font-size:11.5px;color:var(--mut)}
+.ws-cy-act{display:flex;gap:8px}
+.ws-cy-act button{min-height:40px;padding:8px 14px;border-radius:10px;font-family:inherit;
+  font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.ws-cy-reset{background:color-mix(in srgb, var(--warn,#e99b26) 12%, transparent);
+  border:1px solid color-mix(in srgb, var(--warn,#e99b26) 35%, transparent);color:var(--txt)}
+.ws-cy-del{background:color-mix(in srgb, var(--bad) 12%, transparent);
+  border:1px solid color-mix(in srgb, var(--bad) 30%, transparent);color:var(--bad)}
+.ws-cy-act button:active{transform:scale(.97)}
+.ws-cy-empty{font-size:12.5px;color:var(--mut);text-align:center;padding:14px 0}
 .ws-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
 @media(max-width:1000px){.ws-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.ws-grid{grid-template-columns:1fr}.ws-card p{font-size:12.5px}.ws-head-main b{font-size:16px}}
@@ -1733,10 +1759,14 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
       </div>
     </div>
     <div class="ws-stats">
-      <div class="ws-stat"><b id="ws-n-cycles">—</b><span data-i18n="ws.stat.cycles">دوره‌ها</span></div>
+      <div class="ws-stat ws-stat-btn" id="ws-cycles-stat" role="button" tabindex="0" aria-haspopup="true"><b id="ws-n-cycles">—</b><span data-i18n="ws.stat.cycles">دوره‌ها</span></div>
       <div class="ws-stat"><b id="ws-n-scenarios">—</b><span data-i18n="ws.stat.scenarios">سناریوها</span></div>
       <div class="ws-stat"><b id="ws-n-device">—</b><span data-i18n="ws.stat.device">رکورد دستگاه</span></div>
       <div class="ws-stat"><b>۲۴ ساعته</b><span data-i18n="ws.stat.live">داده زنده</span></div>
+    </div>
+    <div id="ws-cycles-panel" hidden>
+      <div class="ws-cy-head"><b data-i18n="ws.cy.manage">مدیریت دوره‌ها</b><button id="ws-cy-close" class="icon-btn" aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
+      <div id="ws-cy-list"></div>
     </div>
     <div class="ws-grid">
       <div class="ws-card" data-go="v-dash"><i class="fa-solid fa-chart-line"></i><h3 data-i18n="ws.card.dash.t">داشبورد اعتبارسنجی</h3><p data-i18n="ws.card.dash.p">مقایسه شبیه‌سازی با داده واقعی و نمودار رشد</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
@@ -1750,6 +1780,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     </div>
     <div class="ws-actions">
       <button class="btn primary" id="ws-go-dash"><i class="fa-solid fa-gauge"></i> <span data-i18n="ws.btn.dash">رفتن به داشبورد</span></button>
+      <button class="btn ghost" id="ws-change-pass"><i class="fa-solid fa-key"></i> <span data-i18n="ws.btn.pass">تغییر رمز</span></button>
       <button class="btn ghost" id="ws-logout"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="ws.btn.logout">خروج از حساب</span></button>
       <button class="btn ghost" id="ws-back-landing"><i class="fa-solid fa-house"></i> <span data-i18n="ws.btn.home">بازگشت به صفحه اصلی</span></button>
     </div>
@@ -2586,23 +2617,23 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.8.36" defer></script>
-<script src="engine.js?v=1.8.36" defer></script>
-<script src="xlsx.js?v=1.8.36" defer></script>
-<script src="stats.js?v=1.8.36" defer></script>
-<script src="version.js?v=1.8.36" defer></script>
-  <script src="locales/fa.js?v=1.8.36" defer></script>
-<script src="locales/en.js?v=1.8.36" defer></script>
-<script src="i18n.js?v=1.8.36" defer></script>
-<script src="utils/formatters.js?v=1.8.36" defer></script>
-<script src="shamsi.js?v=1.8.36" defer></script>
-<script src="auth.js?v=1.8.36" defer></script>
-<script src="device-panel.js?v=1.8.36" defer></script>
-<script src="dialog.js?v=1.8.36" defer></script>
-<script src="router.js?v=1.8.36" defer></script>
-<script src="components/chart.js?v=1.8.36" defer></script>
-<script src="services/export.js?v=1.8.36" defer></script>
-<script src="app.js?v=1.8.36" defer></script>
+<script src="strains.js?v=1.8.37" defer></script>
+<script src="engine.js?v=1.8.37" defer></script>
+<script src="xlsx.js?v=1.8.37" defer></script>
+<script src="stats.js?v=1.8.37" defer></script>
+<script src="version.js?v=1.8.37" defer></script>
+  <script src="locales/fa.js?v=1.8.37" defer></script>
+<script src="locales/en.js?v=1.8.37" defer></script>
+<script src="i18n.js?v=1.8.37" defer></script>
+<script src="utils/formatters.js?v=1.8.37" defer></script>
+<script src="shamsi.js?v=1.8.37" defer></script>
+<script src="auth.js?v=1.8.37" defer></script>
+<script src="device-panel.js?v=1.8.37" defer></script>
+<script src="dialog.js?v=1.8.37" defer></script>
+<script src="router.js?v=1.8.37" defer></script>
+<script src="components/chart.js?v=1.8.37" defer></script>
+<script src="services/export.js?v=1.8.37" defer></script>
+<script src="app.js?v=1.8.37" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">

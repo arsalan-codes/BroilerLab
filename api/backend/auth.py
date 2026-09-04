@@ -1,7 +1,7 @@
 """
 BroilerLab — Authentication (JWT + bcrypt).
 
-- Password hashing: passlib[bcrypt] (bcrypt 5.x)
+- Password hashing: passlib[bcrypt] (pinned bcrypt 4.0.1; >=4.1 breaks passlib).
 - JWT: python-jose HS256, 24h default expiry
 - Dependency: get_current_user (fail-closed — no user => 401)
 

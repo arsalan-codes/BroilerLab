@@ -105,8 +105,8 @@ def test_account_sheet_content_and_actions():
     # to an EXISTING action (no new routes/backend).
     js = webapp_src("auth.js")
     for sid in ("account-sheet", "sheet-backdrop", "sheet-user-name",
-                "sheet-view-profile", "sheet-profile-item", "sheet-settings-item",
-                "sheet-help-item", "sheet-about-item", "sheet-reset-item",
+                "sheet-view-profile", "sheet-profile-item",
+                "sheet-help-item", "sheet-about-item",
                 "sheet-segcard", "sheet-lang-fa", "sheet-lang-en",
                 "sheet-logout", "sheet-theme-switch"):
         assert sid in js, f"sheet must render #{sid}"

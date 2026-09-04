@@ -1095,7 +1095,7 @@ function prefersReduced(){return window.matchMedia && matchMedia("(prefers-reduc
 function tourClearSpot(){
   document.querySelectorAll(".tour-spot").forEach(e=>e.classList.remove("tour-spot"));
   TOUR.el=null;
-  const sh=$("tour-shade");if(sh)sh.classList.remove("on");
+  const sh=$("tour-shade");if(sh)sh.classList.remove("on","holed");
   const tip=$("tour-tip");if(tip){tip.style.display="none";tip.classList.remove("show","tt-above","tt-below")}}
 function tourPlaceTip(rect){
   const tip=$("tour-tip");if(!tip)return;
@@ -1111,6 +1111,23 @@ function tourPlaceTip(rect){
     if(y<10){y=10;place="center"}
   }
   tip.style.left=x+"px";tip.style.top=y+"px";
+  // spotlight hole: punch the shade AROUND the target instead of lifting the
+  // target above the shade. The old z-index boost trapped inside ancestor
+  // stacking contexts (sticky topbar etc.), leaving the target UNDER the
+  // blurred shade — invisible while the tip described it.
+  var sh2=$("tour-shade");
+  if(sh2){
+    if(!rect){sh2.classList.remove("holed")}
+    else{
+      var pad=10, rh=(rect.height!=null?rect.height:((rect.bottom||0)-(rect.top||0)));
+      var hx=Math.max(0,rect.left-pad), hy=Math.max(0,rect.top-pad);
+      var hw=Math.max(0,Math.min(innerWidth-hx,rect.width+pad*2));
+      var hh=Math.max(0,Math.min(innerHeight-hy,rh+pad*2));
+      sh2.style.setProperty("--thx",hx+"px");sh2.style.setProperty("--thy",hy+"px");
+      sh2.style.setProperty("--thw",hw+"px");sh2.style.setProperty("--thh",hh+"px");
+      sh2.classList.add("holed");
+    }
+  }
   // restart the enter animation every step (direction-aware slide)
   tip.classList.remove("show","tt-above","tt-below");
   void tip.offsetWidth;

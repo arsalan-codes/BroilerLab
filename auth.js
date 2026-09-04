@@ -203,10 +203,8 @@
       + '</div></div>'
       + '<div class="sheet-menu" role="menu" aria-label="' + sheetT("sheet.account", "حساب کاربری") + '">'
       + '<button class="sheet-item" id="sheet-profile-item" role="menuitem"><i class="fa-solid fa-user" aria-hidden="true"></i><span>' + sheetT("sheet.profile", "پروفایل کاربری") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
-      + '<button class="sheet-item" id="sheet-settings-item" role="menuitem"><i class="fa-solid fa-gear" aria-hidden="true"></i><span>' + sheetT("sheet.accountSettings", "تنظیمات حساب") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
       + '<button class="sheet-item" id="sheet-help-item" role="menuitem"><i class="fa-solid fa-headset" aria-hidden="true"></i><span>' + sheetT("sheet.help", "راهنما و پشتیبانی") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
       + '<button class="sheet-item" id="sheet-about-item" role="menuitem"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>' + sheetT("sheet.about", "درباره ما") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
-      + '<button class="sheet-item" id="sheet-reset-item" role="menuitem"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i><span>' + sheetT("btn.resetCycle", "بازنشانی داده‌های دوره") + '</span><i class="fa-solid fa-chevron-left chev" aria-hidden="true"></i></button>'
       + '</div>'
       + '<div class="sheet-segcard"><span>' + sheetT("hdr.lang", "زبان") + '</span><div class="sheet-seg" role="group"><button id="sheet-lang-fa" lang="fa">فا</button><button id="sheet-lang-en" lang="en">EN</button></div></div>'
       + '<button class="sheet-logout" id="sheet-logout"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> ' + sheetT("sheet.logout", "خروج از حساب کاربری") + '</button>'
@@ -218,10 +216,8 @@
     var on = function(id, fn){ var el = document.getElementById(id); if (el) el.addEventListener("click", closeFirst(fn)); };
     on("sheet-view-profile", function(){ openWorkspace(); });
     on("sheet-profile-item", function(){ openWorkspace(); });
-    on("sheet-settings-item", function(){ showChangePassModal(); });
     on("sheet-help-item", function(){ if (typeof window.showHelp === "function") window.showHelp(); });
     on("sheet-about-item", function(){ if (window.Router) window.Router.go("v-about"); });
-    on("sheet-reset-item", function(){ var rb = document.getElementById("btn-reset"); if (rb) rb.click(); });
     var curLang = "fa";
     try { curLang = document.documentElement.getAttribute("lang") || "fa"; } catch (e4) {}
     var slf = document.getElementById("sheet-lang-fa"), sle = document.getElementById("sheet-lang-en");
@@ -476,6 +472,39 @@
     try{ apiAuth("/api/scenarios").then(function(js){ var arr=Array.isArray(js)?js:(js.scenarios||js.items||[]); var el=document.getElementById("ws-n-scenarios"); if(el) el.textContent=String(arr.length); }).catch(function(){}); }catch(e){}
     try{ apiAuth("/api/device/records?limit=1").then(function(js){ var n=(js.total!=null?js.total:(Array.isArray(js)?js.length:0)); var el=document.getElementById("ws-n-device"); if(el) el.textContent=String(n); }).catch(function(){}); }catch(e){}
   }
+  function wsT(k, fb){ return (window.tr ? window.tr(k) : fb); }
+  function wsConfirm(o){
+    if (window.MDialog) return window.MDialog.confirm(o);
+    return Promise.resolve(window.confirm(o.message || o.title || ""));
+  }
+  function renderWsCycles(){
+    var list = document.getElementById("ws-cy-list");
+    if (!list) return;
+    apiAuth("/api/cycles").then(function(js){
+      var arr = Array.isArray(js) ? js : (js.cycles || js.items || []);
+      var nEl = document.getElementById("ws-n-cycles");
+      if (nEl) nEl.textContent = String(arr.length);
+      if (!arr.length) {
+        list.innerHTML = '<div class="ws-cy-empty">' + esc(wsT("ws.cy.empty", "هنوز دوره‌ای ثبت نشده است")) + '</div>';
+        return;
+      }
+      list.innerHTML = arr.map(function(c){
+        var code = c.cycle_code || ("#" + c.id);
+        return '<div class="ws-cy-row" data-cy="' + c.id + '" data-cy-code="' + esc(code) + '">'
+          + '<div class="ws-cy-info"><b>' + esc(c.label || code) + '</b><span>' + esc(code) + ' · <i data-cy-visits>…</i></span></div>'
+          + '<div class="ws-cy-act"><button class="ws-cy-reset" data-cy-reset="' + c.id + '"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> ' + esc(wsT("ws.cy.resetData", "ریست داده‌ها")) + '</button>'
+          + '<button class="ws-cy-del" data-cy-del="' + c.id + '"><i class="fa-solid fa-trash" aria-hidden="true"></i> ' + esc(wsT("ws.cy.delete", "حذف دوره")) + '</button></div></div>';
+      }).join("");
+      arr.forEach(function(c){
+        apiAuth("/api/cycles/" + c.id + "/stats").then(function(s){
+          var cell = list.querySelector('[data-cy="' + c.id + '"] [data-cy-visits]');
+          if (cell) cell.textContent = (s.visits || 0) + " " + wsT("ws.cy.visits", "بازدید") + " · " + (s.device_rows || 0) + " " + wsT("ws.cy.rows", "رکورد");
+        }).catch(function(){});
+      });
+    }).catch(function(){
+      list.innerHTML = '<div class="ws-cy-empty">' + esc(wsT("ws.cy.empty", "هنوز دوره‌ای ثبت نشده است")) + '</div>';
+    });
+  }
   window.openWorkspace=openWorkspace;
   window.renderWorkspace=renderWorkspace;
   window.updateLandingCTA=updateLandingCTA;
@@ -548,6 +577,57 @@
       var card=e.target.closest(".ws-card[data-go]");
       if(card){ if(window.Router){ window.Router.go(card.getAttribute("data-go")); } return; }
       if(e.target.closest("#ws-go-dash")){ if(window.Router){ window.Router.go("v-dash"); } return; }
+      if(e.target.closest("#ws-change-pass")){ showChangePassModal(); return; }
+      if(e.target.closest("#ws-cycles-stat")){
+        var cyp = document.getElementById("ws-cycles-panel");
+        if (cyp) {
+          var showIt = cyp.hidden;
+          cyp.hidden = !showIt;
+          if (showIt) { renderWsCycles(); try { cyp.scrollIntoView({behavior:"smooth", block:"nearest"}); } catch (e2) {} }
+        }
+        return;
+      }
+      if(e.target.closest("#ws-cy-close")){ var cyp2 = document.getElementById("ws-cycles-panel"); if (cyp2) cyp2.hidden = true; return; }
+      var cyR = e.target.closest("[data-cy-reset]");
+      if (cyR) {
+        (function(btn){
+          var id = btn.getAttribute("data-cy-reset");
+          var row = btn.closest(".ws-cy-row");
+          var code = row ? row.getAttribute("data-cy-code") : ("#" + id);
+          wsConfirm({title: wsT("ws.cy.resetTitle", "ریست داده‌های دوره"),
+            message: wsT("ws.cy.resetMsg", "داده‌های دوره {code} پاک شود؟").replace("{code}", code),
+            icon: "danger", danger: true,
+            confirmText: wsT("ws.cy.resetData", "ریست داده‌ها"),
+            cancelText: wsT("dialog.cancel", "انصراف")}).then(function(ok){
+            if (!ok) return;
+            apiAuth("/api/cycles/" + id + "/data", {method: "DELETE"}).then(function(){
+              if (window.toast) toast(wsT("ws.cy.resetDone", "داده‌های دوره پاک شد"));
+              renderWsCycles();
+            }).catch(function(err){ if (window.toast) toast(String((err && err.message) || err)); });
+          });
+        })(cyR);
+        return;
+      }
+      var cyD = e.target.closest("[data-cy-del]");
+      if (cyD) {
+        (function(btn){
+          var id = btn.getAttribute("data-cy-del");
+          var row = btn.closest(".ws-cy-row");
+          var code = row ? row.getAttribute("data-cy-code") : ("#" + id);
+          wsConfirm({title: wsT("dev.deleteTitle", "حذف دوره"),
+            message: wsT("dev.deleteMsg", "دوره {code} حذف شود؟").replace("{code}", code),
+            icon: "danger", danger: true,
+            confirmText: wsT("dev.deleteConfirm", "حذف"),
+            cancelText: wsT("dialog.cancel", "انصراف")}).then(function(ok){
+            if (!ok) return;
+            apiAuth("/api/cycles/" + id, {method: "DELETE"}).then(function(){
+              if (window.toast) toast(wsT("ws.cy.deleted", "دوره حذف شد"));
+              renderWsCycles();
+            }).catch(function(err){ if (window.toast) toast(String((err && err.message) || err)); });
+          });
+        })(cyD);
+        return;
+      }
       if(e.target.closest("#ws-logout")){ clearAuth(); renderAuthArea(); updateLandingCTA(); setGated(true); if(window.Router){ window.Router.go("v-landing"); } else { document.querySelectorAll("section.view").forEach(function(s){s.classList.remove("on")}); var l=document.getElementById("v-landing"); if(l) l.classList.add("on"); } if(window.toast) toast(window.tr?window.tr("auth.loggedOut"):"خارج شدید"); return; }
       if(e.target.closest("#ws-back-landing")){ if(window.Router){ window.Router.go("v-landing"); } return; }
     });

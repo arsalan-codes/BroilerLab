@@ -80,6 +80,23 @@ def test_tour_tip_docks_bottom_on_small_screens():
         "docked tip needs its slide-up keyframes"
 
 
+def test_tour_spotlight_hole_replaces_zindex_trick():
+    # Bug: the z-index-boosted target got trapped inside ancestor stacking
+    # contexts (sticky topbar) and stayed UNDER the blurred shade — the tip
+    # described an invisible element. The shade now carries a real hole.
+    css = re.sub(r"\s+", "", src("index.html"))
+    assert "polygon(evenodd" in css and "--thx" in css, \
+        "shade needs a punched spotlight hole driven by CSS vars"
+    assert "9999px" not in css, \
+        "giant-shadow dimming must be gone (it blurred nothing away)"
+    assert "z-index:301" not in css, \
+        "target must paint in place — no stacking-context escape hatch"
+    js = src("app.js")
+    assert '"holed"' in js or "'holed'" in js, "tip placement must punch the hole"
+    assert "setProperty(\"--thx\"" in js or "setProperty('--thx'" in js, \
+        "hole geometry must follow the live target rect"
+
+
 def test_tour_respects_reduced_motion():
     css = re.sub(r"\s+", "", src("index.html"))
     assert "prefers-reduced-motion" in css, "tour needs a reduced-motion guard"

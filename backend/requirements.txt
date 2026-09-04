@@ -1,7 +1,7 @@
 fastapi==0.115.0
 sqlalchemy==2.0.35
 psycopg[binary]==3.2.3
-bcrypt==4.1.2
+bcrypt==4.0.1  # passlib 1.7.4 breaks on bcrypt>=4.1 (72-byte error); 4.0.1 is the proven combo
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 pydantic==2.9.2
