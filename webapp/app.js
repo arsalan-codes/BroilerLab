@@ -1112,25 +1112,32 @@ const TOUR_STEPS=[
   {sel:null, icon:"fa-box-open", title:"tour.expT2", text:"tour.expP2"},
   {sel:null, done:true, icon:"fa-flag-checkered", title:"tour.doneT", text:"tour.doneP"}
 ];
-let TOUR={i:0,active:false,pending:false};
+let TOUR={i:0,active:false,pending:false,el:null,seq:0,raf:0};
 function prefersReduced(){return window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches}
 function tourClearSpot(){
   document.querySelectorAll(".tour-spot").forEach(e=>e.classList.remove("tour-spot"));
+  TOUR.el=null;
   const sh=$("tour-shade");if(sh)sh.classList.remove("on");
-  const tip=$("tour-tip");if(tip)tip.style.display="none"}
+  const tip=$("tour-tip");if(tip){tip.style.display="none";tip.classList.remove("show","tt-above","tt-below")}}
 function tourPlaceTip(rect){
   const tip=$("tour-tip");if(!tip)return;
   tip.style.display="block";
   const tw=tip.offsetWidth||420,th=tip.offsetHeight||180;
-  let x,y;
-  if(!rect){x=clamp((innerWidth-tw)/2,10,innerWidth-tw-10);y=clamp((innerHeight-th)/2,10,innerHeight-th-10)}
+  const maxX=Math.max(10,innerWidth-tw-10),maxY=Math.max(10,innerHeight-th-10);
+  let x,y,place="center";
+  if(!rect){x=clamp((innerWidth-tw)/2,10,maxX);y=clamp((innerHeight-th)/2,10,maxY)}
   else{
-    x=clamp(rect.left+rect.width/2-tw/2,10,innerWidth-tw-10);
-    y=rect.bottom+14;
-    if(y+th>innerHeight-14) y=Math.max(10, rect.top-th-14);
-    if(y<10) y=10;
+    x=clamp(rect.left+rect.width/2-tw/2,10,maxX);
+    y=rect.bottom+14;place="below";
+    if(y+th>innerHeight-14){y=Math.max(10,rect.top-th-14);place="above"}
+    if(y<10){y=10;place="center"}
   }
-  tip.style.left=x+"px";tip.style.top=y+"px"}
+  tip.style.left=x+"px";tip.style.top=y+"px";
+  // restart the enter animation every step (direction-aware slide)
+  tip.classList.remove("show","tt-above","tt-below");
+  void tip.offsetWidth;
+  if(place!=="center") tip.classList.add(place==="above"?"tt-above":"tt-below");
+  tip.classList.add("show")}
 function tourSwitchView(view){
   if(!view) return false;
   const tab=document.querySelector(`.tab[data-v="${view}"]`);
@@ -1180,28 +1187,49 @@ function tourShow(i){
     if(el){
       // ensure visible
       try{ el.scrollIntoView({block:"center",behavior:prefersReduced()?"auto":"smooth"});}catch(e){}
+      const seq=++TOUR.seq;
       setTimeout(()=>{
+        if(seq!==TOUR.seq||!TOUR.active||TOUR.i!==i) return; // stale step: a newer tourShow won
         el.classList.add("tour-spot");
+        TOUR.el=el;
         const r=el.getBoundingClientRect();
         // if element is hidden (display none), center tip
-        if(r.width===0 && r.height===0) tourPlaceTip(null);
+        if(r.width===0 && r.height===0){TOUR.el=null;tourPlaceTip(null)}
         else tourPlaceTip({left:r.left,top:r.top,bottom:r.bottom,width:r.width});
         TOUR.pending=false;
       },prefersReduced()?0:420);
       TOUR.pending=true;return
     }
   }
-  tourPlaceTip(null)
+  TOUR.el=null;tourPlaceTip(null)
+}
+function tourReposition(){
+  // keep the floating tip glued to its target across scroll/resize —
+  // the old flush only ran inside the 420ms post-click window, so the tip
+  // drifted as soon as the user scrolled afterwards.
+  if(!TOUR.active) return;
+  const st=TOUR_STEPS[TOUR.i];
+  if(TOUR.pending){
+    if(!st||!st.sel) return;
+    const el=document.querySelector(st.sel);if(!el||!el.isConnected) return;
+    el.classList.add("tour-spot");
+    TOUR.el=el;
+    const r=el.getBoundingClientRect();
+    if(r.width===0) tourPlaceTip(null);
+    else tourPlaceTip({left:r.left,top:r.top,bottom:r.bottom,width:r.width});
+    TOUR.pending=false;return
+  }
+  if(!st||!st.sel||!TOUR.el||!TOUR.el.isConnected) return;
+  const r=TOUR.el.getBoundingClientRect();
+  if(r.width===0&&r.height===0) tourPlaceTip(null);
+  else tourPlaceTip({left:r.left,top:r.top,bottom:r.bottom,width:r.width})
+}
+function tourScheduleReposition(){
+  if(!TOUR.active||TOUR.raf) return;
+  TOUR.raf=requestAnimationFrame(()=>{TOUR.raf=0;tourReposition()})
 }
 function tourPendingFlush(){
-  if(!TOUR.active||!TOUR.pending)return;
-  const st=TOUR_STEPS[TOUR.i];if(!st||!st.sel)return;
-  const el=document.querySelector(st.sel);if(!el)return;
-  el.classList.add("tour-spot");
-  const r=el.getBoundingClientRect();
-  if(r.width===0) tourPlaceTip(null);
-  else tourPlaceTip({left:r.left,top:r.top,bottom:r.bottom,width:r.width});
-  TOUR.pending=false}
+  tourReposition()}
 function tourStart(force){
   const KEY="arian_tour_v2";
   try{
@@ -1237,7 +1265,8 @@ function bindTour(){
       else tourShow(TOUR.i-1);
     }
   });
-  window.addEventListener("resize",tourPendingFlush);
+  window.addEventListener("resize",tourScheduleReposition);
+  window.addEventListener("scroll",tourScheduleReposition,{passive:true,capture:true});
   window.addEventListener("rossim:lang",()=>{ if(TOUR.active) tourShow(TOUR.i); });
 }
 

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.32"></script>
-<script src="services/api.js?v=1.8.32"></script>
+<script src="config.js?v=1.8.33"></script>
+<script src="services/api.js?v=1.8.33"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -705,8 +705,9 @@ select:focus,input:focus{outline:none;border-color:rgba(25,195,154,.55);
 .sheetrow .cnt{margin-inline-start:auto;color:var(--dim);font-size:10.5px;direction:ltr}
 /* ---------- guided tour — modern glass + progress ---------- */
 #tour-shade{position:fixed;inset:0;z-index:298;display:none;pointer-events:none;background:rgba(4,7,12,.58);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
-#tour-shade.on{display:block}
-.tour-spot{position:relative!important;z-index:301!important;border-radius:12px!important;box-shadow:0 0 0 2px #19c39a, 0 0 0 6px rgba(25,195,154,.18), 0 0 0 9999px rgba(4,7,12,.62), 0 12px 32px rgba(0,0,0,.35)!important;transition:box-shadow .28s ease}
+#tour-shade.on{display:block;pointer-events:auto}
+.tour-spot{position:relative!important;z-index:301!important;border-radius:12px!important;box-shadow:0 0 0 2px #19c39a, 0 0 0 6px rgba(25,195,154,.18), 0 0 0 9999px rgba(4,7,12,.62), 0 12px 32px rgba(0,0,0,.35)!important;transition:box-shadow .28s ease;animation:tourPulse 1.6s ease-in-out 2}
+@keyframes tourPulse{0%,100%{box-shadow:0 0 0 2px #19c39a, 0 0 0 6px rgba(25,195,154,.18), 0 0 0 9999px rgba(4,7,12,.62), 0 12px 32px rgba(0,0,0,.35)}50%{box-shadow:0 0 0 3px #19c39a, 0 0 0 12px rgba(25,195,154,.30), 0 0 0 9999px rgba(4,7,12,.62), 0 12px 32px rgba(0,0,0,.35)}}
 #tour-tip{position:fixed;z-index:302;width:min(420px,92vw);display:none;background:rgba(22,30,46,.96);backdrop-filter:blur(18px) saturate(1.25);-webkit-backdrop-filter:blur(18px) saturate(1.25);border:1px solid rgba(255,255,255,.10);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06) inset;padding:0;overflow:hidden}
 html[data-theme=light] #tour-tip{background:rgba(255,255,255,.97);border-color:rgba(0,0,0,.08)}
 #tour-tip .tt-progress{height:3px;background:rgba(255,255,255,.10);position:relative;overflow:hidden}
@@ -727,6 +728,18 @@ html[data-theme=light] .dots i{background:rgba(0,0,0,.14)}
 .dots i:hover{transform:scale(1.15)}
 #tt-step{font-size:11px;font-weight:800;letter-spacing:.04em;opacity:.9}
 @media(max-width:560px){#tour-tip{width:94vw}.tt-head{padding:12px 14px 6px}#tt-text{padding:0 14px 10px}}
+/* tour tip enter animation (direction-aware) + small-screen bottom dock */
+#tour-tip.show{animation:ttInBelow .22s ease}
+#tour-tip.tt-above.show{animation-name:ttInAbove}
+@keyframes ttInBelow{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes ttInAbove{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes ttUp{from{opacity:0;transform:translateY(48px)}to{opacity:1;transform:none}}
+@media(max-width:560px){
+  #tour-tip{left:3vw !important;right:3vw;width:auto;top:auto !important;
+    bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  #tour-tip.show{animation:ttUp .3s cubic-bezier(.32,.72,.24,1)}}
+@media (prefers-reduced-motion:reduce){
+  #tour-tip.show,.tour-spot{animation:none !important}}
 
 .colpick-head{display:flex;align-items:center;justify-content:space-between;
   margin-bottom:7px}
@@ -2643,23 +2656,23 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.8.32" defer></script>
-<script src="engine.js?v=1.8.32" defer></script>
-<script src="xlsx.js?v=1.8.32" defer></script>
-<script src="stats.js?v=1.8.32" defer></script>
-<script src="version.js?v=1.8.32" defer></script>
-  <script src="locales/fa.js?v=1.8.32" defer></script>
-<script src="locales/en.js?v=1.8.32" defer></script>
-<script src="i18n.js?v=1.8.32" defer></script>
-<script src="utils/formatters.js?v=1.8.32" defer></script>
-<script src="shamsi.js?v=1.8.32" defer></script>
-<script src="auth.js?v=1.8.32" defer></script>
-<script src="device-panel.js?v=1.8.32" defer></script>
-<script src="dialog.js?v=1.8.32" defer></script>
-<script src="router.js?v=1.8.32" defer></script>
-<script src="components/chart.js?v=1.8.32" defer></script>
-<script src="services/export.js?v=1.8.32" defer></script>
-<script src="app.js?v=1.8.32" defer></script>
+<script src="strains.js?v=1.8.33" defer></script>
+<script src="engine.js?v=1.8.33" defer></script>
+<script src="xlsx.js?v=1.8.33" defer></script>
+<script src="stats.js?v=1.8.33" defer></script>
+<script src="version.js?v=1.8.33" defer></script>
+  <script src="locales/fa.js?v=1.8.33" defer></script>
+<script src="locales/en.js?v=1.8.33" defer></script>
+<script src="i18n.js?v=1.8.33" defer></script>
+<script src="utils/formatters.js?v=1.8.33" defer></script>
+<script src="shamsi.js?v=1.8.33" defer></script>
+<script src="auth.js?v=1.8.33" defer></script>
+<script src="device-panel.js?v=1.8.33" defer></script>
+<script src="dialog.js?v=1.8.33" defer></script>
+<script src="router.js?v=1.8.33" defer></script>
+<script src="components/chart.js?v=1.8.33" defer></script>
+<script src="services/export.js?v=1.8.33" defer></script>
+<script src="app.js?v=1.8.33" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
