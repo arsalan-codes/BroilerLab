@@ -68,6 +68,15 @@ def test_brand_link_is_clean():
     assert all("db-glink" in l for l in leftovers), f"stray href=# found: {leftovers}"
 
 
+def test_brand_name_gap():
+    # The two brand spans must never render stuck together: a pinned
+    # margin guarantees the gap in both directions (text-node spaces
+    # collapse too easily).
+    css = re.sub(r"\s+", "", webapp_src("index.html"))
+    assert ".brandb>span+span{margin-inline-start:.32em}" in css, \
+        "brand spans need a guaranteed gap"
+
+
 def test_vercel_spa_rewrite():
     cfg = json.loads(read(ROOT / "vercel.json"))
     rewrites = cfg.get("rewrites", [])

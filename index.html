@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.38"></script>
-<script src="services/api.js?v=1.8.38"></script>
+<script src="config.js?v=1.8.39"></script>
+<script src="services/api.js?v=1.8.39"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -77,6 +77,9 @@ nav .tab{display:inline-flex;align-items:center;justify-content:center}
   display:flex;align-items:center;justify-content:center;background:none;border:none;box-shadow:none}
 .brand .mark img{width:100%;height:100%;object-fit:contain;display:block}
 .brand b{font-size:clamp(15px,1.3vw,18px);font-weight:800;letter-spacing:.2px;display:block;line-height:1.25}
+/* guaranteed visible gap between "سامانه هوشمند" and "آرین" (a bare text-node
+   space renders razor-thin in Vazirmatn and vanishes under some minifiers) */
+.brand b > span + span{margin-inline-start:.32em}
 .brand .tagline{display:block;font-size:clamp(10.5px,.85vw,12px);color:var(--mut);line-height:1.35;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:56vw}
 .brand .uni{display:block;font-size:10px;color:var(--dim);margin-top:2px}
@@ -399,7 +402,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 .hctl .vbadge{align-self:center;display:inline-flex;align-items:center}
 .hpills{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.38).
+/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.39).
    .hctl (desktop inline controls) is display:none on mobile; every drawer
    entry lives in the user menu (dropdown + bottom sheet). ---------- */
 @media(max-width:992px){
@@ -1287,7 +1290,7 @@ html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
   padding:8px 10px;border-radius:8px;border:none;background:transparent;color:var(--txt);cursor:pointer;font-family:inherit;font-size:12.5px}
 .auth-dropdown-item:hover{background:var(--bg2)}
 .auth-dropdown-item.danger{color:var(--bad)}
-/* merged hamburger entries (v1.8.38): divider + language/theme segments */
+/* merged hamburger entries (v1.8.39): divider + language/theme segments */
 .auth-sep{border-top:1px solid var(--line);margin:6px 2px}
 .auth-seg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:6px 10px;font-size:12px;color:var(--mut);font-weight:600}
@@ -2619,23 +2622,23 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.8.38" defer></script>
-<script src="engine.js?v=1.8.38" defer></script>
-<script src="xlsx.js?v=1.8.38" defer></script>
-<script src="stats.js?v=1.8.38" defer></script>
-<script src="version.js?v=1.8.38" defer></script>
-  <script src="locales/fa.js?v=1.8.38" defer></script>
-<script src="locales/en.js?v=1.8.38" defer></script>
-<script src="i18n.js?v=1.8.38" defer></script>
-<script src="utils/formatters.js?v=1.8.38" defer></script>
-<script src="shamsi.js?v=1.8.38" defer></script>
-<script src="auth.js?v=1.8.38" defer></script>
-<script src="device-panel.js?v=1.8.38" defer></script>
-<script src="dialog.js?v=1.8.38" defer></script>
-<script src="router.js?v=1.8.38" defer></script>
-<script src="components/chart.js?v=1.8.38" defer></script>
-<script src="services/export.js?v=1.8.38" defer></script>
-<script src="app.js?v=1.8.38" defer></script>
+<script src="strains.js?v=1.8.39" defer></script>
+<script src="engine.js?v=1.8.39" defer></script>
+<script src="xlsx.js?v=1.8.39" defer></script>
+<script src="stats.js?v=1.8.39" defer></script>
+<script src="version.js?v=1.8.39" defer></script>
+  <script src="locales/fa.js?v=1.8.39" defer></script>
+<script src="locales/en.js?v=1.8.39" defer></script>
+<script src="i18n.js?v=1.8.39" defer></script>
+<script src="utils/formatters.js?v=1.8.39" defer></script>
+<script src="shamsi.js?v=1.8.39" defer></script>
+<script src="auth.js?v=1.8.39" defer></script>
+<script src="device-panel.js?v=1.8.39" defer></script>
+<script src="dialog.js?v=1.8.39" defer></script>
+<script src="router.js?v=1.8.39" defer></script>
+<script src="components/chart.js?v=1.8.39" defer></script>
+<script src="services/export.js?v=1.8.39" defer></script>
+<script src="app.js?v=1.8.39" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
