@@ -574,7 +574,7 @@
     }
     bindLanding();
     document.addEventListener("click", function(e){
-      var card=e.target.closest(".ws-card[data-go]");
+      var card=e.target.closest(".ws-card[data-go],.lcard[data-go]");
       if(card){ if(window.Router){ window.Router.go(card.getAttribute("data-go")); } return; }
       if(e.target.closest("#ws-go-dash")){ if(window.Router){ window.Router.go("v-dash"); } return; }
       if(e.target.closest("#ws-change-pass")){ showChangePassModal(); return; }
@@ -630,6 +630,12 @@
       }
       if(e.target.closest("#ws-logout")){ clearAuth(); renderAuthArea(); updateLandingCTA(); setGated(true); if(window.Router){ window.Router.go("v-landing"); } else { document.querySelectorAll("section.view").forEach(function(s){s.classList.remove("on")}); var l=document.getElementById("v-landing"); if(l) l.classList.add("on"); } if(window.toast) toast(window.tr?window.tr("auth.loggedOut"):"خارج شدید"); return; }
       if(e.target.closest("#ws-back-landing")){ if(window.Router){ window.Router.go("v-landing"); } return; }
+    });
+    // keyboard access for navigable cards (Enter/Space = click)
+    document.addEventListener("keydown", function(e){
+      if(e.key !== "Enter" && e.key !== " ") return;
+      var card = e.target && e.target.closest ? e.target.closest(".ws-card[data-go],.lcard[data-go]") : null;
+      if(card){ e.preventDefault(); if(window.Router){ window.Router.go(card.getAttribute("data-go")); } }
     });
     updateLandingCTA();
     // Also hook successful auth to go dashboard
