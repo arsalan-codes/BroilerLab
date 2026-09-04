@@ -44,5 +44,8 @@ def test_met_gate_unchanged():
     assert '{ path: "/methodology", view: "v-met", public: false' in router, \
         "route stays public:false"
     nav = html[html.find('<nav id="mainnav"'):html.find("</nav>")]
-    assert len(re.findall(r'data-v="(v-[a-z]+)"', nav)) == 6, \
-        "exactly six nav tabs (landing, feed, sci, met, products, about)"
+    tabs = re.findall(r'data-v="(v-[a-z]+)"', nav)
+    assert len(tabs) == 7, \
+        "seven nav tabs (landing, feed, env, sci, met, products, about)"
+    assert tabs.index("v-feed") < tabs.index("v-env") < tabs.index("v-sci"), \
+        "env tab sits right after the feed group"

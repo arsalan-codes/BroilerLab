@@ -48,6 +48,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/env",
+      "destination": "/index.html"
+    },
+    {
       "source": "/science",
       "destination": "/index.html"
     },

@@ -26,7 +26,8 @@
     { path: "/live",         view: "v-sim",       public: false, i18n: "nav.sim",       group: "feed" },
     { path: "/scenarios",    view: "v-scn",       public: false, i18n: "nav.scn",       group: "feed" },
     { path: "/device",       view: "v-dev",       public: false, i18n: "nav.dev",       group: "feed" },
-    { path: "/methodology",  view: "v-met",       public: false, i18n: "nav.met",       group: "feed" },
+    { path: "/methodology",  view: "v-met",       public: false, i18n: "nav.met" },
+    { path: "/env",          view: "v-env",       public: false, i18n: "nav.env",      group: "env" },
     { path: "/science",      view: "v-sci",       public: false, i18n: "nav.sci" },
     { path: "/workspace",    view: "v-workspace", public: false, i18n: "ws.title" },
     { path: "/404",          view: "v-404",       public: true,  i18n: "nf.title" }
@@ -43,7 +44,8 @@
     "/sci": "/science",
     "/login": "/", "/register": "/"   // auth is a modal, not a page: land home & open modal
   };
-  var FEED_GROUP = ["v-feed", "v-dash", "v-exp", "v-farm", "v-sim", "v-scn", "v-dev", "v-met"];
+  var FEED_GROUP = ["v-feed", "v-dash", "v-exp", "v-farm", "v-sim", "v-scn", "v-dev"];
+  var ENV_GROUP = ["v-env"];
   var current = null;         // active route object
   var pending = null;         // intended destination while unauthenticated
 

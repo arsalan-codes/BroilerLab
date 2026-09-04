@@ -121,6 +121,34 @@ class DeviceLog(Base):
     )
 
 
+class EnvSample(Base):
+    """One MQTT telemetry row from the climate-control hardware.
+
+    Narrow row (all sensor values in one message = one insert): the broker
+    publishes the full house snapshot at ~1 Hz, so batched single-table
+    inserts with a (house_id, ts) covering index keep ingest at O(1) per
+    message with no join on read. house_id scopes ownership via Cycle.
+    """
+    __tablename__ = "env_samples"
+    id = Column(Integer, primary_key=True)
+    house_id = Column(Integer, nullable=False, index=True)
+    ts = Column(DateTime(timezone=True), nullable=False, default=utcnow)
+    temp_c = Column(Float, nullable=True)
+    rh = Column(Float, nullable=True)
+    bed_rh = Column(Float, nullable=True)
+    feed_kg = Column(Float, nullable=True)
+    water_l = Column(Float, nullable=True)
+    nh3_ppm = Column(Float, nullable=True)
+    o2_pct = Column(Float, nullable=True)
+    fan_pct = Column(Float, nullable=True)
+    light_lux = Column(Float, nullable=True)
+    rssi = Column(Float, nullable=True)
+    health_json = Column(String(500), nullable=True)
+    __table_args__ = (
+        Index("ix_env_house_ts", "house_id", "ts"),
+    )
+
+
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 

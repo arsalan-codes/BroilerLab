@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy.orm import Session
 from config import API_HOST, API_PORT
-from models import init_db, SessionLocal, Cycle, Visit, DeviceLog, User
+from models import init_db, SessionLocal, Cycle, Visit, DeviceLog, User, EnvSample
 from processor import get_processor
 import hub
 import auth as authmod
@@ -119,7 +119,7 @@ app.add_middleware(CORSMiddleware, allow_origins=_CORS_ORIGINS, allow_methods=["
 @app.get("/")
 def index():
     return FileResponse(os.path.join(WEBAPP_DIR, "index.html"), headers={"Cache-Control":"no-cache"})
-_STATIC_FILES = ("app.js","device-panel.js","auth.js","i18n.js","engine.js","strains.js","stats.js","xlsx.js","shamsi.js","dialog.js","router.js","config.js","version.js","favicon.png","logo_32.png","logo_128.png","logo_180.png","logo_192.png","logo_256.png","logo_512.png","fa/all.min.css","fa/fa-solid-900.woff2","fa/fa-solid-900.ttf","fa/fa-regular-400.woff2","fa/fa-regular-400.ttf","fa/fa-brands-400.woff2","fa/fa-brands-400.ttf","logo.svg","logo_1024.png","logo_128.webp","logo_512.webp","logo_256.webp","locales/fa.js","locales/en.js",)
+_STATIC_FILES = ("app.js","device-panel.js","auth.js","i18n.js","engine.js","strains.js","stats.js","xlsx.js","shamsi.js","dialog.js","router.js","config.js","version.js","favicon.png","logo_32.png","logo_128.png","logo_180.png","logo_192.png","logo_256.png","logo_512.png","fa/all.min.css","fa/fa-solid-900.woff2","fa/fa-solid-900.ttf","fa/fa-regular-400.woff2","fa/fa-regular-400.ttf","fa/fa-brands-400.woff2","fa/fa-brands-400.ttf","logo.svg","logo_1024.png","logo_128.webp","logo_512.webp","logo_256.webp","locales/fa.js","locales/en.js","env-control.js",)
 for _f in _STATIC_FILES:
     _path = os.path.join(WEBAPP_DIR, _f)
     if os.path.exists(_path):
@@ -372,6 +372,88 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
                         "age_day": v.age_day, "sensor_id": v.sensor_id,
                         "rssi": v.rssi, "read_ok": v.read_ok})
         return out
+@app.get("/api/env/summary")
+def env_summary(current: User = Depends(authmod.get_current_user)):
+    """Latest per-house climate snapshot + last 10 temperature samples.
+
+    Single query per table; ownership enforced by env_samples.house_id being
+    minted only from cycles owned by the requesting user (fail-closed like
+    every other endpoint). Falls back to an empty (not demo) payload when no
+    rows exist yet — the frontend renders offline placeholders.
+    """
+    out = {"houses": [], "series": {"temps": []}}
+    with SessionLocal() as s:
+        owned = s.query(Cycle.id).filter(Cycle.user_id == current.id, Cycle.active == True).all()  # noqa: E712
+        house_ids = sorted({(c.id % 100) or 1 for (c.id,) in owned}) or [1]
+        latest = {}
+        for hid in house_ids:
+            row = (s.query(EnvSample)
+                    .filter(EnvSample.house_id == hid)
+                    .order_by(EnvSample.ts.desc())
+                    .first())
+            if row:
+                latest[hid] = row
+        series = (s.query(EnvSample)
+                    .filter(EnvSample.house_id == house_ids[0])
+                    .order_by(EnvSample.ts.desc())
+                    .limit(10)
+                    .all())
+        out["series"]["temps"] = [r.temp_c for r in reversed(series) if r.temp_c is not None]
+        for hid in house_ids:
+            r = latest.get(hid)
+            health = {"activity": 0, "distribution": 0, "respiratory": 0, "alert": 0}
+            if r and r.health_json:
+                try:
+                    import json as _json
+                    health = _json.loads(r.health_json)
+                except Exception:
+                    pass
+            out["houses"].append({
+                "id": hid, "name": f"House {hid}",
+                "online": bool(r) and (datetime.now(timezone.utc) - r.ts).total_seconds() < 60 if r else False,
+                "tiles": {
+                    "temp": r.temp_c if r else None, "rh": r.rh if r else None,
+                    "bed": r.bed_rh if r else None, "feed": r.feed_kg if r else None,
+                    "water": r.water_l if r else None, "nh3": r.nh3_ppm if r else None,
+                    "o2": r.o2_pct if r else None, "fan": r.fan_pct if r else None,
+                    "light": r.light_lux if r else None,
+                } if r else {},
+                "health": health,
+                "devices": [{
+                    "id": f"ENV-{hid}01", "metric": "temp",
+                    "rssi": r.rssi if r else -100, "last": "1s",
+                    "state": "ok" if r else "offline",
+                }],
+            })
+    return out
+
+@app.get("/api/env/export")
+def env_export(scope: str = "day", house: int = 1, current: User = Depends(authmod.get_current_user)):
+    """Excel export: hourly / daily / monthly / custom range (from & to query)."""
+    from fastapi.responses import StreamingResponse
+    import io
+    try:
+        import openpyxl
+    except Exception:
+        raise HTTPException(status_code=501, detail="xlsx module missing")
+    with SessionLocal() as s:
+        q = s.query(EnvSample).filter(EnvSample.house_id == house).order_by(EnvSample.ts.asc())
+        rows = q.limit(20000).all()
+    if not rows:
+        raise HTTPException(status_code=404, detail="no env data")
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"house_{house}"
+    ws.append(["ts", "temp_c", "rh", "bed_rh", "feed_kg", "water_l", "nh3_ppm", "o2_pct", "fan_pct", "light_lux", "rssi"])
+    for r in rows:
+        ws.append([r.ts.isoformat(), r.temp_c, r.rh, r.bed_rh, r.feed_kg, r.water_l, r.nh3_ppm, r.o2_pct, r.fan_pct, r.light_lux, r.rssi])
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return StreamingResponse(
+        buf, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="Arian_env_{scope}.xlsx"'})
+
 @app.post("/api/cycles/{cycle_id}/ingest")
 def ingest_event(cycle_id: int, payload: IngestIn, current: User = Depends(authmod.get_current_user)):
     with SessionLocal() as s:

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.48"></script>
-<script src="services/api.js?v=1.8.48"></script>
+<script src="config.js?v=1.8.49"></script>
+<script src="services/api.js?v=1.8.49"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -402,7 +402,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 .hctl .vbadge{align-self:center;display:inline-flex;align-items:center}
 .hpills{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.48).
+/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.49).
    .hctl (desktop inline controls) is display:none on mobile; every drawer
    entry lives in the user menu (dropdown + bottom sheet). ---------- */
 @media(max-width:992px){
@@ -1274,6 +1274,37 @@ html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
 @media(max-width:560px){.prod-hero{padding:20px 16px}.prod-card{padding:18px 16px}.prod-card h3{font-size:15.5px}}
 @media(prefers-reduced-motion:reduce){.prod-status .dot{animation:none}}
 
+
+/* ================= ENV CONTROL (v-env) ================= */
+.env-houses{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px}
+.env-house{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:11px;
+  border:1px solid var(--line);background:var(--card);color:var(--mut);cursor:pointer;
+  font-family:inherit;font-size:12.5px;font-weight:700;transition:.15s}
+.env-house b{color:var(--txt);font-variant-numeric:tabular-nums}
+.env-house.on{background:color-mix(in srgb, var(--acc) 14%, transparent);border-color:color-mix(in srgb, var(--acc) 45%, transparent);color:var(--acc)}
+.env-house .dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.env-house.on .dot{background:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb, var(--acc) 20%, transparent)}
+.env-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:13px}
+.env-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.env-tile{position:relative;padding:12px 13px;border-radius:13px;background:var(--bg2);
+  border:1px solid var(--line);overflow:hidden}
+.env-tile .tl{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--mut)}
+.env-tile .tv{font-size:clamp(19px,2vw,23px);font-weight:900;color:var(--txt);margin-top:5px;
+  font-variant-numeric:tabular-nums;line-height:1.1}
+.env-tile .tv small{font-size:12px;font-weight:700;color:var(--dim)}
+.env-tile .tb{margin-top:8px;height:4px;border-radius:2px;background:color-mix(in srgb, var(--txt) 8%, transparent);overflow:hidden}
+.env-tile .tb i{display:block;height:100%;border-radius:2px;background:var(--acc);transition:width .6s ease}
+.env-tile.warn .tb i{background:var(--warn)} .env-tile.warn .tv{color:var(--warn)}
+.env-tile.bad .tb i{background:var(--bad)} .env-tile.bad .tv{color:var(--bad)}
+.env-tile .tic{margin-inline-start:auto;font-size:14px;color:var(--dim)}
+.env-health{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.env-hcard{padding:12px 13px;border-radius:13px;background:var(--bg2);border:1px solid var(--line)}
+.env-hcard .hh{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--mut)}
+.env-hcard .hv{font-size:clamp(18px,1.9vw,22px);font-weight:900;margin-top:5px;font-variant-numeric:tabular-nums}
+.env-hcard .hs{font-size:10.5px;margin-top:4px;font-weight:700}
+.env-hcard.ok .hs{color:var(--acc)} .env-hcard.wn .hs{color:var(--warn)} .env-hcard.bad .hs{color:var(--bad)}
+@media(max-width:620px){.env-grid{grid-template-columns:1fr}.env-tiles{grid-template-columns:repeat(2,1fr)}.env-health{grid-template-columns:repeat(2,1fr)}}
+
 /* view header */
 .view-head{margin-bottom:15px}
 .view-head .eyebrow{font-size:10.5px;letter-spacing:.14em;color:var(--dim);
@@ -1311,7 +1342,7 @@ html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
   padding:8px 10px;border-radius:8px;border:none;background:transparent;color:var(--txt);cursor:pointer;font-family:inherit;font-size:12.5px}
 .auth-dropdown-item:hover{background:var(--bg2)}
 .auth-dropdown-item.danger{color:var(--bad)}
-/* merged hamburger entries (v1.8.48): divider + language/theme segments */
+/* merged hamburger entries (v1.8.49): divider + language/theme segments */
 .auth-sep{border-top:1px solid var(--line);margin:6px 2px}
 .auth-seg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:6px 10px;font-size:12px;color:var(--mut);font-weight:600}
@@ -1378,7 +1409,7 @@ html[data-theme=light] .m-dialog{box-shadow:0 24px 64px rgba(15,23,42,.18),0 1px
 
 
 /* gate: when not authed, hide app and show only brand + login */
-body.needs-auth #v-workspace, body.needs-auth #v-feed, body.needs-auth #v-dash, body.needs-auth #v-exp, body.needs-auth #v-farm, body.needs-auth #v-sim, body.needs-auth #v-scn, body.needs-auth #v-dev, body.needs-auth #v-sci, body.needs-auth #v-met{display:none !important}
+body.needs-auth #v-workspace, body.needs-auth #v-feed, body.needs-auth #v-dash, body.needs-auth #v-exp, body.needs-auth #v-farm, body.needs-auth #v-sim, body.needs-auth #v-scn, body.needs-auth #v-dev, body.needs-auth #v-sci, body.needs-auth #v-met, body.needs-auth #v-env{display:none !important}
 body.needs-auth .tab[data-v]:not([data-v="v-landing"]):not([data-v="v-about"]):not([data-v="v-products"]){opacity:.55}
 body.needs-auth .topbar{backdrop-filter:none}
 body.needs-auth .auth-modal-backdrop{background:rgba(255,255,255,.06);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
@@ -1727,6 +1758,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <nav id="mainnav">
   <button class="tab on" data-v="v-landing" id="tab-landing"><span data-i18n="nav.landing">صفحه اصلی</span></button>
   <button class="tab" id="nav-feed-btn" data-v="v-feed"><span data-i18n="nav.feedGroup">سیستم پایش مصرف خوراک</span></button>
+  <button class="tab" data-v="v-env"><span data-i18n="nav.env">کنترل محیطی</span></button>
   <button class="tab" data-v="v-sci"><span data-i18n="nav.sci">مبانی علمی</span></button>
   <button class="tab" data-v="v-met"><span data-i18n="nav.met">روش‌شناسی</span></button>
   <button class="tab" data-v="v-products"><span data-i18n="nav.products">محصولات و خدمات</span></button>
@@ -2546,6 +2578,82 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 </section>
 
 
+
+<!-- ================= VIEW: ENV CONTROL ================= -->
+<section class="view" id="v-env">
+  <div class="view-head">
+    <span class="eyebrow">ENV · <span data-i18n="env.eyebrow">کنترل محیطی</span></span>
+    <h2 data-i18n="env.h.t">سیستم کنترل محیطی</h2>
+    <p data-i18n="env.p">پایش لحظه‌ای دما، رطوبت، رطوبت بستر، مصرف خوراک و آب، گازها، فن‌ها و روشنایی سالن — با داده مستقیم سنسورها از طریق MQTT و سلامت گله با بینایی ماشین.</p>
+  </div>
+
+  <!-- house selector rail -->
+  <div class="env-houses" id="env-houses" role="tablist" aria-label="Houses"></div>
+
+  <div class="env-grid">
+
+    <!-- climate tiles (live) -->
+    <div class="card env-tiles-card">
+      <h3><span class="ic">🌡️</span><span data-i18n="env.tiles.t">شرایط لحظه‌ای سالن</span>
+        <small class="src" data-i18n="env.tiles.s">به‌روزرسانی زنده · MQTT</small></h3>
+      <div class="env-tiles" id="env-tiles"></div>
+    </div>
+
+    <!-- house temperature chart -->
+    <div class="card">
+      <h3><span class="ic">📈</span><span data-i18n="env.chart.t">دمای سالن‌ها — لحظه‌ای</span></h3>
+      <div class="chart-box tall"><canvas id="env-chart"></canvas></div>
+      <div class="controls" style="margin-top:8px">
+        <span class="dm" id="env-chart-note"></span>
+      </div>
+    </div>
+
+    <!-- herd health (machine vision) -->
+    <div class="card">
+      <h3><span class="ic">👁️</span><span data-i18n="env.health.t">سلامت گله — بینایی ماشین</span>
+        <small class="src" data-i18n="env.health.s">دوربین‌های سالن · تحلیل رفتار</small></h3>
+      <div class="env-health" id="env-health"></div>
+    </div>
+
+    <!-- hardware status -->
+    <div class="card">
+      <h3><span class="ic">🧩</span><span data-i18n="env.hw.t">سلامت سخت‌افزار و سنسورها</span>
+        <small class="src" data-i18n="env.hw.s">آخرین پیام هر دستگاه</small></h3>
+      <div class="tbl-scroll" style="max-height:290px">
+        <table><thead><tr>
+          <th data-i18n="env.hw.device">دستگاه</th>
+          <th data-i18n="env.hw.metric">سنجه</th>
+          <th class="num" data-i18n="env.hw.rssi">قدرت سیگنال</th>
+          <th data-i18n="env.hw.last">آخرین پیام</th>
+          <th data-i18n="env.hw.state">وضعیت</th>
+        </tr></thead><tbody id="tb-env-hw"></tbody></table>
+      </div>
+    </div>
+
+    <!-- export -->
+    <div class="card env-export-card">
+      <h3><span class="ic">📤</span><span data-i18n="env.export.t">گزارش اکسل</span>
+        <small class="src" data-i18n="env.export.s">ساعتی · روزانه · ماهانه · بازه دلخواه</small></h3>
+      <div class="controls">
+        <div class="ctrl">
+          <label data-i18n="env.export.from">از تاریخ</label>
+          <input type="date" id="env-exp-from">
+        </div>
+        <div class="ctrl">
+          <label data-i18n="env.export.to">تا تاریخ</label>
+          <input type="date" id="env-exp-to">
+        </div>
+        <button class="btn" id="btn-env-exp-hour">⏱ <span data-i18n="env.export.hour">ساعتی</span></button>
+        <button class="btn" id="btn-env-exp-day">📅 <span data-i18n="env.export.day">روزانه</span></button>
+        <button class="btn" id="btn-env-exp-month">🗓 <span data-i18n="env.export.month">ماهانه</span></button>
+        <button class="btn primary" id="btn-env-exp-range">🧾 <span data-i18n="env.export.range">بازه دلخواه</span></button>
+        <span class="dm" id="env-exp-lbl"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
 <!-- ================= VIEW: ABOUT ================= -->
 <section class="view" id="v-products" aria-label="Products and Services">
   <div class="prod-hero">
@@ -2649,23 +2757,24 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.8.48" defer></script>
-<script src="engine.js?v=1.8.48" defer></script>
-<script src="xlsx.js?v=1.8.48" defer></script>
-<script src="stats.js?v=1.8.48" defer></script>
-<script src="version.js?v=1.8.48" defer></script>
-  <script src="locales/fa.js?v=1.8.48" defer></script>
-<script src="locales/en.js?v=1.8.48" defer></script>
-<script src="i18n.js?v=1.8.48" defer></script>
-<script src="utils/formatters.js?v=1.8.48" defer></script>
-<script src="shamsi.js?v=1.8.48" defer></script>
-<script src="auth.js?v=1.8.48" defer></script>
-<script src="device-panel.js?v=1.8.48" defer></script>
-<script src="dialog.js?v=1.8.48" defer></script>
-<script src="router.js?v=1.8.48" defer></script>
-<script src="components/chart.js?v=1.8.48" defer></script>
-<script src="services/export.js?v=1.8.48" defer></script>
-<script src="app.js?v=1.8.48" defer></script>
+<script src="strains.js?v=1.8.49" defer></script>
+<script src="engine.js?v=1.8.49" defer></script>
+<script src="xlsx.js?v=1.8.49" defer></script>
+<script src="stats.js?v=1.8.49" defer></script>
+<script src="version.js?v=1.8.49" defer></script>
+  <script src="locales/fa.js?v=1.8.49" defer></script>
+<script src="locales/en.js?v=1.8.49" defer></script>
+<script src="i18n.js?v=1.8.49" defer></script>
+<script src="utils/formatters.js?v=1.8.49" defer></script>
+<script src="shamsi.js?v=1.8.49" defer></script>
+<script src="auth.js?v=1.8.49" defer></script>
+<script src="device-panel.js?v=1.8.49" defer></script>
+<script src="dialog.js?v=1.8.49" defer></script>
+<script src="router.js?v=1.8.49" defer></script>
+<script src="components/chart.js?v=1.8.49" defer></script>
+<script src="env-control.js?v=1.8.49" defer></script>
+<script src="services/export.js?v=1.8.49" defer></script>
+<script src="app.js?v=1.8.49" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">

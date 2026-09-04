@@ -31,10 +31,54 @@ def _on_connect(client, userdata, flags, rc, props=None):
     client.subscribe(f"{MQTT_TOPIC_PREFIX}/#")
 
 
+def _ingest_env(payload: dict, house_hint=None):
+    """Fast path for climate telemetry (topic .../env/<house>).
+
+    One message = one narrow insert into env_samples; no per-row session
+    churn. Values are optional — the hardware may send partial snapshots.
+    """
+    from models import EnvSample, utcnow
+    try:
+        house = int(payload.get("house") or house_hint or 1)
+    except (TypeError, ValueError):
+        return
+    row = EnvSample(
+        house_id=house,
+        ts=utcnow(),
+        temp_c=_f(payload.get("temp")),
+        rh=_f(payload.get("rh")),
+        bed_rh=_f(payload.get("bed_rh")),
+        feed_kg=_f(payload.get("feed_kg")),
+        water_l=_f(payload.get("water_l")),
+        nh3_ppm=_f(payload.get("nh3")),
+        o2_pct=_f(payload.get("o2")),
+        fan_pct=_f(payload.get("fan")),
+        light_lux=_f(payload.get("light")),
+        rssi=_f(payload.get("rssi")),
+        health_json=json.dumps(payload["health"]) if isinstance(payload.get("health"), dict) else None,
+    )
+    with SessionLocal() as s:
+        s.add(row)
+        s.commit()
+
+
+def _f(v):
+    try:
+        return float(v) if v is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+
 def _on_message(client, userdata, msg):
     try:
         payload = json.loads(msg.payload.decode("utf-8"))
     except (ValueError, UnicodeDecodeError):
+        return
+    # climate topic: broilerlab/env/<house> → fast single-insert path
+    parts = msg.topic.rstrip("/").split("/")
+    if len(parts) >= 2 and parts[-2] == "env":
+        _ingest_env(payload, parts[-1])
         return
     cycle_id = _resolve_cycle_id(payload)
     if cycle_id is None:
