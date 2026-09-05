@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.52"></script>
-<script src="services/api.js?v=1.8.52"></script>
+<script src="config.js?v=1.8.54"></script>
+<script src="services/api.js?v=1.8.54"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -198,6 +198,12 @@ html[data-theme=light] .strain-select__list{background:#fff;border-color:#e2e8f0
 html[data-theme=light] .strain-select__option:hover,
 html[data-theme=light] .strain-select__option:focus{background:#f1f5f9;color:#19c39a}
 html[data-theme=light] .strain-select__option[aria-selected="true"]{background:rgba(25,195,154,.1);color:#19c39a}
+/* dd-select: native <select> upgraded to strain-select look */
+.dd-hidden{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;clip-path:inset(50%)}
+.dd-select{min-width:160px;max-width:220px;width:100%;font-size:12px}
+.dd-select .dd-current{height:36px;padding:0 14px 0 12px}
+.dd-select .dd-list{max-height:280px;min-width:100%;width:max-content;min-width:max-content}
+@media(max-width:560px){.dd-select{max-width:none}.dd-select .dd-list{width:100%}}
 
 /* mobile select adjustments */
 @media(max-width:992px){
@@ -402,7 +408,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 .hctl .vbadge{align-self:center;display:inline-flex;align-items:center}
 .hpills{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.52).
+/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.54).
    .hctl (desktop inline controls) is display:none on mobile; every drawer
    entry lives in the user menu (dropdown + bottom sheet). ---------- */
 @media(max-width:992px){
@@ -1417,7 +1423,7 @@ html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
   padding:8px 10px;border-radius:8px;border:none;background:transparent;color:var(--txt);cursor:pointer;font-family:inherit;font-size:12.5px}
 .auth-dropdown-item:hover{background:var(--bg2)}
 .auth-dropdown-item.danger{color:var(--bad)}
-/* merged hamburger entries (v1.8.52): divider + language/theme segments */
+/* merged hamburger entries (v1.8.54): divider + language/theme segments */
 .auth-sep{border-top:1px solid var(--line);margin:6px 2px}
 .auth-seg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:6px 10px;font-size:12px;color:var(--mut);font-weight:600}
@@ -1813,7 +1819,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
           </div>
           <div class="settings-row">
             <span class="settings-label" data-i18n="hdr.tz">منطقه زمانی</span>
-            <select id="tz-select" class="hsel" style="min-width:150px;height:34px" aria-label="Timezone">
+            <select id="tz-select" aria-label="Timezone">
               <option value="auto" data-i18n="tz.auto">خودکار (سیستم)</option>
               <option value="Asia/Tehran">تهران (UTC+3:30)</option>
               <option value="UTC">UTC</option>
@@ -2874,24 +2880,25 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.8.52" defer></script>
-<script src="engine.js?v=1.8.52" defer></script>
-<script src="xlsx.js?v=1.8.52" defer></script>
-<script src="stats.js?v=1.8.52" defer></script>
-<script src="version.js?v=1.8.52" defer></script>
-  <script src="locales/fa.js?v=1.8.52" defer></script>
-<script src="locales/en.js?v=1.8.52" defer></script>
-<script src="i18n.js?v=1.8.52" defer></script>
-<script src="utils/formatters.js?v=1.8.52" defer></script>
-<script src="shamsi.js?v=1.8.52" defer></script>
-<script src="auth.js?v=1.8.52" defer></script>
-<script src="device-panel.js?v=1.8.52" defer></script>
-<script src="dialog.js?v=1.8.52" defer></script>
-<script src="router.js?v=1.8.52" defer></script>
-<script src="components/chart.js?v=1.8.52" defer></script>
-<script src="env-control.js?v=1.8.52" defer></script>
-<script src="services/export.js?v=1.8.52" defer></script>
-<script src="app.js?v=1.8.52" defer></script>
+<script src="strains.js?v=1.8.54" defer></script>
+<script src="engine.js?v=1.8.54" defer></script>
+<script src="xlsx.js?v=1.8.54" defer></script>
+<script src="stats.js?v=1.8.54" defer></script>
+<script src="version.js?v=1.8.54" defer></script>
+  <script src="locales/fa.js?v=1.8.54" defer></script>
+<script src="locales/en.js?v=1.8.54" defer></script>
+<script src="i18n.js?v=1.8.54" defer></script>
+<script src="utils/formatters.js?v=1.8.54" defer></script>
+<script src="shamsi.js?v=1.8.54" defer></script>
+<script src="auth.js?v=1.8.54" defer></script>
+<script src="device-panel.js?v=1.8.54" defer></script>
+<script src="dialog.js?v=1.8.54" defer></script>
+<script src="router.js?v=1.8.54" defer></script>
+<script src="components/chart.js?v=1.8.54" defer></script>
+<script src="dd-select.js?v=1.8.54" defer></script>
+<script src="env-control.js?v=1.8.54" defer></script>
+<script src="services/export.js?v=1.8.54" defer></script>
+<script src="app.js?v=1.8.54" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">

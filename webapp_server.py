@@ -1,47 +1,3047 @@
-import http.server, gzip, os, mimetypes
-from urllib.parse import unquote
-WEBAPP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "webapp")
-class GzipHandler(http.server.SimpleHTTPRequestHandler):
-    def __init__(self,*a,**kw):
-        super().__init__(*a, directory=WEBAPP_DIR, **kw)
-    def end_headers(self):
-        path = self.path.split("?")[0]
-        if path.endswith((".js",".css",".html")):
-            self.send_header("Cache-Control", "public, max-age=86400")
-            if path=="/" or path.endswith("index.html"):
-                self.send_header("Cache-Control", "no-cache")
-        elif path.endswith((".woff2",".ttf",".png",".jpg",".webp")):
-            self.send_header("Cache-Control", "public, max-age=604800, immutable")
-        if path.endswith((".js",".css",".html",".json")):
-            self.send_header("Vary", "Accept-Encoding")
-        super().end_headers()
-    def do_GET(self):
-        accept = self.headers.get("Accept-Encoding","")
-        wants_gzip = "gzip" in accept
-        clean = unquote(self.path.split("?")[0])
-        fpath = self.translate_path(clean)
-        # SPA fallback: clean "/" and unknown extension-less paths serve the app shell
-        if os.path.isdir(fpath):
-            fpath = os.path.join(fpath, "index.html")
-        elif not os.path.isfile(fpath) and "." not in os.path.basename(clean):
-            fpath = os.path.join(WEBAPP_DIR, "index.html")
-        if os.path.isfile(fpath) and fpath.endswith((".js",".css",".html",".json")) and wants_gzip and os.path.getsize(fpath)>400:
-            try:
-                with open(fpath,"rb") as f: data=f.read()
-                gz=gzip.compress(data, compresslevel=6)
-                self.send_response(200)
-                self.send_header("Content-Encoding","gzip")
-                self.send_header("Content-Length", str(len(gz)))
-                ctype,_=mimetypes.guess_type(fpath)
-                self.send_header("Content-Type", ctype or "application/octet-stream")
-                self.end_headers()
-                self.wfile.write(gz)
-                return
-            except: pass
-        return super().do_GET()
-if __name__=="__main__":
-    import socketserver
-    socketserver.TCPServer.allow_reuse_address=True
-    with socketserver.TCPServer(("0.0.0.0",8080), GzipHandler) as httpd:
-        print("Serving", WEBAPP_DIR, "on 8080 with gzip+cache")
-        httpd.serve_forever()
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<script src="config.local.js"></script>
+<script src="config.js?v=1.8.53"></script>
+<script src="services/api.js?v=1.8.53"></script>
+<script id="early-auth-gate">(function(){try{
+  var tok=localStorage.getItem("broiler_token");
+  var valid=false;
+  if(tok){try{var b64=tok.split(".")[1].replace(/-/g,"+").replace(/_/g,"/");while(b64.length%4)b64+="=";var pl=JSON.parse(atob(b64));valid=pl.exp? (pl.exp*1000>Date.now()+5000):true;}catch(e){valid=false;}}
+  window.__EARLY_AUTH_VALID=valid;
+  if(!valid){
+    // unauthenticated: hide page until auth.js shows login gate (prevents dashboard flash)
+    document.documentElement.style.visibility="hidden";
+  }
+  // when authed, leave visible so dashboard shows instantly with no flash
+}catch(e){}} )();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="app.title">آرین — سامانه هوشمند پرورش و اصلاح نژاد</title>
+<meta name="author" content="Arsalan Rezazadeh">
+<meta name="description" content="Arian — intelligent poultry breeding &amp; rearing platform. Ross 308 / Cobb 500 / Arbor Acres Plus / Hubbard EP · RFID + dual load-cell · biostatistics lab">
+<link rel="icon" type="image/png" sizes="32x32" href="logo_32.png">
+<link rel="icon" type="image/png" sizes="180x180" href="logo_180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="logo_192.png">
+<link rel="apple-touch-icon" href="logo_180.png">
+<link rel="icon" type="image/png" sizes="512x512" href="logo_512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fa/all.min.css">
+<script>try{var _t=localStorage.getItem("rossim_theme");
+if(_t==="dark"){document.documentElement.setAttribute("data-theme","dark")}
+else if(_t==="light"){document.documentElement.setAttribute("data-theme","light")}
+else{document.documentElement.setAttribute("data-theme","light")}}catch(e){
+document.documentElement.setAttribute("data-theme","light")}</script>
+<style>
+/* ================= design tokens ================= */
+:root{
+  --bg:#0b0f17;--bg2:#0e141f;--card:#111826;--card2:#151d2c;--line:#1f2a3d;
+  --txt:#e8edf5;--mut:#8a95ab;--dim:#58647e;
+  --acc:#1fd9a8;--acc2:#3d7bfd;--warn:#e99b26;--bad:#e5484d;--purple:#8b5cf6;
+  --r:12px;
+  --sh-sm:0 1px 2px rgba(0,0,0,.28),0 2px 8px rgba(0,0,0,.16);
+  --sh-md:0 6px 24px rgba(0,0,0,.35);
+  --sh-lg:0 14px 40px rgba(0,0,0,.45),0 4px 12px rgba(0,0,0,.28);
+  --sh:var(--sh-md);
+  --chart-grid:#232d44;--chart-label:#7d889f;
+  --feed-bg:#070b11;--tip-bg:rgba(13,18,29,.96);--tip-bd:#2a3550;
+  --font:"Vazirmatn","IBM Plex Sans",system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:var(--font);
+  min-height:100vh;font-size:clamp(13px,.28vw + 12.4px,14.5px);line-height:1.65;
+  font-feature-settings:"tnum" 1,"ss01" 1}
+.wrap{max-width:1280px;margin:0 auto;padding:0 24px 64px}
+
+/* ================= topbar v2 — modern, 100% responsive ================= */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(11,15,23,.82);
+  backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);
+  border-bottom:1px solid var(--line);
+  box-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 10px 30px rgba(0,0,0,.18)}
+.topbar-in{max-width:1320px;margin:0 auto;padding:0 22px;height:76px;display:flex;
+  align-items:center;gap:14px}
+/* topbar centering polish (v1.8.0): taller bar, everything vertically centered */
+.topbar-in{align-items:center;justify-content:flex-start}
+.topbar-in>*{flex:none}
+.topbar-in .hspace{flex:1 1 auto}
+.topbar-in .brand{align-self:center}
+.topbar-in .hctl,.topbar-in .auth-area,.topbar-in #auth-area{display:flex;align-items:center;justify-content:center}
+.topbar-in .hgroup,.topbar-in .topclock{display:flex;align-items:center}
+nav{align-items:center}
+nav .tab{display:inline-flex;align-items:center;justify-content:center}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;min-width:0}
+.brand .mark{width:52px;height:52px;border-radius:14px;overflow:hidden;flex:none;
+  display:flex;align-items:center;justify-content:center;background:none;border:none;box-shadow:none}
+.brand .mark img{width:100%;height:100%;object-fit:contain;display:block}
+.brand b{font-size:clamp(15px,1.3vw,18px);font-weight:800;letter-spacing:.2px;display:block;line-height:1.25}
+/* guaranteed visible gap between "سامانه هوشمند" and "آرین" (a bare text-node
+   space renders razor-thin in Vazirmatn and vanishes under some minifiers) */
+.brand b > span + span{margin-inline-start:.32em}
+.brand .tagline{display:block;font-size:clamp(10.5px,.85vw,12px);color:var(--mut);line-height:1.35;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:56vw}
+.brand .uni{display:block;font-size:10px;color:var(--dim);margin-top:2px}
+.hspace{flex:1}
+.topclock{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+  font-variant-numeric:tabular-nums;direction:ltr;
+  padding:9px 15px;border-radius:99px;
+  background:rgba(255,255,255,.05);border:1px solid var(--line);
+  box-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 2px 8px rgba(0,0,0,.08);
+  color:var(--txt);font-size:clamp(11.5px,.6vw,12.5px);line-height:1;user-select:none;
+  transition:border-color .15s, background .15s}
+.topclock::before{content:"";width:7px;height:7px;border-radius:50%;flex:none;
+  background:var(--acc);box-shadow:0 0 0 0 rgba(25,195,154,.6);
+  animation:tc-pulse 2.2s ease-out infinite}
+@keyframes tc-pulse{0%{box-shadow:0 0 0 0 rgba(25,195,154,.55)}
+  70%{box-shadow:0 0 0 7px rgba(25,195,154,0)}100%{box-shadow:0 0 0 0 rgba(25,195,154,0)}}
+.topclock:hover{border-color:rgba(25,195,154,.35);background:rgba(255,255,255,.08);
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 4px 14px rgba(0,0,0,.14)}
+.topclock .tc-date{font-weight:600}
+.topclock .tc-sep{color:var(--dim);margin:0 1px}
+.topclock .tc-time{font-weight:700;letter-spacing:.5px}
+.hctl{display:flex;align-items:center;gap:14px}
+.hgroup{display:flex;flex-direction:column;gap:4px;min-width:0;justify-content:center}
+.hlabel{font-size:10.5px;color:var(--dim);font-weight:700;line-height:1;letter-spacing:.03em}
+
+/* ===== Modern Select (hsel) ===== */
+.hsel{
+  appearance:none;
+  background:var(--bg2);
+  border:1px solid var(--line);
+  color:var(--txt);
+  padding:0 44px 0 12px;
+  border-radius:9px;
+  font-family:inherit;
+  font-size:12px;
+  line-height:32px;
+  height:32px;
+  min-width:150px;
+  width:auto!important;
+  cursor:pointer;
+  transition:border-color .15s, box-shadow .15s, background .15s;
+  background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a95ab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat:no-repeat;
+  background-position:right 10px center;
+  background-size:16px 16px;
+}
+.hsel:hover{border-color:#33415e;background:var(--card)}
+.hsel:focus{outline:none;border-color:rgba(25,195,154,.55);box-shadow:0 0 0 3px rgba(25,195,154,.08)}
+.hsel:focus-visible{box-shadow:0 0 0 3px rgba(25,195,154,.15)}
+.hsel option{background:var(--card);color:var(--txt);padding:10px 12px}
+.hsel option:checked{background:rgba(25,195,154,.15);font-weight:600}
+
+/* light theme adjustments */
+html[data-theme=light] .hsel{
+  background:#f8fafc;
+  border-color:#e2e8f0;
+  background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+html[data-theme=light] .hsel:hover{border-color:#cbd5e1;background:#fff}
+html[data-theme=light] .hsel option{background:#fff;color:#0f172a}
+html[data-theme=light] .hsel option:checked{background:rgba(25,195,154,.12)}
+
+/* ===== Custom Strain Select (radio-based dropdown) ===== */
+.strain-select{
+  position:relative;
+  min-width:160px;
+  max-width:220px;
+  font-family:inherit;
+  font-size:12px;
+}
+.strain-select__current{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  height:36px;padding:0 14px 0 12px;
+  background:var(--bg2);border:1px solid var(--line);border-radius:10px;
+  color:var(--txt);cursor:pointer;
+  transition:border-color .15s,box-shadow .15s,background .15s;
+}
+.strain-select__current:hover{border-color:#33415e;background:var(--card)}
+.strain-select:focus-within .strain-select__current,
+.strain-select__current:focus{
+  outline:none;border-color:rgba(25,195,154,.55);
+  box-shadow:0 0 0 3px rgba(25,195,154,.12)
+}
+.strain-select__value{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.strain-select__icon{
+  flex-shrink:0;width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+  color:var(--mut);transition:transform .2s ease;
+  pointer-events:none
+}
+.strain-select[aria-expanded="true"] .strain-select__icon{transform:rotate(180deg)}
+.strain-select__list{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:200;
+  margin:0;padding:6px;list-style:none;
+  background:rgba(255,255,255,.08);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,.14);border-radius:10px;
+  box-shadow:var(--sh-lg);max-height:260px;overflow-y:auto;
+  animation:strainDropIn .18s ease-out;
+}
+@keyframes strainDropIn{
+  from{opacity:0;transform:translateY(-6px)}
+  to{opacity:1;transform:none}
+}
+.strain-select__option{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-radius:8px;cursor:pointer;color:var(--txt);
+  transition:background .12s,color .12s
+}
+.strain-select__option:hover,
+.strain-select__option:focus{background:var(--bg2);color:var(--acc);outline:none}
+.strain-select__option[aria-selected="true"]{background:rgba(25,195,154,.12);color:var(--acc);font-weight:600}
+.strain-select__radio{display:none}
+html[data-theme=light] .strain-select__current{background:#f8fafc;border-color:#e2e8f0}
+html[data-theme=light] .strain-select__current:hover{background:#fff;border-color:#cbd5e1}
+html[data-theme=light] .strain-select:focus-within .strain-select__current,
+html[data-theme=light] .strain-select__current:focus{border-color:rgba(25,195,154,.6);box-shadow:0 0 0 3px rgba(25,195,154,.1)}
+html[data-theme=light] .strain-select__list{background:#fff;border-color:#e2e8f0;box-shadow:0 10px 30px rgba(15,23,42,.12)}
+html[data-theme=light] .strain-select__option:hover,
+html[data-theme=light] .strain-select__option:focus{background:#f1f5f9;color:#19c39a}
+html[data-theme=light] .strain-select__option[aria-selected="true"]{background:rgba(25,195,154,.1);color:#19c39a}
+/* dd-select: native <select> upgraded to strain-select look */
+.dd-hidden{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px}
+.dd-select{min-width:160px;max-width:220px;width:100%;font-size:12px}
+.dd-select .dd-current{height:36px;padding:0 14px 0 12px}
+.dd-select .dd-list{max-height:280px;min-width:100%;width:max-content;min-width:max-content}
+@media(max-width:560px){.dd-select{max-width:none}.dd-select .dd-list{width:100%}}
+
+/* mobile select adjustments */
+@media(max-width:992px){
+  .strain-select{min-width:0;flex:1 1 auto;max-width:none}
+  .strain-select__current{height:40px}
+  .strain-select__list{max-height:220px}
+}
+
+/* ============ Devices & Data panel (modern redesign) ============ */
+.dev-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));
+  gap:14px;
+  margin-top:14px;
+}
+.dev-card{display:flex;flex-direction:column}
+.dev-card__title{
+  font-size:11px;font-weight:750;color:var(--mut);margin:0 0 14px;
+  letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:8px
+}
+html[dir=ltr] .dev-card__title{letter-spacing:.08em}
+.dev-card__title .ic{font-size:14px;filter:saturate(.85)}
+
+/* cycle creation form */
+.cy-form{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px
+}
+.field{
+  position:relative;display:flex;flex-direction:column;
+  min-width:0;flex:1 1 130px
+}
+.field--grow{flex:1 1 180px}
+.field--select{flex:0 0 auto}
+.field__input{
+  width:100%;height:42px;padding:14px 13px 4px;
+  background:var(--card2);border:1px solid var(--line);border-radius:10px;
+  color:var(--fg);font-family:inherit;font-size:12.5px;
+  transition:border-color .15s,box-shadow .15s,background .15s;
+  box-sizing:border-box
+}
+.field__input:focus{
+  outline:none;border-color:rgba(25,195,154,.6);
+  box-shadow:0 0 0 3px rgba(25,195,154,.1);background:var(--card)
+}
+.field__label{
+  position:absolute;top:13px;right:13px;left:13px;
+  font-size:12.5px;color:var(--mut);pointer-events:none;
+  transform-origin:right center;
+  transition:transform .15s ease,color .15s ease;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis
+}
+html[dir=ltr] .field__label{transform-origin:left center}
+.field__input:focus + .field__label,
+.field__input:not(:placeholder-shown) + .field__label{
+  transform:translateY(-10px) scale(.78);color:var(--acc)
+}
+.field__bar{
+  position:absolute;bottom:0;left:50%;width:0;height:2px;
+  background:var(--acc);border-radius:2px;transform:translateX(-50%);
+  transition:width .2s ease
+}
+.field__input:focus ~ .field__bar{width:100%}
+/* keep select component aligned with fields */
+.field--select .strain-select{width:100%}
+.field--select .strain-select__current{height:42px}
+
+.cy-form__submit{
+  flex:0 0 auto;height:42px;padding:0 20px;white-space:nowrap;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px
+}
+@media(max-width:560px){
+  .field{flex:1 1 100%}
+  .cy-form__submit{width:100%}
+  .field--select{flex:1 1 100%}
+}
+
+/* cycle list */
+.cy-list{
+  max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:8px;
+  margin-top:4px
+}
+.cy-list:empty::before{
+  content:"دوره‌ای ثبت نشده است.";
+  display:block;padding:18px;text-align:center;color:var(--dim);
+  font-size:11.5px;border:1px dashed var(--line);border-radius:10px
+}
+.cy-item{
+  display:flex;align-items:center;gap:10px;padding:11px 13px;
+  border:1px solid var(--line);border-radius:11px;background:var(--card2);
+  transition:border-color .15s,box-shadow .15s,transform .12s
+}
+.cy-item:hover{border-color:var(--acc);transform:translateY(-1px)}
+.cy-item.active{
+  border-color:var(--acc);
+  box-shadow:0 0 0 2px var(--acc-soft,#e8f0ff) inset
+}
+.cy-code{
+  font-weight:800;font-size:13px;min-width:40px;color:var(--acc);
+  direction:ltr;font-variant-numeric:tabular-nums
+}
+.cy-label{
+  flex:1;font-size:12px;color:var(--fg);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap
+}
+.cy-meta{font-size:10.5px;color:var(--dim);white-space:nowrap}
+.cy-del{
+  margin-left:auto;border:none;background:transparent;color:var(--bad,#e5484d);
+  cursor:pointer;font-size:14px;padding:6px 8px;border-radius:8px;transition:.15s;
+  flex-shrink:0
+}
+.cy-del:hover{background:var(--bad-soft,#ffecec)}
+html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
+
+/* live feed */
+.live-feed{
+  flex:1;min-height:180px;max-height:300px;overflow:auto;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;line-height:1.6;
+  background:var(--code,#0e1626);color:#cfe3ff;border-radius:11px;
+  padding:11px 13px;direction:ltr;text-align:left;
+  border:1px solid rgba(25,195,154,.15)
+}
+.live-feed .lf-row{
+  white-space:nowrap;opacity:0;animation:lfIn .25s forwards;
+  padding:1px 0
+}
+.live-feed .lf-row .t{color:#7fd1ff}
+.live-feed .lf-row .b{color:#9effa0}
+.live-feed .lf-row .w{color:#ffd479}
+.live-feed .lf-row .f{color:#ff9bb0}
+@keyframes lfIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* stats */
+.dev-stats .ministats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px
+}
+.dev-stats .mstat{
+  background:var(--card2);border:1px solid var(--line);border-radius:11px;
+  padding:13px 14px;text-align:center;transition:border-color .15s,transform .12s
+}
+.dev-stats .mstat:hover{border-color:rgba(25,195,154,.4);transform:translateY(-1px)}
+.dev-stats .mstat .mv{
+  display:block;font-size:clamp(19px,2vw,23px);font-weight:800;
+  font-variant-numeric:tabular-nums;color:var(--fg);direction:ltr
+}
+.dev-stats .mstat .ml{display:block;font-size:10.5px;color:var(--mut);margin-top:4px}
+
+/* ============ Realtime registrations (bird entry log) ============ */
+.dev-regs__live{
+  display:inline-flex;align-items:center;gap:5px;margin-inline-start:auto;
+  font-size:10px;font-weight:700;color:var(--acc);letter-spacing:.02em
+}
+.dev-regs__live .fa-circle{font-size:7px;color:#2bbf6a;filter:drop-shadow(0 0 4px #2bbf6a);
+  animation:regPulse 1.6s ease-in-out infinite}
+@keyframes regPulse{0%,100%{opacity:1}50%{opacity:.35}}
+.dev-regs__note{margin-top:12px}
+.reg-table{border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.reg-thead{
+  display:grid;
+  grid-template-columns:1fr 1fr .8fr 1.4fr 1fr .7fr;
+  gap:0;background:var(--bg2);border-bottom:1px solid var(--line)
+}
+.reg-thead .reg-cell{
+  font-size:10px;font-weight:750;color:var(--mut);text-transform:uppercase;
+  letter-spacing:.03em;padding:9px 12px;white-space:nowrap
+}
+.reg-body{max-height:340px;overflow-y:auto}
+.reg-row{
+  display:grid;grid-template-columns:1fr 1fr .8fr 1.4fr 1fr .7fr;
+  align-items:center;border-bottom:1px solid rgba(31,42,61,.45);
+  font-size:12px;color:var(--fg);transition:background .2s,opacity .3s;
+  animation:regIn .25s ease-out
+}
+.reg-row:last-child{border-bottom:none}
+.reg-row:hover{background:rgba(25,195,154,.045)}
+.reg-row.new{animation:regFlash 1.6s ease-out}
+@keyframes regIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+@keyframes regFlash{0%{background:rgba(25,195,154,.22)}100%{background:transparent}}
+.reg-cell{padding:10px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reg-cell--tag{font-weight:800;color:var(--acc);font-variant-numeric:tabular-nums}
+.reg-cell--w{font-variant-numeric:tabular-nums;font-weight:650}
+.reg-cell--w .reg-unit{font-size:10px;color:var(--dim);font-weight:500;margin-inline-start:3px}
+.reg-cell--date{color:var(--mut);font-variant-numeric:tabular-nums}
+.reg-cell--time{color:#7fd1ff;font-variant-numeric:tabular-nums;font-family:ui-monospace,Consolas,monospace}
+.reg-cell--sensor{color:var(--dim);font-variant-numeric:tabular-nums}
+.reg-cell--rssi{color:var(--warn);font-variant-numeric:tabular-nums;direction:ltr}
+.reg-cell--feed{font-variant-numeric:tabular-nums;font-weight:800;color:var(--acc)}
+.reg-cell--feed .reg-unit{font-size:10px;color:var(--dim);font-weight:500;margin-inline-start:3px}
+.reg-cell--elapsed{color:#7fd1ff;font-variant-numeric:tabular-nums;font-family:ui-monospace,Consolas,monospace}
+.reg-cell--elapsed .reg-unit{font-size:10px;color:var(--dim);font-family:inherit;margin-inline-start:3px}
+.reg-cell--dt{color:var(--mut);font-variant-numeric:tabular-nums}
+.reg-empty{
+  padding:22px;text-align:center;color:var(--dim);font-size:11.5px;direction:rtl
+}
+.reg-empty .fa{display:block;font-size:20px;margin-bottom:8px;opacity:.5}
+/* responsive: collapse to horizontal scroll on narrow screens */
+@media(max-width:720px){
+  .reg-thead,.reg-row{grid-template-columns:1fr 1fr 1.2fr 1fr;min-width:430px;font-size:11px}
+  .reg-cell--elapsed,.reg-cell--sensor{display:none}
+}
+.langseg button{height:32px;padding:0 13px;display:inline-flex;align-items:center}
+.hctl .pill{height:26px}
+.hctl .vbadge{align-self:center;display:inline-flex;align-items:center}
+.hpills{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.53).
+   .hctl (desktop inline controls) is display:none on mobile; every drawer
+   entry lives in the user menu (dropdown + bottom sheet). ---------- */
+@media(max-width:992px){
+  /* touch-first scrolling: momentum, no scroll chaining, no tap delay */
+  html{overscroll-behavior-y:contain}
+  body{-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+  button,.tab,[role=button]{touch-action:manipulation}
+  #account-sheet,#auth-dropdown,.settings-dropdown,nav#mainnav,.strain-select__list{touch-action:pan-y}
+  /* RTL pages: clip horizontal overflow so nothing contributes to sideways scroll */
+  html,body{overflow-x:hidden;overflow-x:clip}
+  /* mobile topbar = full-bleed single row: brand + stacked clock + avatar.
+     .topbar sits inside .wrap (which owns 14px side padding at ≤860px), so it
+     pulls itself out with -14px margins and width:auto — measured L=0 R=0. */
+  .topbar{width:auto;margin-left:-14px;margin-right:-14px}
+  .topbar-in{max-width:100%;width:100%;margin:0;padding:0 12px}
+  .topbar-in > .hctl{display:flex;align-items:center;flex:none;min-width:0}
+  .topbar-in > .hctl .hgroup,
+  .topbar-in > .hctl #btn-help,
+  .topbar-in > .hctl #btn-reset,
+  .topbar-in > .hctl .hpills{display:none !important}
+  /* stacked clock: date over time, compact 10.5px (readability floor) */
+  .topbar-in > .hctl .topclock{flex-direction:column;gap:2px;padding:6px 10px;
+    font-size:10.5px;line-height:1.4;text-align:center}
+  .topbar-in > .hctl .topclock::before{display:none} /* live dot off on mobile (user request) */
+  /* borderless: the desktop pill chrome (bg/border/shadow) does not belong on mobile */
+  .topbar-in > .hctl .topclock{background:none;border:none;box-shadow:none;padding:2px 4px}
+  /* thin line between date and time (replaces the old inline separator) */
+  .topbar-in > .hctl .topclock .tc-sep{display:block;width:28px;height:1px;
+    margin:2px auto;border-radius:1px;background:color-mix(in srgb, var(--txt) 25%, transparent);
+    font-size:0;line-height:0;color:transparent}
+  .topbar-in > .hctl .topclock .tc-date,
+  .topbar-in > .hctl .topclock .tc-time{font-size:10.5px;font-weight:700;white-space:nowrap}
+  .topbar-in > #auth-area{display:none}
+  /* mobile: topbar shows ONLY a round avatar icon as the account-menu trigger */
+  .topbar-in > #auth-area{display:block;margin-inline-start:auto}
+  /* round user button (gradient ring, no bg fill) */
+  #auth-area .auth-user,#auth-area .auth-login-btn{width:42px;height:42px;max-width:none;
+    border-radius:999px;padding:0;justify-content:center;cursor:pointer;
+    background:linear-gradient(135deg, color-mix(in srgb, var(--acc) 18%, transparent),
+                                         color-mix(in srgb, var(--acc2) 18%, transparent));
+    border:1.5px solid color-mix(in srgb, var(--acc) 55%, transparent);
+    box-shadow:0 2px 10px color-mix(in srgb, var(--acc) 22%, transparent);
+    transition:filter .2s, box-shadow .2s}
+.auth-login-btn .auth-btn-label{display:inline}
+  #auth-area .auth-user:hover,#auth-area .auth-login-btn:hover{filter:brightness(1.08);
+    box-shadow:0 3px 14px color-mix(in srgb, var(--acc) 35%, transparent)}
+  #auth-area .auth-user .auth-name,#auth-area .auth-user .auth-chevron{display:none}
+  #auth-area .auth-user .auth-avatar{background:linear-gradient(135deg,var(--acc),var(--acc2));
+    color:#fff;font-size:15px;font-weight:900;width:30px;height:30px;border-radius:999px;
+    display:grid;place-items:center}
+  #auth-area .auth-login-btn .auth-btn-label{display:none}
+  #auth-area .auth-login-btn i{font-size:17px;color:var(--acc)}
+  #auth-area .auth-dropdown{display:none}
+  /* status ring: green = logged in, red = logged out; animated wave */
+  #auth-area{position:relative}
+  #auth-area::after{content:"";position:absolute;inset-inline-start:auto;
+    inset-block-start:-3px;inset-inline-end:-3px;width:12px;height:12px;border-radius:999px;
+    background:var(--ring,#ef4444);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring,#ef4444) 25%, transparent);
+    animation:ringPulse 2s ease-in-out infinite;z-index:2}
+  @keyframes ringPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:.75}}
+  #auth-area.is-logged-in::after{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.25)}
+  #auth-area.is-logged-out::after{background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.25)}
+  #auth-area.is-logged-in .auth-user,#auth-area.is-logged-in .auth-login-btn{
+    border-color:#22c55e;
+    box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:waveGreen 2.2s ease-out infinite}
+  #auth-area.is-logged-out .auth-user,#auth-area.is-logged-out .auth-login-btn{
+    border-color:#ef4444;
+    box-shadow:0 0 0 0 rgba(239,68,68,.5);animation:waveRed 2.2s ease-out infinite}
+  @keyframes waveGreen{0%{box-shadow:0 0 0 0 rgba(34,197,94,.45)}70%{box-shadow:0 0 0 12px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+  @keyframes waveRed{0%{box-shadow:0 0 0 0 rgba(239,68,68,.45)}70%{box-shadow:0 0 0 12px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+  /* avatar opens the bottom sheet on mobile (dropdown stays desktop-only) */
+  .topbar-in > #auth-area .auth-user{cursor:pointer}
+
+  /* MobileAccountSheet (tablet & below): avatar opens a bottom sheet sliding
+     from the bottom with the full user menu (account + language + theme +
+     help + reset). Desktop never shows the sheet (see min-width:993px). */
+  #sheet-backdrop{display:none}
+  #sheet-backdrop.open{display:block;position:fixed;inset:0;z-index:224;
+    background:rgba(0,0,0,.45);opacity:0;transition:opacity .28s ease}
+  #sheet-backdrop.open.show{opacity:1}
+  #account-sheet{display:none}
+  #account-sheet.open{display:flex;flex-direction:column;position:fixed;
+    left:0;right:0;bottom:0;z-index:226;max-width:560px;margin-inline:auto;
+    max-height:78vh;max-height:78dvh;background:var(--card);
+    border-radius:30px 30px 0 0;border:none;
+    box-shadow:0 -18px 60px rgba(0,0,0,.35);
+    transform:translateY(105%);transition:transform .3s cubic-bezier(.32,.72,.24,1);
+    overflow-y:auto;overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+  #account-sheet.open.show{transform:none}
+  /* BUGFIX: flex column children shrink by default, so on short screens the
+     content squished instead of overflowing — the sheet never scrolled.
+     Pin children to natural height so overflow-y can actually scroll. */
+  #account-sheet.open > *{flex-shrink:0}
+  #account-sheet .sheet-handle{width:60px;height:6px;border-radius:999px;flex-shrink:0;
+    background:color-mix(in srgb, var(--txt) 18%, transparent);margin:16px auto 2px}
+  #account-sheet .sheet-profile{display:flex;align-items:center;gap:16px;padding:12px 20px 6px}
+  #account-sheet .sheet-avatar{width:84px;height:84px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,var(--acc),var(--acc2));
+    color:#fff;font-size:30px;font-weight:800}
+  #account-sheet .sheet-user{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
+  #account-sheet .sheet-user b{font-size:24px;font-weight:700;color:var(--txt);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #account-sheet .sheet-user span{font-size:15px;color:var(--mut);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #account-sheet .sheet-profile-btn{align-self:flex-start;margin-top:9px;min-height:44px;
+    display:inline-flex;align-items:center;gap:8px;padding:0 18px;border-radius:999px;
+    background:none;border:1.5px solid var(--acc2);color:var(--acc2);
+    font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+  #account-sheet .sheet-profile-btn:active{transform:scale(.97);opacity:.85}
+  #account-sheet .sheet-menu{margin:16px 18px 0;background:var(--card2);
+    border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  #account-sheet .sheet-item{width:100%;min-height:68px;display:flex;align-items:center;
+    gap:14px;padding:12px 20px;background:none;border:none;cursor:pointer;
+    font-family:inherit;font-size:16.5px;font-weight:600;color:var(--txt);text-align:start}
+  #account-sheet .sheet-item + .sheet-item{border-top:1px solid var(--line)}
+  #account-sheet .sheet-item > i:first-child{font-size:24px;color:var(--acc2);flex-shrink:0}
+  #account-sheet .sheet-item .chev{margin-inline-start:auto;font-size:14px;color:var(--mut)}
+  html[dir=ltr] #account-sheet .sheet-item .chev{transform:scaleX(-1)}
+  #account-sheet .sheet-item:active{background:color-mix(in srgb, var(--txt) 6%, transparent)}
+  /* inline language card (replaces the removed drawer language section) */
+  #account-sheet .sheet-segcard{margin:12px 18px 0;display:flex;align-items:center;
+    justify-content:space-between;gap:10px;padding:12px 20px;border-radius:15px;
+    background:var(--card2);border:1px solid var(--line);
+    font-size:14px;font-weight:700;color:var(--mut)}
+  #account-sheet .sheet-seg{display:inline-flex;border:1px solid var(--line);
+    border-radius:11px;overflow:hidden}
+  #account-sheet .sheet-seg button{background:none;border:none;color:var(--mut);
+    padding:8px 16px;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;
+    min-height:40px;display:inline-flex;align-items:center}
+  #account-sheet .sheet-seg button.on{background:var(--acc);color:#fff}
+  #account-sheet .sheet-logout{margin:12px 18px 0;min-height:60px;border-radius:15px;
+    display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;
+    background:color-mix(in srgb, var(--bad) 12%, transparent);
+    border:1px solid color-mix(in srgb, var(--bad) 30%, transparent);
+    color:var(--bad);font-family:inherit;font-size:16px;font-weight:700}
+  #account-sheet .sheet-logout i{font-size:19px}
+  #account-sheet .sheet-logout:active{transform:scale(.98);opacity:.9}
+  #account-sheet .sheet-util{display:flex;align-items:center;justify-content:space-between;
+    gap:10px;margin-top:14px;padding:14px 22px 0;border-top:1px solid var(--line)}
+  #account-sheet .sheet-ver{font-size:12.5px;color:var(--dim)}
+  #account-sheet .sheet-theme{display:flex;align-items:center;gap:10px;
+    font-size:13.5px;font-weight:600;color:var(--mut)}
+  #account-sheet .sheet-switch{width:52px;height:30px;border-radius:999px;border:none;
+    cursor:pointer;position:relative;flex-shrink:0;
+    background:color-mix(in srgb, var(--txt) 16%, transparent);
+    transition:background-color .2s ease}
+  #account-sheet .sheet-switch::after{content:"";position:absolute;top:3px;inset-inline-start:3px;
+    width:24px;height:24px;border-radius:50%;background:#fff;
+    box-shadow:0 1px 4px rgba(0,0,0,.3);transition:transform .2s ease}
+  #account-sheet .sheet-switch[aria-checked=true]{background:var(--acc)}
+  #account-sheet .sheet-switch[aria-checked=true]::after{transform:translateX(-22px)}
+  html[dir=ltr] #account-sheet .sheet-switch[aria-checked=true]::after{transform:translateX(22px)}
+  @media (prefers-reduced-motion:reduce){
+    #sheet-backdrop.open,#account-sheet.open{transition:none}}
+
+  /* compact bar: everything fits, no overflow */
+  .topbar-in{gap:8px}
+  .topbar-in .brand{min-width:0;flex:0 1 auto}
+  .topbar-in .brand>span:last-child{min-width:0}
+  .topbar-in .brand b{font-size:14.5px;white-space:nowrap}
+  #auth-area{margin-inline-start:auto;min-width:0}
+  #auth-area .auth-login-btn{min-width:0;padding:9px 12px;font-size:12px;white-space:nowrap}
+  #auth-area .auth-user{max-width:150px}
+  #auth-area .auth-name{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* mobile nav: full-width evenly-spread tabs, bigger touch targets, snap */
+  nav#mainnav{position:sticky;top:0;height:auto;flex-wrap:wrap;justify-content:center;
+    gap:6px;padding:8px 10px 10px;overflow-x:visible}
+  nav#mainnav .tab{flex:1 1 auto;min-height:44px;padding:8px 12px;justify-content:center;
+    border-radius:12px;border-bottom-width:0;font-size:12.5px}
+  nav#mainnav .tab.on{background:color-mix(in srgb, var(--acc) 16%, transparent);
+    border-bottom:0;box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--acc) 35%, transparent)}
+  /* generic mobile controls (used outside the removed drawer too) */
+  .hsel{width:100%!important;min-width:0;height:38px}
+  .langseg button{flex:1;justify-content:center;height:38px}
+}
+@media(max-width:560px){
+  .hsel{min-width:0;flex:1 1 auto}
+}
+.sel{position:relative}
+select,input[type=number],input[type=text]{background:var(--bg2);border:1px solid var(--line);
+  color:var(--txt);padding:7.5px 11px;border-radius:9px;font-family:inherit;font-size:12.5px;
+  transition:border-color .15s, box-shadow .15s}
+
+/* ---------- settings dropdown (desktop) ---------- */
+.hsettings{position:relative;display:inline-flex;align-items:center}
+.hsettings .icon-btn{border-radius:11px;width:36px;height:36px;font-size:15px}
+.settings-dropdown{
+  position:absolute;top:calc(100% + 8px);inset-inline-end:0;z-index:210;
+  min-width:260px;max-width:320px;
+  background:var(--card);border:1px solid var(--line);
+  border-radius:12px;box-shadow:var(--sh-lg);
+  padding:10px;opacity:0;visibility:hidden;pointer-events:none;
+  transform:translateY(-6px);transition:opacity .18s,transform .18s,visibility .18s}
+.settings-dropdown[hidden]{display:none}
+.settings-dropdown.open{opacity:1;visibility:visible;pointer-events:auto;transform:none}
+.settings-section{padding:4px 0}
+.settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 4px}
+.settings-label{font-size:12px;color:var(--mut);font-weight:600;white-space:nowrap}
+.settings-divider{border-top:1px solid var(--line);margin:6px 0}
+.settings-action{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;
+  background:none;border:none;border-radius:9px;font-family:inherit;font-size:12.5px;
+  color:var(--txt);text-align:start;cursor:pointer;transition:.15s}
+.settings-action:hover{background:var(--bg2)}
+.settings-icon{font-size:15px;flex-shrink:0}
+.settings-text{flex:1;font-weight:500}
+.settings-info{padding-top:6px;border-top:1px solid var(--line);margin-top:4px}
+.settings-info .hpills{flex-direction:column;align-items:stretch;gap:6px}
+.settings-info .pill{justify-content:space-between;display:flex;align-items:center;padding:6px 10px}
+.settings-info .vbadge{align-self:flex-end}
+
+/* mobile: settings gear hidden — its entries live in the user menu */
+@media(max-width:992px){
+  .hsettings{display:none}
+}
+
+/* desktop: show settings button, hide redundant items in hctl */
+@media(min-width:993px){
+  .hctl .hgroup:has(#theme-dark), 
+  .hctl .hgroup:has(#lang-fa),
+  .hctl #btn-help,
+  .hctl #btn-reset,
+  .hctl .hpills{display:none}
+  /* account bottom sheet is mobile-only: hidden on desktop */
+  #sheet-backdrop,#account-sheet{display:none !important}
+}
+select:focus,input:focus{outline:none;border-color:rgba(25,195,154,.55);
+  box-shadow:0 0 0 3px rgba(25,195,154,.08)}
+.langseg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.langseg button{background:none;border:none;color:var(--mut);padding:7px 12px;
+  font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
+.langseg button.on{background:rgba(25,195,154,.14);color:var(--acc)}
+.vbadge{font-size:10px;color:var(--dim);border:1px solid var(--line);
+  padding:4px 9px;border-radius:99px}
+.rb-label{display:none}
+.icon-btn{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+  background:var(--bg2);border:1px solid var(--line);border-radius:9px;cursor:pointer;
+  font-size:14px;color:var(--mut);transition:.15s;padding:0}
+.icon-btn:hover{color:var(--txt);border-color:#33415e;transform:translateY(-1px)}
+.modal-wrap{position:fixed;inset:0;z-index:230;display:grid;place-items:center;
+  background:rgba(4,7,12,.55);backdrop-filter:blur(3px)}
+.modal{width:min(430px,92vw);background:var(--card);border:1px solid var(--line);
+  border-radius:14px;box-shadow:var(--sh-lg);padding:16px 18px}
+.mrow{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.mfoot{display:flex;justify-content:flex-end;gap:10px;margin-top:14px;
+  align-items:center}
+#ex-sheets{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.sheetrow{display:flex;align-items:center;gap:9px;background:var(--bg2);
+  border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:12px;
+  cursor:pointer;transition:.15s}
+.sheetrow:hover{border-color:#33415e}
+.sheetrow input{accent-color:var(--acc);width:15px;height:15px}
+.sheetrow.locked{opacity:.75;cursor:default}
+.sheetrow .cnt{margin-inline-start:auto;color:var(--dim);font-size:10.5px;direction:ltr}
+/* ---------- guided tour — modern glass + progress ---------- */
+#tour-shade{position:fixed;inset:0;z-index:298;display:none;pointer-events:none;background:rgba(4,7,12,.58);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+#tour-shade.on{display:block;pointer-events:auto}
+/* spotlight hole around the tour target: the shade never covers what the
+   tip describes, so ancestors' stacking contexts can't trap the target
+   under the blur (the old z-index + giant-shadow trick did exactly that) */
+#tour-shade.holed{clip-path:polygon(evenodd,0 0,100% 0,100% 100%,0 100%,0 0,var(--thx,0px) var(--thy,0px),calc(var(--thx,0px) + var(--thw,0px)) var(--thy,0px),calc(var(--thx,0px) + var(--thw,0px)) calc(var(--thy,0px) + var(--thh,0px)),var(--thx,0px) calc(var(--thy,0px) + var(--thh,0px)),var(--thx,0px) var(--thy,0px))}
+.tour-spot{border-radius:12px!important;box-shadow:0 0 0 2px #19c39a, 0 0 0 6px rgba(25,195,154,.18), 0 12px 32px rgba(0,0,0,.35)!important;transition:box-shadow .28s ease;animation:tourPulse 1.6s ease-in-out 2}
+@keyframes tourPulse{0%,100%{box-shadow:0 0 0 2px #19c39a, 0 0 0 6px rgba(25,195,154,.18), 0 12px 32px rgba(0,0,0,.35)}50%{box-shadow:0 0 0 3px #19c39a, 0 0 0 12px rgba(25,195,154,.30), 0 12px 32px rgba(0,0,0,.35)}}
+#tour-tip{position:fixed;z-index:302;width:min(420px,92vw);display:none;background:rgba(22,30,46,.96);backdrop-filter:blur(18px) saturate(1.25);-webkit-backdrop-filter:blur(18px) saturate(1.25);border:1px solid rgba(255,255,255,.10);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06) inset;padding:0;overflow:hidden}
+html[data-theme=light] #tour-tip{background:rgba(255,255,255,.97);border-color:rgba(0,0,0,.08)}
+#tour-tip .tt-progress{height:3px;background:rgba(255,255,255,.10);position:relative;overflow:hidden}
+#tour-tip .tt-progress i{position:absolute;inset:0 100% 0 0;background:linear-gradient(90deg,#19c39a,#3b82f6);border-radius:999px;transition:width .35s ease}
+.tt-head{display:flex;align-items:center;gap:10px;padding:14px 16px 8px}
+.tt-head b{font-size:13.5px;line-height:1.3}
+.tt-head .tt-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(25,195,154,.14);border:1px solid rgba(25,195,154,.22);color:#19c39a;flex-shrink:0;font-size:15px}
+#tt-text{font-size:12.5px;color:var(--mut);line-height:1.9;padding:0 16px 12px;max-height:38vh;overflow:auto}
+#tt-text strong{color:var(--txt);font-weight:800}
+.tt-foot{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,255,.07)}
+html[data-theme=light] .tt-foot{background:rgba(0,0,0,.03);border-top-color:rgba(0,0,0,.06)}
+.tt-foot .btn{padding:7px 14px;border-radius:9px;font-size:12px;font-weight:700}
+.tt-foot .btn.ghost{background:transparent;border:1px solid var(--line)}
+.dots{display:flex;gap:5px;margin-inline:auto;align-items:center}
+.dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18);transition:.25s;cursor:pointer}
+html[data-theme=light] .dots i{background:rgba(0,0,0,.14)}
+.dots i.on{background:#19c39a;transform:scale(1.25);box-shadow:0 0 8px rgba(25,195,154,.45)}
+.dots i:hover{transform:scale(1.15)}
+#tt-step{font-size:11px;font-weight:800;letter-spacing:.04em;opacity:.9}
+@media(max-width:560px){#tour-tip{width:94vw}.tt-head{padding:12px 14px 6px}#tt-text{padding:0 14px 10px}}
+/* tour tip enter animation (direction-aware) + small-screen bottom dock */
+#tour-tip.show{animation:ttInBelow .22s ease}
+#tour-tip.tt-above.show{animation-name:ttInAbove}
+@keyframes ttInBelow{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes ttInAbove{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes ttUp{from{opacity:0;transform:translateY(48px)}to{opacity:1;transform:none}}
+@media(max-width:560px){
+  #tour-tip{left:3vw !important;right:3vw;width:auto;top:auto !important;
+    bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  #tour-tip.show{animation:ttUp .3s cubic-bezier(.32,.72,.24,1)}}
+@media (prefers-reduced-motion:reduce){
+  #tour-tip.show,.tour-spot{animation:none !important}}
+
+.colpick-head{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:7px}
+.cp-actions{display:flex;gap:6px}
+.cp-actions .tag{cursor:pointer;border:none}
+.cp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:6px;max-height:170px;overflow:auto;border:1px solid var(--line);
+  border-radius:9px;padding:8px;background:var(--bg2)}
+.cp-grid .sheetrow{padding:5px 8px;font-size:10.5px}
+.cp-grid .cnt{color:var(--dim);font-size:10px}
+
+/* methodology */
+.pipe{display:flex;align-items:stretch;gap:6px;flex-wrap:wrap}
+.pstep{flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--line);
+  border-radius:10px;padding:10px 9px;text-align:center;position:relative}
+.pstep b{display:block;font-size:16px;color:var(--acc);margin-bottom:4px}
+.pstep span{display:block;font-size:11px;font-weight:650;margin-bottom:3px}
+.pstep small{font-size:10.5px;color:var(--dim);line-height:1.5;display:block}
+.pstep.accent{border-color:rgba(25,195,154,.4);background:rgba(25,195,154,.05)}
+html[dir=rtl] .parrow{transition:transform .2s}
+.parrow{display:flex;align-items:center;font-size:17px;color:var(--dim)}
+.eqs{display:flex;flex-direction:column;gap:8px}
+.eq code{display:block;padding:8px 12px;border-radius:8px;font-size:11.5px;
+  line-height:1.7;background:var(--bg2);border:1px solid var(--line);direction:ltr;text-align:left}
+.eq small{display:block;margin-top:3px;color:var(--mut);font-size:10.5px}
+.abstract{font-size:12.5px;color:var(--mut);line-height:2.2}
+
+.icon-btn.armed{background:rgba(229,72,77,.15);border-color:var(--bad);color:var(--bad);
+  animation:pulse 1s infinite}
+
+/* ================= nav ================= */
+/* ================= nav — modern tabs ================= */
+nav{display:flex;gap:4px;margin:0;border-bottom:1px solid var(--line);
+  overflow-x:auto;scrollbar-width:none;padding:0 22px;height:54px;align-items:stretch;
+  justify-content:center;
+  background:rgba(11,15,23,.82);backdrop-filter:blur(18px) saturate(1.4);
+  -webkit-backdrop-filter:blur(18px) saturate(1.4)}
+nav::-webkit-scrollbar{display:none}
+.tab{cursor:pointer;background:none;border:none;color:var(--mut);
+  padding:0 18px;font-family:inherit;font-size:clamp(12.5px,.7vw,13.5px);font-weight:700;
+  display:inline-flex;gap:7px;align-items:center;white-space:nowrap;
+  border-bottom:3px solid transparent;transition:color .18s,border-color .18s;
+  position:relative;border-radius:0}
+.tab .no{font-size:10.5px;color:var(--dim);letter-spacing:.5px}
+.tab:hover{color:var(--txt);background:rgba(255,255,255,.04)}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+/* desktop: center tabs */
+@media(min-width:993px){
+  nav{justify-content:center}
+}
+/* light theme nav */
+html[data-theme=light] nav{background:rgba(255,255,255,.88)}
+html[data-theme=light] .tab:hover{background:rgba(0,0,0,.04)}
+/* ===== nav group (Feed Monitoring) ===== */
+/* ===== Feed overview (v-feed) ===== */
+#v-feed{display:none}
+#v-feed.on{display:block;animation:fade .3s ease}
+.feed-hero{position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--line);background:radial-gradient(700px 400px at 75% -10%, rgba(25,195,154,.14), transparent 60%),radial-gradient(600px 380px at 5% 110%, rgba(59,130,246,.10), transparent 60%),linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)), var(--card);padding:26px;display:grid;grid-template-columns:1.15fr .85fr;gap:22px;align-items:center}
+.feed-hero-bg{position:absolute;inset:0;background:linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px);background-size:28px 28px;mask:radial-gradient(600px 350px at 55% 40%, black 40%, transparent 75%);-webkit-mask:radial-gradient(600px 350px at 55% 40%, black 40%, transparent 75%);pointer-events:none;opacity:.45}
+.feed-hero-inner{position:relative;z-index:1;display:flex;flex-direction:column;gap:14px;min-width:0}
+.feed-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:rgba(25,195,154,.11);border:1px solid rgba(25,195,154,.22);color:var(--acc);font-size:11.5px;font-weight:750;width:fit-content}
+.feed-hero h2{font-size:clamp(22px,3.2vw,30px);font-weight:900;line-height:1.18;letter-spacing:-.02em;margin:0}
+.feed-hero h2 span{color:var(--acc)}
+.feed-hero p{font-size:12.8px;color:var(--mut);line-height:1.85;margin:0}
+.feed-hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.feed-visual{position:relative;z-index:1;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:linear-gradient(135deg, #0f1a2e 0%, #0b1220 100%);min-height:210px;display:grid;place-items:center;padding:16px;box-shadow:0 12px 32px rgba(0,0,0,.22)}
+.feed-vis-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.feed-vis-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;backdrop-filter:blur(8px)}
+.feed-vis-card b{font-size:12px;font-weight:800;color:#fff}
+.feed-vis-card span{font-size:11px;color:rgba(255,255,255,.70);line-height:1.6}
+.feed-vis-card i{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:rgba(25,195,154,.18);color:#5eead4;font-size:15px;margin-bottom:2px}
+.feed-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.feed-kpi{padding:14px 12px;border-radius:14px;background:var(--card);border:1px solid var(--line);text-align:center;box-shadow:var(--sh-sm);transition:border-color .15s, transform .15s}
+.feed-kpi:hover{border-color:rgba(25,195,154,.28);transform:translateY(-1px)}
+.feed-kpi b{display:block;font-size:clamp(18px,2.2vw,22px);font-weight:900;color:var(--acc);line-height:1}
+.feed-kpi span.kpi-l{display:block;font-size:11px;font-weight:750;color:var(--txt);margin-top:6px}
+.feed-kpi span.kpi-s{display:block;font-size:11px;color:var(--mut);margin-top:2px;line-height:1.4}
+.feed-section{margin-top:22px}
+.feed-section h3{font-size:14px;font-weight:900;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.feed-section h3 i{color:var(--acc)}
+.feed-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.feed-step{padding:14px 12px;border-radius:14px;background:var(--card);border:1px solid var(--line);text-align:center;position:relative}
+.feed-step b{display:block;font-size:12.5px;font-weight:800;margin-bottom:4px}
+.feed-step p{font-size:11px;color:var(--mut);line-height:1.6;margin:0}
+.feed-step .step-no{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-weight:900;font-size:12px;margin:0 auto 8px}
+.feed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.feed-card{padding:16px;border-radius:16px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;gap:10px;transition:transform .18s, box-shadow .18s, border-color .18s;cursor:pointer;text-align:right}
+.feed-card:hover{transform:translateY(-3px);box-shadow:var(--sh-md);border-color:rgba(25,195,154,.30)}
+.feed-card i{width:38px;height:38px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(135deg,rgba(25,195,154,.14),rgba(59,130,246,.11));color:#0f766e;font-size:17px}
+.feed-card h4{font-size:13px;font-weight:900;margin:0}
+.feed-card p{font-size:11.8px;color:var(--mut);line-height:1.75;margin:0;flex:1}
+.feed-card .feed-go{margin-top:auto;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--acc)}
+.feed-card .feed-go i{width:auto;height:auto;background:none;font-size:10px;color:var(--acc)}
+.feed-cta{margin-top:18px;padding:18px;border-radius:16px;background:linear-gradient(135deg,rgba(25,195,154,.10),rgba(59,130,246,.08)),var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.feed-cta h4{font-size:14px;font-weight:900;margin:0 0 4px}
+.feed-cta p{font-size:12px;color:var(--mut);margin:0;line-height:1.7}
+.feed-cta .cta-actions{display:flex;gap:10px;flex-wrap:wrap}
+@media(max-width:900px){.feed-hero{grid-template-columns:1fr}.feed-kpis{grid-template-columns:repeat(2,1fr)}.feed-steps{grid-template-columns:repeat(2,1fr)}.feed-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.feed-kpis{grid-template-columns:1fr 1fr}.feed-steps{grid-template-columns:1fr}.feed-grid{grid-template-columns:1fr}.feed-hero{padding:18px 16px}}
+html[data-theme=dark] .feed-hero{background:radial-gradient(700px 400px at 75% -10%, rgba(25,195,154,.16), transparent 60%),radial-gradient(600px 380px at 5% 110%, rgba(59,130,246,.12), transparent 60%),rgba(17,24,38,.78)}
+html[data-theme=dark] .feed-kpi, html[data-theme=dark] .feed-step, html[data-theme=dark] .feed-card{background:rgba(17,24,38,.78);border-color:rgba(255,255,255,.06)}
+html[data-theme=light] .feed-visual{background:linear-gradient(135deg,#f1f5f9 0%,#e2e8f0 100%);border-color:rgba(0,0,0,.06)}
+html[data-theme=light] .feed-vis-card{background:rgba(255,255,255,.85);border-color:rgba(0,0,0,.06)}
+html[data-theme=light] .feed-vis-card b{color:#0f172a}
+/* ===== 404 (v-404) ===== */
+#v-404{display:none}
+#v-404.on{display:block}
+.nf-wrap{max-width:560px;margin:48px auto;text-align:center;padding:40px 24px;border-radius:22px;background:var(--card);border:1px solid var(--line);box-shadow:var(--sh-sm)}
+.nf-code{font-size:clamp(56px,8vw,84px);font-weight:900;line-height:1;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-.02em}
+.nf-wrap h2{font-size:clamp(18px,2.4vw,24px);font-weight:900;margin:12px 0 8px}
+.nf-wrap p{font-size:13px;color:var(--mut);line-height:1.9;margin:0 0 20px}
+.nf-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+html[data-theme=dark] .nf-wrap{background:rgba(17,24,38,.78);border-color:rgba(255,255,255,.06)}
+html[data-theme=light] .feed-vis-card span{color:#475569}
+section.view{display:none}
+section.view.on{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* ================= layout & cards ================= */
+.grid{display:grid;gap:13px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px 18px;box-shadow:var(--sh-sm)}
+.card.lifted,.kpi,.barn-card,.insp{box-shadow:var(--sh-md)}
+.btn{box-shadow:var(--sh-sm)}
+.btn:not(.ghost):not(:disabled):hover{box-shadow:0 4px 14px rgba(25,195,154,.32)}
+.btn.blue:not(.ghost):hover{box-shadow:0 4px 14px rgba(61,123,253,.32)}
+.chart-box{background:linear-gradient(180deg,var(--card),var(--bg2));
+  border:1px solid var(--line);border-radius:11px;padding:8px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.02),var(--sh-sm)}
+.feedwrap,.tbl-scroll{box-shadow:var(--sh-sm)}
+
+.penbox{box-shadow:var(--sh-sm)}
+.penbox:hover{transform:translateY(-2px);box-shadow:var(--sh-md)}
+.penbox.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),var(--sh-md)}
+.dbox{box-shadow:var(--sh-sm)}
+.dbox.lit{box-shadow:0 0 18px rgba(25,195,154,.24),var(--sh-md)}
+#tip{box-shadow:var(--sh-lg)}
+#toast{box-shadow:var(--sh-lg)}
+.card h3{font-size:11.5px;font-weight:750;color:var(--mut);margin-bottom:13px;
+  letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;
+  gap:8px;flex-wrap:wrap}
+html[dir=ltr] .card h3{letter-spacing:.08em}
+.card h3 .ic{font-size:14px;filter:saturate(.85)}
+.cy-list{max-height:280px;overflow:auto;display:flex;flex-direction:column;gap:7px}
+.cy-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--line);
+  border-radius:9px;background:var(--card2);transition:.15s}
+.cy-item:hover{border-color:var(--acc)}
+.cy-code{font-weight:800;font-size:13px;min-width:42px}
+.cy-label{flex:1;font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cy-meta{font-size:10.5px;color:var(--mut);opacity:.8}
+.cy-del{margin-left:auto;border:none;background:transparent;color:var(--bad,#e5484d);cursor:pointer;
+  font-size:14px;padding:4px 6px;border-radius:7px;transition:.15s}
+.cy-del:hover{background:var(--bad-soft,#ffecec)}
+.cy-item.active{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc-soft,#e8f0ff) inset}
+.ws-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-inline-start:6px;
+  background:#bbb;box-shadow:0 0 0 2px rgba(0,0,0,.05)}
+.ws-dot.on{background:#2bbf6a;box-shadow:0 0 8px #2bbf6a88}
+.ws-dot.off{background:#e5484d;box-shadow:0 0 8px #e5484d66}
+.live-feed{max-height:260px;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:11px;line-height:1.55;background:var(--code,#0e1626);color:#cfe3ff;
+  border-radius:9px;padding:10px 12px;direction:ltr;text-align:left}
+.live-feed .lf-row{white-space:nowrap;opacity:0;animation:lfIn .25s forwards}
+.live-feed .lf-row .t{color:#7fd1ff}
+.live-feed .lf-row .b{color:#9effa0}
+.live-feed .lf-row .w{color:#ffd479}
+.live-feed .lf-row .f{color:#ff9bb0}
+@keyframes lfIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.ministats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.mstat{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;text-align:center}
+.mstat .mv{display:block;font-size:21px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--fg)}
+.mstat .ml{display:block;font-size:10.5px;color:var(--mut);margin-top:3px}
+.kpi .v{font-size:26px;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums;
+  letter-spacing:-.3px}
+.kpi .u{font-size:11px;color:var(--mut);margin-top:5px;line-height:1.7}
+.kpi .ic{float:left;opacity:.9;font-size:17px}
+.acc{color:var(--acc)}.blue{color:var(--acc2)}.org{color:var(--warn)}.bad{color:var(--bad)}.prp{color:var(--purple)}.dm{color:var(--dim)}
+small.src{color:var(--dim);font-size:10px;font-weight:450}
+.ministat{display:flex;align-items:center;gap:11px;background:var(--bg2);
+  border:1px solid var(--line);border-radius:10px;padding:11px 14px}
+.ministat .mv{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.ministat .ml{font-size:10.5px;color:var(--mut);line-height:1.5}
+
+/* strain banner */
+.strainbanner{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,
+  rgba(25,195,154,.07),rgba(61,123,253,.05));border:1px solid var(--line);
+  border-radius:10px;padding:9px 14px;margin-bottom:14px;font-size:12px;color:var(--mut);
+  flex-wrap:wrap}
+.strainbanner b{color:var(--txt)}
+.strainbanner .src-lnk{margin-inline-start:auto}
+
+/* ================= controls & buttons ================= */
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.ctrl{display:flex;flex-direction:column;gap:5px}
+.ctrl label{font-size:10.5px;color:var(--mut);font-weight:650}
+.btn{cursor:pointer;border:none;border-radius:9px;padding:9px 18px;font-family:inherit;
+  font-size:12.5px;font-weight:700;color:#04140f;transition:.15s;display:inline-flex;
+  gap:7px;align-items:center;background:linear-gradient(135deg,var(--acc),#37d9a8)}
+.btn:hover{filter:brightness(1.07)} 
+.btn:disabled{opacity:.4;cursor:not-allowed;filter:none}
+.btn.blue{background:linear-gradient(135deg,var(--acc2),#6a9dfd);color:#fff}
+.btn.warn{background:linear-gradient(135deg,#e99b26,#f3b04a);color:#211200}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--mut)}
+.btn.ghost:hover:not(:disabled){color:var(--txt);border-color:#33415e}
+
+/* progress / feed */
+.prog{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.prog>i{display:block;height:100%;width:0%;border-radius:99px;transition:width .3s;
+  background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.feedwrap{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--feed-bg)}
+.feedhead{display:flex;gap:6px;align-items:center;padding:8px 12px;
+  border-bottom:1px solid var(--line);background:rgba(17,24,38,.7)}
+.feedhead i{width:9px;height:9px;border-radius:50%;background:#2a3550}
+.feedhead i:nth-child(1){background:#ef444499}.feedhead i:nth-child(2){background:#f59e0b99}.feedhead i:nth-child(3){background:#22c55e99}
+.feedhead span{margin-inline-start:auto;font-size:10px;color:var(--dim);direction:ltr}
+.feed{padding:9px 12px;font-family:ui-monospace,Consolas,monospace;font-size:11px;
+  line-height:1.85;height:300px;overflow-y:auto;direction:ltr;text-align:left;color:#8fa2c0;
+  background:var(--feed-bg)}
+.feed .r{white-space:pre;display:block}
+.feed .id{color:var(--acc);font-weight:600}.feed .neg{color:#f08080}.feed .pos{color:var(--warn)}
+.feed .dm{color:var(--dim)}
+.feed .flash{animation:fl 1s ease}@keyframes fl{from{background:rgba(25,195,154,.13)}to{background:none}}
+
+/* device panel */
+.dev{display:flex;align-items:stretch;justify-content:center;gap:13px;flex-wrap:wrap;padding:12px 2px}
+.dpart{flex:1;min-width:145px;max-width:200px;text-align:center}
+.dbox{position:relative;border:1px solid var(--line);border-radius:11px;background:var(--bg2);
+  padding:14px 9px 11px;font-size:11px;color:var(--mut);height:100%;display:flex;
+  flex-direction:column;gap:6px;align-items:center;justify-content:center;transition:.25s}
+.dbox.lit{border-color:var(--acc);box-shadow:0 0 16px rgba(25,195,154,.25);transform:translateY(-2px)}
+.dbox b{color:var(--txt)}
+.dbox .big{font-size:19px;font-weight:800;color:var(--acc);direction:ltr}
+.led{position:absolute;top:8px;inset-inline-start:9px;width:7px;height:7px;border-radius:50%;
+  background:#2a3550;transition:.3s}
+.dbox.lit .led{background:var(--acc);box-shadow:0 0 8px var(--acc)}
+.gauge{width:60px;height:68px;margin:3px auto 0;border:1px solid var(--line);border-radius:8px;
+  background:var(--bg);position:relative;overflow:hidden;direction:ltr}
+.gauge>i{position:absolute;bottom:0;left:0;right:0;height:74%;
+  background:linear-gradient(180deg,var(--acc),rgba(25,195,154,.3));transition:height .35s,background .35s}
+.gauge.low>i{background:linear-gradient(180deg,var(--bad),rgba(229,72,77,.3))}
+.gauge span{position:absolute;inset:0;display:grid;place-items:center;font-size:10.5px;
+  color:var(--txt);font-weight:700}
+.statusline{margin-top:8px;font-size:11px;color:var(--mut);text-align:center;min-height:17px}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{color:var(--mut);font-weight:650;text-align:right;padding:7px 9px;
+  border-bottom:1px solid var(--line);font-size:10.5px;white-space:nowrap;
+  position:sticky;top:0;background:var(--card2);z-index:2}
+td{padding:7px 9px;border-bottom:1px solid rgba(31,42,61,.5)}
+tbody tr:hover td{background:rgba(61,123,253,.04)}
+tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:left;direction:ltr;font-variant-numeric:tabular-nums}
+/* bidirectional hygiene */
+bdi{unicode-bidi:isolate}
+.dir-ltr{direction:ltr!important;unicode-bidi:isolate;text-align:start}
+.dir-rtl{direction:rtl!important;unicode-bidi:isolate;text-align:start}
+.kpi .v,.insp .krow b{direction:ltr;unicode-bidi:isolate}
+.pmatrix{direction:ltr}
+.tag{font-size:10.5px;padding:3px 9px;border-radius:99px;font-weight:750;white-space:nowrap}
+.tag.ok{background:rgba(25,195,154,.12);color:var(--acc)}
+.tag.wn{background:rgba(233,155,38,.12);color:var(--warn)}
+.tag.bd{background:rgba(229,72,77,.12);color:var(--bad)}
+.tag.bl{background:rgba(61,123,253,.14);color:#7fabfc}
+.tbl-scroll{max-height:350px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+
+/* charts */
+.chart-box{position:relative;height:275px}
+.chart-box.tall{height:320px}
+.chart-box.sm{height:145px}
+.legend{display:flex;gap:13px;flex-wrap:wrap;margin-top:8px}
+.lg{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;color:var(--mut)}
+.sw{width:12px;height:3.5px;border-radius:3px;display:inline-block}
+.sw.bar{width:10px;height:10px}
+
+/* misc */
+.note{background:rgba(61,123,253,.05);border:1px solid rgba(61,123,253,.2);
+  border-radius:10px;padding:11px 14px;font-size:12px;color:#b6c4de;line-height:2;margin-top:12px}
+.note.wn{background:rgba(233,155,38,.05);border-color:rgba(233,155,38,.22);color:#e6d3ac}
+.note.gd{background:rgba(25,195,154,.05);border-color:rgba(25,195,154,.22);color:#aedece}
+.srcs{font-size:11.5px;color:var(--mut);line-height:2.05}
+.srcs b{color:var(--txt)}
+.srcs a{color:#7fabfc;text-decoration:none}
+.srcs a:hover{text-decoration:underline}
+.step{display:inline-block;font-size:10.5px;padding:2.5px 9px;border-radius:99px;
+  font-weight:750;margin-inline-end:7px}
+.step.ok{background:rgba(25,195,154,.12);color:var(--acc)}
+.step.wn{background:rgba(233,155,38,.12);color:var(--warn)}
+code{background:var(--bg2);border:1px solid var(--line);border-radius:5px;
+  padding:1px 6px;font-size:10.5px;direction:ltr;display:inline-block}
+footer{margin-top:40px;border-top:1px solid var(--line);padding:22px 12px 10px;
+  color:var(--dim);font-size:11.5px;line-height:1.9;
+  display:flex;flex-direction:column;gap:9px;align-items:center;text-align:center}
+footer a{color:var(--mut);text-decoration:none;transition:color .15s}
+footer a:hover{color:var(--acc)}
+.f-top{display:flex;flex-direction:column;align-items:center;gap:10px}
+.f-brand{display:flex;align-items:center;gap:9px;color:var(--mut);font-size:12.5px}
+.f-brand b{font-weight:800;color:var(--txt);letter-spacing:.2px}
+.f-ver{font-size:10px;color:var(--dim);border:1px solid var(--line);border-radius:99px;padding:2px 8px;font-weight:700;direction:ltr}
+.own{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.own a{display:inline-flex;gap:7px;align-items:center;padding:6px 12px;border-radius:99px;
+  border:1px solid var(--line);background:var(--bg2);font-size:11.5px;font-weight:600;
+  transition:border-color .15s, color .15s, background .15s}
+.own a i{font-size:13px;color:var(--acc)}
+.own a:hover{border-color:rgba(25,195,154,.4);color:var(--acc);background:rgba(25,195,154,.07)}
+.f-meta{font-size:11px;color:var(--dim)}
+.f-copy{font-size:10.5px;color:var(--dim);opacity:.85}
+@media(max-width:560px){
+  .own a{padding:6px 10px;font-size:11px}
+  .f-meta{max-width:92%;overflow-wrap:anywhere}
+}
+#tip{position:fixed;z-index:90;display:none;pointer-events:none;
+  background:var(--tip-bg);border:1px solid var(--tip-bd);border-radius:9px;
+  padding:8px 12px;font-size:11px;line-height:1.85;box-shadow:0 8px 22px rgba(0,0,0,.5);max-width:250px}
+#tip b.t{color:var(--txt);display:block;margin-bottom:2px}
+#tip .row{display:flex;align-items:center;gap:7px;color:var(--mut)}
+#tip .row b{color:var(--txt);margin-inline-start:auto;direction:ltr}
+#tip .dt{width:8px;height:8px;border-radius:3px;display:inline-block}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);
+  z-index:99;background:rgba(17,24,38,.97);border:1px solid var(--line);color:var(--txt);
+  border-radius:10px;padding:10px 18px;font-size:12px;box-shadow:var(--sh);
+  transition:.35s;opacity:0}
+#toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+.busyrow{display:flex;align-items:center;gap:9px;padding:7px 2px;
+  border-bottom:1px dashed rgba(31,42,61,.6)}
+.busyrow:last-child{border-bottom:none}
+.busyrow .bp{flex:1;height:8px;background:var(--bg2);border-radius:99px;overflow:hidden;direction:ltr}
+.busyrow .bp>i{display:block;height:100%;border-radius:99px;transition:width .8s}
+
+/* experiment designer */
+#exp-rows input[type=text]{min-width:92px;width:106px;direction:ltr;text-align:left;font-weight:650}
+#exp-rows input[type=number]{width:98px;min-width:0}
+#exp-rows select{min-width:175px}
+.exp-del{cursor:pointer;border:none;background:none;color:var(--bad);font-size:14px;
+  opacity:.55;padding:4px 8px;border-radius:7px}
+.exp-del:hover{opacity:1;background:rgba(229,72,77,.09)}
+.tchip{display:inline-block;font-size:10px;font-weight:700;color:var(--c,#8a95ab);
+  background:color-mix(in srgb,var(--c,#8a95ab) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--c,#8a95ab) 38%,transparent);
+  padding:2.5px 9px;border-radius:99px;margin:2px 3px;white-space:nowrap}
+
+/* biostatistics lab */
+.bio-table td,.bio-table th{padding:6px 8px}
+.pmatrix td{text-align:center;direction:ltr;font-variant-numeric:tabular-nums}
+.pmatrix td:first-child{text-align:right;direction:rtl}
+.starp{color:var(--acc);font-weight:800}
+.methtext{font-size:11px;color:var(--mut);line-height:1.95}
+
+/* farm */
+.farm-grid{display:grid;gap:13px;grid-template-columns:minmax(0,1fr) 330px}
+@media(max-width:1040px){.farm-grid{grid-template-columns:1fr}}
+.side-col{display:flex;flex-direction:column;gap:13px}
+.barn{position:relative;background:linear-gradient(180deg,#0f1622,#0b111c);
+  border:1px solid var(--line);border-radius:12px;padding:36px 11px 11px;overflow:hidden}
+.barn::before{content:"";position:absolute;top:0;left:0;right:0;height:26px;
+  background:repeating-linear-gradient(90deg,#182236 0 40px,#121b2b 40px 80px);
+  border-bottom:1px solid var(--line)}
+.fanrow{position:absolute;top:4px;left:14px;display:flex;gap:24px;z-index:3}
+.fan{font-size:12px;color:#56719c;animation:spin 3.4s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pens-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(208px,1fr));gap:9px}
+.penbox{border:1px solid var(--line);border-radius:11px;background:var(--bg2);cursor:pointer;
+  transition:.18s;overflow:hidden;position:relative;z-index:2}
+.penbox:hover{border-color:#33415e}
+.penbox.sel{border-color:var(--acc);box-shadow:0 0 14px rgba(25,195,154,.2)}
+.penhead{display:flex;align-items:center;justify-content:space-between;gap:6px;
+  padding:6px 9px;border-bottom:1px solid var(--line);background:rgba(17,24,38,.65)}
+.penhead b{font-size:12px;direction:ltr}
+.penfloor{position:relative;height:84px;margin:6px;overflow:hidden;border-radius:7px;
+  background:radial-gradient(circle at 35% 25%,rgba(25,195,154,.04),transparent 60%),#090e17;
+  border:1px dashed rgba(31,42,61,.7)}
+.chick{position:absolute;left:0;top:0;line-height:1;user-select:none;
+  pointer-events:auto;cursor:pointer;z-index:3;
+  will-change:transform;filter:saturate(.92) drop-shadow(0 1.5px 1.5px rgba(0,0,0,.4))}
+.chick::after{content:attr(data-tag);position:absolute;top:-10px;left:50%;
+  transform:translateX(-50%);font-size:9px;font-weight:700;letter-spacing:.2px;
+  color:#dbe4f0;text-shadow:0 1px 2px #000,0 0 3px rgba(0,0,0,.6);
+  font-family:ui-monospace,Consolas,monospace;pointer-events:none;white-space:nowrap}
+.pens-wrap.hide-tags .chick::after{display:none}
+.chick:hover{filter:saturate(1.15) drop-shadow(0 0 4px rgba(25,195,154,.5))}
+.chick.eat{animation:peck .45s ease-in-out infinite alternate}
+@keyframes peck{from{margin-top:0}to{margin-top:2.5px}}
+.chick.die{transition:opacity .8s,filter .8s;opacity:0;filter:grayscale(1)}
+.troughrow{display:flex;align-items:center;gap:7px;padding:0 9px 3px;font-size:10.5px;color:var(--mut)}
+.mbin{flex:1;height:6px;background:var(--bg);border:1px solid var(--line);border-radius:99px;
+  overflow:hidden;direction:ltr}
+.mbin>i{display:block;height:100%;background:linear-gradient(90deg,#e99b26,#f3b04a);transition:width .4s}
+.mbin.low>i{background:linear-gradient(90deg,#e5484d,#f48080)}
+.penstats{padding:0 9px 7px;font-size:10.5px;color:var(--mut);display:flex;
+  justify-content:space-between;direction:ltr;font-variant-numeric:tabular-nums}
+.darkveil{position:absolute;inset:0;background:rgba(3,5,10,.74);opacity:0;
+  transition:opacity 1.3s;pointer-events:none;z-index:4;display:flex;
+  justify-content:center;padding-top:42px;font-size:11px;color:#8fa2c0}
+.darkveil.on{opacity:1}
+.lightchip{margin-inline-start:auto;font-size:10px;padding:3px 10px;border-radius:99px;
+  border:1px solid var(--line);color:var(--warn);font-weight:650}
+.lightchip.off{color:var(--dim)}
+.fm-clock{display:flex;gap:8px;align-items:center;background:var(--bg2);
+  border:1px solid var(--line);border-radius:9px;padding:7px 12px;direction:ltr;
+  font-variant-numeric:tabular-nums}
+.fm-clock b{color:var(--acc);font-size:13px}
+.fm-clock span{color:var(--mut);font-size:11.5px}
+.fm-meta{display:flex;justify-content:space-between;gap:10px;margin-top:8px;
+  font-size:11px;color:var(--mut);flex-wrap:wrap}
+.insp .krow{display:flex;justify-content:space-between;gap:9px;font-size:11.5px;
+  padding:6px 0;border-bottom:1px dashed rgba(31,42,61,.6)}
+.insp .krow:last-of-type{border-bottom:none}
+.insp .krow b{direction:ltr;font-variant-numeric:tabular-nums}
+.tickercard ul{list-style:none;max-height:215px;overflow:auto;font-size:10.5px;
+  line-height:1.8;color:var(--mut)}
+.tickercard li{padding:4px 2px;border-bottom:1px dashed rgba(31,42,61,.55)}
+.tickercard li b{color:var(--txt)}
+.tickercard li.bad{color:#eda6a6}
+.tickercard li.good{color:#9fdccb}
+
+/* ================= LIGHT (B/W) THEME ================= */
+html[data-theme=light]{
+  --bg:#f5f6f8;--bg2:#edeff3;--card:#ffffff;--card2:#fbfcfd;--line:#dee3ea;
+  --txt:#151a22;--mut:#57627a;--dim:#8791a2;
+  --acc:#0a7d63;--acc2:#2b62d9;--warn:#a86f0d;--bad:#cf3338;--purple:#6f46cc;
+  --sh-sm:0 1px 2px rgba(25,35,55,.06),0 2px 6px rgba(25,35,55,.05);
+  --sh-md:0 4px 14px rgba(25,35,55,.09);
+  --sh-lg:0 14px 36px rgba(25,35,55,.16),0 4px 10px rgba(25,35,55,.08);
+  --sh:var(--sh-md);
+  --chart-grid:#e4e8ee;--chart-label:#69748a;
+  --feed-bg:#0d1219;--tip-bg:rgba(255,255,255,.97);--tip-bd:#d4dbe4;
+}
+html[data-theme=light] body{background:
+  radial-gradient(900px 380px at 85% -10%,rgba(12,143,114,.05),transparent 60%),
+  radial-gradient(800px 360px at 8% -10%,rgba(43,98,217,.05),transparent 55%),var(--bg)}
+html[data-theme=light] .topbar,html[data-theme=light] nav{background:rgba(255,255,255,.88)}
+html[data-theme=light] .card{box-shadow:0 2px 10px rgba(25,35,55,.05)}
+html[data-theme=light] td{border-bottom-color:rgba(190,199,212,.55)}
+html[data-theme=light] tbody tr:hover td{background:rgba(43,98,217,.045)}
+html[data-theme=light] .busyrow{border-bottom-color:rgba(190,199,212,.6)}
+html[data-theme=light] .org{color:#8f5c04}
+html[data-theme=light] .tag.wn{color:#8a5a06;background:rgba(168,111,13,.12)}
+html[data-theme=light] .tag.ok{color:#0a7a62;background:rgba(12,143,114,.11)}
+html[data-theme=light] .tag.bl{color:#2857bd;background:rgba(43,98,217,.1)}
+html[data-theme=light] .tag.bd{color:#b52e33;background:rgba(207,51,56,.09)}
+html[data-theme=light] .note{background:rgba(43,98,217,.05);color:#33415e;border-color:rgba(43,98,217,.25)}
+html[data-theme=light] .note.wn{background:rgba(168,111,13,.06);color:#6e4a10;border-color:rgba(168,111,13,.28)}
+html[data-theme=light] .note.gd{background:rgba(12,143,114,.055);color:#0b5f4d;border-color:rgba(12,143,114,.28)}
+html[data-theme=light] ::-webkit-scrollbar-thumb{background:#c3ccd9}
+html[data-theme=light] #toast{background:rgba(255,255,255,.97);color:var(--txt)}
+html[data-theme=light] #tip{background:var(--tip-bg);border-color:var(--tip-bd)}
+html[data-theme=light] #tip .row b{color:#10151d}
+html[data-theme=light] .step.ok{color:#0a7a62}.step.wn{color:#8a5a06}
+html[data-theme=light] .srcs a{color:#2857bd}
+html[data-theme=light] .tickercard li b{color:#1a2130}
+html[data-theme=light] .insp .krow b{color:#1a2130}
+/* feed terminal & barn illustration stay dark by design */
+
+/* ================= RESPONSIVE SYSTEM ================= */
+html[dir=ltr] body{font-family:"IBM Plex Sans","Vazirmatn",system-ui,sans-serif}
+.kpi .v{font-size:clamp(20px,3.2vw,26px)}
+@media(max-width:1100px){
+  .farm-grid{grid-template-columns:minmax(0,1fr) 300px}
+}
+@media(max-width:1020px){
+  .farm-grid{grid-template-columns:1fr}
+  .side-col{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .tickercard ul{max-height:150px}
+}
+@media(max-width:860px){
+  .topbar-in{padding:0 16px;height:66px;gap:10px}
+  .wrap{padding:0 14px 56px}
+  nav{margin:14px 0 18px}
+  .tab{padding:11px 13px;font-size:12px}
+  .g2{grid-template-columns:1fr}
+}
+@media(max-width:720px){
+  .brand .tagline,.brand .uni{display:none}
+  .chart-box,.chart-box.tall{height:235px}
+  .side-col{grid-template-columns:1fr}
+  .dev{gap:9px}
+  .controls{gap:8px}
+  .btn{padding:10px 15px;font-size:12px}
+  .fm-clock{padding:7px 10px}
+}
+/* anti-blowout: grid children may shrink below content size */
+.grid>*{min-width:0}
+.card,.tbl-scroll,.chart-box,.feedwrap{max-width:100%}
+.busyrow{flex-wrap:wrap;row-gap:5px}
+@media(max-width:620px){
+  .hsettings{display:none!important}   /* gear = drawer duplicate; kills the ≤430 overflow */
+  .topbar-in .mark{width:40px;height:40px;border-radius:11px}
+  .topbar-in .brand b{font-size:13.5px}
+  #auth-area .auth-login-btn{padding:8px 10px;font-size:11.5px}
+  #auth-area .auth-name{max-width:72px}
+  .busyrow .bp{flex-basis:100%;order:3}
+  .busyrow b.num,.busyrow .dm{width:auto!important;flex:0 0 auto}
+  .busyrow>.tag:first-child{flex:1 1 auto;text-align:center}
+}
+@media(max-width:560px){
+  .g4{grid-template-columns:repeat(2,1fr)}
+  .ministat{flex-direction:column;text-align:center;gap:4px;padding:10px 8px}
+  .dev{flex-direction:column;align-items:stretch}
+  .dpart{max-width:none;width:100%}
+  .darrow{transform:rotate(90deg);padding:2px 0}
+  .dbox{flex-direction:row;justify-content:flex-start;text-align:right;gap:12px;min-height:64px;padding:10px 44px}
+  html[dir=ltr] .dbox{text-align:left}
+  .gauge{margin:0;width:52px;height:44px}
+  .pens-wrap{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  .penfloor{height:70px}
+  .exp-actions,.controls>.ctrl{flex:1 1 auto}
+  select,input[type=number],input[type=text]{width:100%;min-width:0}
+  .controls .ctrl{min-width:46%}
+}
+@media(max-width:420px){
+  .g4{grid-template-columns:1fr}
+  h1{font-size:clamp(18px,4.5vw,24px)}.brand b{font-size:14px}
+}
+
+/* touch targets & a11y */
+@media(pointer:coarse){
+  .btn{min-height:42px}
+  .tab{min-height:44px}
+  select,.field__input{min-height:42px}
+  .tab,.btn,select,input,.langseg button{min-height:42px}
+  .tab{padding-inline:15px}
+}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:6px}
+.tab:focus-visible{outline-offset:-2px}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}
+  .prog>i::after{display:none}
+}
+/* custom select arrow (both directions) */
+select{appearance:none;-webkit-appearance:none;padding-inline-end:26px;
+ background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a95ab' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");
+ background-repeat:no-repeat;background-position:left 10px center}
+html[dir=ltr] select{background-position:right 10px center;background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a95ab' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");padding-inline-end:28px;padding-inline-start:11px}
+.table-x{overflow-x:auto}
+.table-x table{min-width:520px}
+
+/* ================= Products & Services ================= */
+.prod-hero{margin-top:18px;padding:26px 24px;border:1px solid var(--line);border-radius:20px;
+  background:linear-gradient(135deg,rgba(25,195,154,.10),rgba(59,130,246,.08)),var(--card);
+  backdrop-filter:blur(14px);box-shadow:var(--sh-md)}
+.prod-hero h2{font-size:clamp(20px,2.4vw,26px);font-weight:900;letter-spacing:-.02em;margin:0 0 8px}
+.prod-hero p{margin:0;color:var(--mut);font-size:13.5px;line-height:1.9;max-width:760px}
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px;margin-top:18px}
+.prod-card{position:relative;display:flex;flex-direction:column;gap:14px;padding:24px 22px;
+  border:1px solid var(--line);border-radius:20px;background:var(--card);backdrop-filter:blur(10px);
+  box-shadow:var(--sh-sm);transition:transform .18s,box-shadow .18s,border-color .18s;overflow:hidden}
+.prod-card::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;
+  background:linear-gradient(180deg,var(--acc),var(--acc2));opacity:.9}
+.prod-card:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(15,23,42,.14);border-color:rgba(25,195,154,.35)}
+.prod-ic{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:24px;color:#fff;
+  background:linear-gradient(135deg,#19c39a,#2563eb);box-shadow:0 8px 22px rgba(37,99,235,.25)}
+.prod-card h3{font-size:17px;font-weight:900;margin:0}
+.prod-card .prod-tag{font-size:11px;font-weight:700;color:var(--acc);letter-spacing:.03em}
+.prod-card p.prod-desc{margin:0;color:var(--mut);font-size:13px;line-height:1.9}
+.prod-feats{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.prod-feats li{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.75;color:var(--txt)}
+.prod-feats li i{color:var(--acc);font-size:12px;margin-top:4px;flex-shrink:0}
+.prod-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.prod-status{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:750;color:var(--acc)}
+.prod-status .dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 3px rgba(25,195,154,.18);animation:prodPulse 2s ease-in-out infinite}
+@keyframes prodPulse{0%,100%{opacity:1}50%{opacity:.45}}
+.prod-cta{cursor:pointer;border:none;border-radius:10px;padding:9px 16px;font-family:inherit;font-size:12.5px;font-weight:800;
+  color:#04140f;background:linear-gradient(135deg,var(--acc),#37d9a8);display:inline-flex;gap:7px;align-items:center;transition:.15s;box-shadow:var(--sh-sm)}
+.prod-cta:hover{filter:brightness(1.07)}
+.prod-cta.ghost{background:none;color:var(--acc);border:1px solid rgba(25,195,154,.35)}
+html[data-theme=dark] .prod-hero{background:linear-gradient(135deg,rgba(25,195,154,.12),rgba(59,130,246,.09)),rgba(17,24,38,.78)}
+html[data-theme=dark] .prod-card{background:rgba(17,24,38,.78);border-color:rgba(255,255,255,.06)}
+html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
+@media(max-width:560px){.prod-hero{padding:20px 16px}.prod-card{padding:18px 16px}.prod-card h3{font-size:15.5px}}
+@media(prefers-reduced-motion:reduce){.prod-status .dot{animation:none}}
+
+
+/* ================= ENV CONTROL (v-env) — site-token design ================= */
+/* banner: ambient accent glow, mirrors .prod-hero language */
+.env-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:16px 20px;border-radius:18px;border:1px solid var(--line);margin-bottom:13px;
+  background:linear-gradient(135deg,color-mix(in srgb, var(--acc) 9%, transparent),
+              color-mix(in srgb, var(--acc2) 7%, transparent)),var(--card);
+  box-shadow:var(--sh-sm)}
+.env-banner-main{display:flex;align-items:center;gap:12px}
+.env-banner-main b{display:block;font-size:14.5px;font-weight:900;color:var(--txt)}
+.env-banner-main small{display:block;font-size:11.5px;color:var(--mut);margin-top:2px}
+.env-banner-dot{width:11px;height:11px;border-radius:50%;background:var(--acc);flex:none;
+  box-shadow:0 0 0 0 color-mix(in srgb, var(--acc) 55%, transparent);animation:tc-pulse 2.2s ease-out infinite}
+.env-banner.warn .env-banner-dot{background:var(--warn)}
+.env-banner.bad .env-banner-dot{background:var(--bad);animation:none}
+.env-banner-kpis{display:flex;gap:18px;flex-wrap:wrap}
+.env-kpi{display:flex;flex-direction:column;gap:1px}
+.env-kpi b{font-size:17px;font-weight:900;color:var(--txt);font-variant-numeric:tabular-nums}
+.env-kpi b small{font-size:11px;color:var(--dim);font-weight:700}
+.env-kpi span{font-size:10.5px;font-weight:700;color:var(--mut);letter-spacing:.02em}
+
+.env-houses{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px}
+.env-house{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:11px;
+  border:1px solid var(--line);background:var(--card);color:var(--mut);cursor:pointer;
+  font-family:inherit;font-size:12.5px;font-weight:700;transition:.15s}
+.env-house b{color:var(--txt);font-variant-numeric:tabular-nums}
+.env-house:hover{border-color:color-mix(in srgb, var(--acc) 35%, transparent)}
+.env-house.on{background:color-mix(in srgb, var(--acc) 14%, transparent);border-color:color-mix(in srgb, var(--acc) 45%, transparent);color:var(--acc)}
+.env-house .dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.env-house.on .dot{background:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb, var(--acc) 20%, transparent)}
+
+.env-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:13px}
+.env-tiles-card{grid-column:1/-1}
+.env-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.env-tile{position:relative;padding:12px 13px;border-radius:13px;background:var(--bg2);
+  border:1px solid var(--line);overflow:hidden;transition:border-color .15s}
+.env-tile:hover{border-color:color-mix(in srgb, var(--acc) 30%, transparent)}
+.env-tile .tl{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--mut)}
+.env-tile .tv{font-size:clamp(19px,2vw,23px);font-weight:900;color:var(--txt);margin-top:5px;
+  font-variant-numeric:tabular-nums;line-height:1.1}
+.env-tile .tv small{font-size:12px;font-weight:700;color:var(--dim)}
+.env-tile .tb{margin-top:8px;height:4px;border-radius:2px;background:color-mix(in srgb, var(--txt) 8%, transparent);overflow:hidden}
+.env-tile .tb i{display:block;height:100%;border-radius:2px;background:var(--acc);transition:width .6s ease}
+.env-tile.warn .tb i{background:var(--warn)} .env-tile.warn .tv{color:var(--warn)}
+.env-tile.bad .tb i{background:var(--bad)} .env-tile.bad .tv{color:var(--bad)}
+.env-tile .tic{margin-inline-start:auto;font-size:14px;color:var(--dim)}
+
+.env-health{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.env-hcard{padding:12px 13px;border-radius:13px;background:var(--bg2);border:1px solid var(--line)}
+.env-hcard .hh{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--mut)}
+.env-hcard .hv{font-size:clamp(18px,1.9vw,22px);font-weight:900;margin-top:5px;font-variant-numeric:tabular-nums}
+.env-hcard .hs{font-size:10.5px;margin-top:4px;font-weight:700}
+.env-hcard.ok .hs{color:var(--acc)} .env-hcard.wn .hs{color:var(--warn)} .env-hcard.bad .hs{color:var(--bad)}
+
+/* trends report (گزارش تغییرات): segmented scope picker + date range —
+   rides the site's own design system (cards, langseg-style segments,
+   gradient primary btn, tabular numerals) */
+.env-export-hint{font-size:12px;color:var(--mut);margin:6px 0 14px;line-height:1.9}
+.env-export-bar{display:flex;flex-direction:column;gap:13px}
+.env-export-fields{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.env-field{display:flex;flex-direction:column;gap:5px}
+.env-field span{font-size:10.5px;font-weight:800;color:var(--mut);letter-spacing:.02em}
+.env-field input{background:var(--bg2);border:1px solid var(--line);color:var(--txt);
+  padding:8px 12px;border-radius:9px;font-family:inherit;font-size:12.5px;min-height:40px;
+  transition:border-color .15s, box-shadow .15s}
+.env-field input:focus{outline:none;border-color:rgba(25,195,154,.55);
+  box-shadow:0 0 0 3px rgba(25,195,154,.08)}
+.env-arrow{color:var(--dim);font-weight:900;padding-bottom:9px}
+/* scope picker: pill segments like .langseg, active = accent fill */
+.env-scope{display:inline-flex;border:1px solid var(--line);border-radius:11px;
+  overflow:hidden;background:var(--bg2)}
+.env-scope button{background:none;border:none;color:var(--mut);cursor:pointer;
+  padding:9px 16px;font-family:inherit;font-size:12px;font-weight:700;
+  display:inline-flex;align-items:center;gap:6px;min-height:40px;
+  transition:background .15s,color .15s}
+.env-scope button + button{border-inline-start:1px solid var(--line)}
+.env-scope button:hover{color:var(--txt);background:color-mix(in srgb, var(--txt) 4%, transparent)}
+.env-scope button.on{background:color-mix(in srgb, var(--acc) 16%, transparent);color:var(--acc)}
+.env-scope button .sc-ic{font-size:12px;opacity:.9}
+/* range date fields reveal only for the custom scope */
+.env-export-fields.hidden{display:none}
+/* primary action = site gradient btn with shine sweep */
+.env-export-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.env-export-actions .btn{margin:0;position:relative;overflow:hidden}
+.env-export-actions .btn.primary{background:linear-gradient(135deg,#1ad3a6,#128d72);color:#fff;
+  box-shadow:0 6px 20px rgba(25,195,154,.28), 0 1px 0 rgba(255,255,255,.22) inset}
+.env-export-actions .btn.primary:hover{box-shadow:0 10px 28px rgba(25,195,154,.38), 0 1px 0 rgba(255,255,255,.25) inset;filter:brightness(1.04)}
+.env-export-actions .btn.primary::after{content:"";position:absolute;top:0;bottom:0;width:38%;left:-60%;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.35),transparent);
+  transform:skewX(-18deg);transition:left .55s ease}
+.env-export-actions .btn.primary:hover::after{left:135%}
+/* busy/ready status line */
+.env-exp-status{display:inline-flex;align-items:center;gap:7px;font-size:12px;
+  font-weight:700;color:var(--mut);min-height:22px}
+.env-exp-status.busy::before{content:"";width:12px;height:12px;border-radius:50%;
+  border:2px solid color-mix(in srgb, var(--acc) 30%, transparent);
+  border-top-color:var(--acc);animation:envSpin .8s linear infinite}
+.env-exp-status.done{color:var(--acc)}
+.env-exp-status.err{color:var(--bad)}
+@keyframes envSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){
+  .env-export-actions .btn.primary::after{display:none}
+  .env-exp-status.busy::before{animation:none}
+}
+@media(max-width:620px){.env-grid{grid-template-columns:1fr}.env-tiles{grid-template-columns:repeat(2,1fr)}.env-health{grid-template-columns:repeat(2,1fr)}.env-export-actions .btn{flex:1 1 auto;justify-content:center}.env-scope{width:100%}.env-scope button{flex:1;justify-content:center}}
+
+/* view header */
+.view-head{margin-bottom:15px}
+.view-head .eyebrow{font-size:10.5px;letter-spacing:.14em;color:var(--dim);
+  text-transform:uppercase;font-weight:750;display:block;margin-bottom:3px}
+.view-head h2{font-size:clamp(17px,1.6vw,20px);font-weight:800;letter-spacing:-.2px;margin-bottom:3px}
+.view-head p{font-size:12px;color:var(--mut)}
+
+/* farm empty state */
+.fm-empty{position:absolute;inset:0;z-index:6;display:grid;place-items:center;
+  background:rgba(9,13,21,.82);backdrop-filter:blur(3px)}
+.fm-empty .inner{text-align:center;max-width:340px;padding:20px}
+.fm-empty .e{font-size:34px;margin-bottom:8px}
+.fm-empty p{font-size:12px;color:var(--mut);line-height:2;margin-bottom:12px}
+@media print{
+  .topbar,nav,.controls,.btn{display:none!important}
+  body{background:#fff;color:#000}
+}
+/* ================= auth (user panel) ================= */
+#auth-area{display:flex;align-items:center}
+.auth-login-btn{font-size:12.5px;padding:7px 14px;border-radius:10px}
+.auth-user{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;
+  padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid var(--line);transition:background .15s;position:relative}
+.auth-user:hover{background:rgba(255,255,255,.1)}
+.auth-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-weight:800;font-size:13px;flex-shrink:0}
+.auth-name{font-size:12.5px;font-weight:600;color:var(--txt);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.auth-chevron{font-size:10px;color:var(--mut)}
+.auth-dropdown{position:absolute;top:calc(100% + 8px);inset-inline-end:0;min-width:200px;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh-lg);padding:8px;z-index:80}
+#auth-area{position:relative}
+.auth-dropdown-head{padding:8px 10px 10px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.auth-dropdown-head b{display:block;font-size:13px;color:var(--txt)}
+.auth-dropdown-head span{display:block;font-size:11px;color:var(--mut);margin-top:2px;word-break:break-all}
+.auth-dropdown-item{display:flex;align-items:center;gap:8px;width:100%;text-align:start;
+  padding:8px 10px;border-radius:8px;border:none;background:transparent;color:var(--txt);cursor:pointer;font-family:inherit;font-size:12.5px}
+.auth-dropdown-item:hover{background:var(--bg2)}
+.auth-dropdown-item.danger{color:var(--bad)}
+/* merged hamburger entries (v1.8.53): divider + language/theme segments */
+.auth-sep{border-top:1px solid var(--line);margin:6px 2px}
+.auth-seg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:6px 10px;font-size:12px;color:var(--mut);font-weight:600}
+.auth-seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.auth-seg button{background:none;border:none;color:var(--mut);padding:6px 12px;
+  font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;min-height:32px}
+.auth-seg button.on{background:rgba(25,195,154,.14);color:var(--acc)}
+#auth-area{gap:6px}
+.auth-modal-backdrop{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.06);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);padding:16px}
+.auth-modal-backdrop[hidden]{display:none !important}
+.auth-modal{position:relative;width:100%;max-width:400px;background:rgba(255,255,255,.08);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,.14);
+  border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.12) inset;padding:22px 20px 18px;animation:fade .2s ease}
+.auth-modal-close{position:absolute;inset-inline-end:12px;top:12px;width:32px;height:32px;border-radius:50%;
+  border:1px solid var(--line);background:var(--bg2);color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.auth-modal-close:hover{color:var(--txt);border-color:var(--acc)}
+.auth-modal-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.auth-modal-head b{display:block;font-size:15px;font-weight:800}
+.auth-modal-head span{display:block;font-size:11px;color:var(--mut)}
+.auth-tabs{display:flex;gap:6px;margin-bottom:16px;background:var(--bg2);padding:4px;border-radius:10px}
+.auth-tab{flex:1;padding:7px;border-radius:8px;border:none;background:transparent;color:var(--mut);cursor:pointer;font-family:inherit;font-weight:600;font-size:13px}
+.auth-tab.on{background:var(--card);color:var(--txt);box-shadow:var(--sh-sm)}
+.auth-form{display:none;flex-direction:column;gap:10px}
+.auth-form.on{display:flex}
+.auth-form label{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--mut);font-weight:600}
+.auth-form input{padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--bg2);color:var(--txt);font-family:inherit;font-size:13px;outline:none}
+.auth-form input:focus{border-color:rgba(25,195,154,.55);box-shadow:0 0 0 3px rgba(25,195,154,.12)}
+.auth-submit{margin-top:4px;width:100%;justify-content:center}
+.auth-error{padding:8px 10px;border-radius:8px;background:rgba(229,72,77,.12);border:1px solid rgba(229,72,77,.3);color:var(--bad);font-size:12px}
+.auth-error[hidden]{display:none !important}
+.auth-hint{font-size:11.5px;color:var(--mut);text-align:center;margin-top:2px}
+.auth-hint a{color:var(--acc);text-decoration:none}
+.auth-hint a:hover{text-decoration:underline}
+/* ===== Material Dialog (confirm/prompt/alert) ===== */
+.m-dialog-backdrop{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(10,14,22,.38);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
+.m-dialog-backdrop.on{opacity:1;visibility:visible}
+.m-dialog{width:100%;max-width:440px;background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.38),0 1px 0 rgba(255,255,255,.06) inset;padding:22px 20px 16px;transform:translateY(8px) scale(.98);transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.m-dialog-backdrop.on .m-dialog{transform:translateY(0) scale(1)}
+.m-dialog-icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:18px;margin-bottom:14px}
+.m-dialog-icon.warn{background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.28);color:#d97706}
+.m-dialog-icon.danger{background:rgba(229,72,77,.12);border:1px solid rgba(229,72,77,.28);color:#dc2626}
+.m-dialog-icon.info{background:rgba(59,130,246,.10);border:1px solid rgba(59,130,246,.22);color:#2563eb}
+.m-dialog-icon.success{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.28);color:#059669}
+.m-dialog h3{font-size:15px;font-weight:900;line-height:1.4;margin:0 0 8px;color:var(--txt)}
+.m-dialog p{font-size:13px;line-height:1.8;color:var(--mut);margin:0 0 6px;white-space:pre-line}
+.m-dialog-input{width:100%;margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);color:var(--txt);font-family:inherit;font-size:13px;outline:none;transition:border-color .15s,box-shadow .15s}
+.m-dialog-input:focus{border-color:rgba(25,195,154,.55);box-shadow:0 0 0 3px rgba(25,195,154,.12)}
+.m-dialog-input::placeholder{color:var(--dim)}
+.m-dialog-error{font-size:12px;color:var(--bad);margin-top:8px;display:none}
+.m-dialog-error.on{display:block}
+.m-dialog-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.m-dialog-actions .btn{border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;min-width:84px;justify-content:center}
+.m-dialog-actions .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+.m-dialog-actions .btn-ghost:hover{background:var(--bg2)}
+.m-dialog-actions .btn-primary{background:var(--acc);border:1px solid var(--acc);color:#fff;box-shadow:0 4px 14px rgba(25,195,154,.25)}
+.m-dialog-actions .btn-primary:hover{filter:brightness(1.05)}
+.m-dialog-actions .btn-danger{background:#dc2626;border:1px solid #dc2626;color:#fff;box-shadow:0 4px 14px rgba(220,38,38,.25)}
+.m-dialog-actions .btn-danger:hover{background:#b91c1c;border-color:#b91c1c}
+html[data-theme=light] .m-dialog-backdrop{background:rgba(255,255,255,.42)}
+html[data-theme=light] .m-dialog{box-shadow:0 24px 64px rgba(15,23,42,.18),0 1px 0 rgba(255,255,255,.8) inset}
+@media(max-width:560px){.m-dialog{padding:18px 16px;border-radius:16px}.m-dialog h3{font-size:14px}}
+@media(max-width:560px){ .auth-name{max-width:80px} .auth-modal{padding:18px 16px} }
+
+
+/* gate: when not authed, hide app and show only brand + login */
+body.needs-auth #v-workspace, body.needs-auth #v-feed, body.needs-auth #v-dash, body.needs-auth #v-exp, body.needs-auth #v-farm, body.needs-auth #v-sim, body.needs-auth #v-scn, body.needs-auth #v-dev, body.needs-auth #v-sci, body.needs-auth #v-met, body.needs-auth #v-env{display:none !important}
+body.needs-auth .tab[data-v]:not([data-v="v-landing"]):not([data-v="v-about"]):not([data-v="v-products"]){opacity:.55}
+body.needs-auth .topbar{backdrop-filter:none}
+body.needs-auth .auth-modal-backdrop{background:rgba(255,255,255,.06);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
+body.needs-auth .auth-modal{animation:none;box-shadow:0 24px 64px rgba(0,0,0,.55)}
+html[data-theme=light] .auth-modal-backdrop{background:rgba(255,255,255,.32);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
+html[data-theme=light] .auth-modal{background:rgba(255,255,255,.72);backdrop-filter:blur(20px) saturate(1.3);border-color:rgba(0,0,0,.08)}
+/* scroll allowed when gated but on public pages - modal JS handles lock */
+
+
+/* ===== Landing (public) ===== */
+#v-landing.on{display:block}
+/* ===== Workspace / User Panel ===== */
+#v-workspace{display:none}
+#v-workspace.on{display:block}
+.ws-wrap{max-width:1160px;margin:0 auto;padding:24px 18px 40px}
+.ws-head{display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:18px 20px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(135deg,rgba(25,195,154,.10),rgba(59,130,246,.08)),var(--card);backdrop-filter:blur(14px)}
+.ws-avatar{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-weight:900;font-size:22px;color:#fff;background:linear-gradient(135deg,#19c39a,#2563eb);box-shadow:0 8px 22px rgba(37,99,235,.25)}
+.ws-head-main{flex:1;min-width:200px}
+.ws-head-main b{font-size:18px;font-weight:900}
+.ws-head-main span{color:var(--mut);font-size:13px;display:block;margin-top:2px}
+.ws-badges{display:flex;gap:8px;flex-wrap:wrap}
+.ws-badge{font-size:11px;font-weight:800;letter-spacing:.02em;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--mut)}
+.ws-badge.ok{background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.25);color:#065f46}
+.ws-badge.warn{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.25);color:#92400e}
+.ws-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+@media(max-width:760px){.ws-stats{grid-template-columns:repeat(2,1fr)}}
+.ws-stat{padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:var(--card);text-align:center;box-shadow:var(--sh-sm)}
+.ws-stat b{font-size:clamp(19px,2vw,23px);font-weight:900;display:block;line-height:1}
+.ws-stat span{font-size:11px;color:var(--mut);letter-spacing:.04em}
+.ws-stat-btn{cursor:pointer;transition:border-color .18s,transform .18s}
+.ws-stat-btn:hover{border-color:rgba(25,195,154,.45);transform:translateY(-2px)}
+.ws-stat-btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+#ws-cycles-panel{margin-top:14px;border:1px solid var(--line);border-radius:18px;background:var(--card);padding:14px 16px}
+#ws-cycles-panel[hidden]{display:none}
+.ws-cy-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.ws-cy-head b{font-size:14px;font-weight:900}
+.ws-cy-head .icon-btn{width:32px;height:32px;border-radius:9px;flex:none}
+.ws-cy-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:13px;margin-top:8px;flex-wrap:wrap}
+.ws-cy-row:first-of-type{margin-top:0}
+.ws-cy-info{flex:1;min-width:140px}
+.ws-cy-info b{font-size:13px;font-weight:800;display:block}
+.ws-cy-info span{font-size:11.5px;color:var(--mut)}
+.ws-cy-act{display:flex;gap:8px}
+.ws-cy-act button{min-height:40px;padding:8px 14px;border-radius:10px;font-family:inherit;
+  font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.ws-cy-reset{background:color-mix(in srgb, var(--warn,#e99b26) 12%, transparent);
+  border:1px solid color-mix(in srgb, var(--warn,#e99b26) 35%, transparent);color:var(--txt)}
+.ws-cy-del{background:color-mix(in srgb, var(--bad) 12%, transparent);
+  border:1px solid color-mix(in srgb, var(--bad) 30%, transparent);color:var(--bad)}
+.ws-cy-act button:active{transform:scale(.97)}
+.ws-cy-empty{font-size:12.5px;color:var(--mut);text-align:center;padding:14px 0}
+.ws-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+@media(max-width:1000px){.ws-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.ws-grid{grid-template-columns:1fr}.ws-card p{font-size:12.5px}.ws-head-main b{font-size:16px}}
+.ws-card{position:relative;padding:16px 16px 14px;border-radius:18px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(10px);display:flex;flex-direction:column;gap:10px;transition:transform .18s,box-shadow .18s,border-color .18s;cursor:pointer;text-align:right;box-shadow:var(--sh-sm)}
+.ws-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(15,23,42,.10);border-color:rgba(25,195,154,.35)}
+.ws-card i{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(135deg,rgba(25,195,154,.14),rgba(59,130,246,.12));color:#0f766e;font-size:18px}
+.ws-card h3{font-size:14px;font-weight:900;margin:0}
+.ws-card p{font-size:12px;color:var(--mut);line-height:1.7;margin:0;min-height:36px}
+.ws-card .ws-go{margin-top:auto;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#0f766e}
+.ws-card .ws-go i{width:auto;height:auto;background:none;font-size:11px}
+.ws-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.ws-actions .btn{border-radius:12px}
+/* Dynamic theme tuning for workspace */
+html[data-theme=dark] .ws-head{background:linear-gradient(135deg,rgba(25,195,154,.12),rgba(59,130,246,.09)),rgba(17,24,38,.78);border-color:rgba(255,255,255,.07)}
+html[data-theme=dark] .ws-stat{background:rgba(17,24,38,.82);border-color:rgba(255,255,255,.06)}
+html[data-theme=dark] .ws-card{background:rgba(17,24,38,.78);border-color:rgba(255,255,255,.06)}
+html[data-theme=dark] .ws-card:hover{box-shadow:0 12px 28px rgba(0,0,0,.35)}
+html[data-theme=dark] .ws-badge{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.08);color:var(--mut)}
+html[data-theme=light] .ws-head{background:linear-gradient(135deg,rgba(25,195,154,.08),rgba(59,130,246,.06)),#ffffff;box-shadow:var(--sh-sm)}
+html[data-theme=light] .ws-stat{background:#ffffff}
+html[data-theme=light] .ws-card{background:#ffffff}
+html[data-theme=light] .ws-card:hover{box-shadow:var(--sh-md)}
+#v-landing{display:none}
+.landing-hero{position:relative;border-radius:28px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:
+  radial-gradient(820px 520px at 72% -8%, rgba(25,195,154,.18), transparent 58%),
+  radial-gradient(640px 420px at 4% 102%, rgba(59,130,246,.13), transparent 60%),
+  radial-gradient(500px 300px at 45% 45%, rgba(139,92,246,.08), transparent 70%),
+  linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.015)), var(--card);
+  padding:52px 32px 36px;display:grid;grid-template-columns:1fr;gap:0;align-items:center;isolation:isolate;margin-block-start:28px}
+.landing-hero::before{content:"";position:absolute;inset:0;background:
+  linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px),
+  linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px);
+  background-size:32px 32px;mask:radial-gradient(700px 400px at 60% 40%, black 40%, transparent 75%);-webkit-mask:radial-gradient(700px 400px at 60% 40%, black 40%, transparent 75%);pointer-events:none;opacity:.55}
+.landing-hero-bg{position:absolute;inset:0;background:linear-gradient(180deg, transparent 40%, rgba(0,0,0,.22));pointer-events:none;z-index:0}
+.landing-hero-inner{position:relative;z-index:1;min-width:0;display:flex;flex-direction:column;gap:20px}
+.landing-hero-inner .landing-badge{margin:0}
+.landing-hero-inner .landing-title{margin:-6px 0 8px;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+/* Hero brand line — fluid type ladder (single source, both langs).
+   Sized from live glyph measurements: the EN prefix+accent line is ≈13.9em
+   wide, FA ≈10.6em. 6.1vw keeps EN on ONE line down to ~560px
+   (1024→62.5px/868px✓, 860→52.5px/730px✓, 560→34px/475px✓);
+   below 560 the line wraps balanced (text-wrap:balance) instead of shrinking
+   to unreadable sizes. */
+.landing-title .brand-hero{font-size:clamp(34px,6.1vw,72px);font-weight:1000;letter-spacing:-.024em;line-height:1.08;display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:.04em .22em;text-wrap:balance}
+.landing-title .brand-hero [data-i18n="landing.heroPrefix"]{font-weight:1000;color:var(--tx)}
+.brand-hero-accent{position:relative;display:inline-block;padding:0 .01em .14em;color:transparent;background:linear-gradient(135deg,#19c39a 0%,#0ea5e9 48%,#7c3aed 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:1000;font-size:1.06em;letter-spacing:-.02em;filter:drop-shadow(0 2px 12px rgba(25,195,154,.22))}
+html[data-theme=dark] .brand-hero-accent{filter:drop-shadow(0 1px 8px rgba(25,195,154,.18))}
+.brand-hero-accent [data-i18n="brand.name"]{position:relative;z-index:1}
+.brand-hero-sub{font-weight:500;color:var(--mut);opacity:.9;margin-top:6px;min-height:1.5em;display:block;letter-spacing:.01em;
+  white-space:nowrap;overflow:hidden;max-width:100%;
+  font-size:15px;   /* ≥1280px */
+  text-align:start} /* follows dir: RTL→right, LTR→left; never centered */
+@keyframes cursorBlink{50%{opacity:0}}
+
+@media(prefers-reduced-motion:reduce){}
+.landing-hero-inner .landing-cta{margin:0;display:flex;gap:12px;flex-wrap:wrap}
+.landing-hero-inner .landing-stats{margin:0}
+.landing-badge{align-self:flex-start;display:inline-flex;align-items:center;gap:9px;padding:7px 14px;border-radius:999px;background:color-mix(in srgb, var(--acc) 10%, transparent);border:1px solid color-mix(in srgb, var(--acc) 24%, transparent);color:var(--acc);font-size:12px;font-weight:700;backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(25,195,154,.12);flex-wrap:wrap;row-gap:4px}
+.landing-badge .lb-fact{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.landing-badge .lb-fact b{font-weight:900;color:var(--acc2);font-size:13.5px;font-variant-numeric:tabular-nums;
+  text-shadow:0 0 1px color-mix(in srgb, var(--acc2) 30%, transparent)}
+html[data-theme=light] .landing-badge .lb-fact b{color:var(--acc2);text-shadow:none}
+.landing-badge .lb-fact i{font-size:11px;opacity:.9}
+.landing-badge .lb-sep{color:color-mix(in srgb, var(--acc) 45%, transparent);font-weight:900}
+@media(max-width:560px){.landing-badge{border-radius:16px}.landing-badge .lb-sep{display:none}.landing-badge .lb-fact{padding:2px 8px;border-radius:999px;background:color-mix(in srgb, var(--acc) 7%, transparent)}}
+.landing-title{margin:16px 0 10px;font-size:clamp(26px,4.2vw,38px);line-height:1.18;font-weight:900;letter-spacing:-.03em}
+.landing-title > span:not(.brand-hero-sub):not(.brand-hero){display:block;font-size:clamp(15px,1.8vw,19px);font-weight:700;color:var(--mut);margin-top:6px;min-height:26px}
+/* landing-desc-box removed — unused */
+.landing-cta{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 18px}
+.btn.lg{padding:10px 18px;font-size:13px;border-radius:12px}
+.btn.primary.lg{background:var(--acc);color:#fff;border:1px solid var(--acc);box-shadow:0 6px 18px rgba(25,195,154,.25)}
+.btn.ghost.lg{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--txt)}
+.landing-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+.landing-stats .ls{padding:14px 12px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid var(--line);text-align:center;display:flex;flex-direction:column;justify-content:center;min-height:72px;backdrop-filter:blur(6px);transition:border-color .15s,transform .15s}
+.landing-stats .ls:hover{border-color:rgba(25,195,154,.28);transform:translateY(-1px)}
+.landing-stats .ls b{display:block;font-size:14px;font-weight:900;line-height:1.35;white-space:normal}
+.landing-stats .ls span{font-size:11px;color:var(--mut);margin-top:4px}
+@media(max-width:900px){.landing-stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.landing-stats{grid-template-columns:1fr}}
+.landing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0}
+.landing-grid .lcard{padding:16px;border-radius:16px;background:var(--card);border:1px solid var(--line);transition:transform .15s, border-color .15s}
+.landing-grid .lcard[data-go]{cursor:pointer}
+.landing-grid .lcard[data-go]:hover{transform:translateY(-3px);border-color:rgba(25,195,154,.4)}
+.landing-grid .lcard:hover{transform:translateY(-2px);border-color:rgba(25,195,154,.28)}
+.landing-grid .lcard i{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(25,195,154,.12);color:var(--acc);margin-bottom:10px}
+.landing-grid .lcard h3{margin:0 0 6px;font-size:13px;font-weight:800}
+.landing-grid .lcard p{margin:0;color:var(--mut);font-size:12px;line-height:1.7}
+.landing-foot{margin:8px 0 0;padding:16px;border-radius:16px;background:var(--card);border:1px dashed var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.landing-foot p{margin:0;color:var(--mut);font-size:12px;line-height:1.8;max-width:620px}
+@media(max-width:900px){.landing-hero{grid-template-columns:1fr}.landing-grid{grid-template-columns:repeat(2,1fr)}.landing-badge{align-self:center}.landing-cta{justify-content:center}}
+@media(max-width:560px){.landing-grid{grid-template-columns:1fr}.landing-hero{padding:34px 16px 24px}.landing-badge{align-self:center}.landing-cta{justify-content:center}}
+html[data-theme=light] .landing-hero{background:radial-gradient(820px 520px at 72% -8%, rgba(25,195,154,.12), transparent 58%), radial-gradient(640px 420px at 4% 102%, rgba(59,130,246,.09), transparent 60%), linear-gradient(180deg, #fff, #f6f7f9);border-color:rgba(0,0,0,.06)}
+
+
+/* ===== INP: render optimization ===== */
+.view{content-visibility:auto; contain-intrinsic-size: 600px 800px}
+.view.on{content-visibility:visible}
+.tab{will-change: transform}
+canvas{will-change: contents}
+
+
+/* ===== RTL/LTR directional icons & logical fix (auto locale) ===== */
+[dir="rtl"] .fa-arrow-left{transform:scaleX(-1)}
+[dir="rtl"] .fa-arrow-right{transform:scaleX(-1)}
+[dir="rtl"] .parrow{transition:transform .2s}
+[dir="ltr"] .parrow{transform:none}
+/* ensure logical handling for dropdowns already uses inset-inline */
+[dir="rtl"] .strain-select__list{left:0;right:0}
+[dir="ltr"] .strain-select__list{left:0;right:0}
+
+
+/* landing visual removed — keyframes pruned */
+
+/* ============================================================
+   UI/UX Polish Layer v2.0 — additive, safe (no markup changes)
+   ============================================================ */
+
+/* ---------- 1. Buttons: gradient + lift + focus ---------- */
+.btn{position:relative;overflow:hidden;transition:transform .16s ease, box-shadow .16s ease, filter .16s ease, border-color .16s ease, background .16s ease;will-change:transform}
+.btn:hover:not(:disabled){transform:translateY(-1px)}
+.btn:active:not(:disabled){transform:translateY(0) scale(.985);transition-duration:.05s}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary.lg{background:linear-gradient(135deg,#1ad3a6,#128d72);border:none;
+  box-shadow:0 6px 20px rgba(25,195,154,.28), 0 1px 0 rgba(255,255,255,.22) inset}
+.btn.primary.lg:hover{box-shadow:0 10px 28px rgba(25,195,154,.38), 0 1px 0 rgba(255,255,255,.25) inset;filter:brightness(1.04)}
+.btn.primary.lg::after{content:"";position:absolute;top:0;bottom:0;width:38%;left:-60%;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.35),transparent);
+  transform:skewX(-18deg);transition:left .55s ease}
+.btn.primary.lg:hover::after{left:135%}
+.btn.ghost.lg:hover{border-color:rgba(25,195,154,.45);color:var(--acc);background:rgba(25,195,154,.07)}
+.btn.blue:not(.ghost){background:linear-gradient(135deg,#4d8bff,#2f5fd6);
+  box-shadow:0 6px 18px rgba(61,123,253,.28), 0 1px 0 rgba(255,255,255,.2) inset}
+@media(prefers-reduced-motion:reduce){.btn.primary.lg::after{display:none}.btn:hover{transform:none}}
+
+/* ---------- 2. Landing hero: shimmering badge + stat accents ---------- */
+.landing-badge i{animation:badgeGlow 2.6s ease-in-out infinite}
+@keyframes badgeGlow{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.65;transform:scale(.88)}}
+@media(prefers-reduced-motion:reduce){.landing-badge i{animation:none}}
+.landing-stats .ls{position:relative;overflow:hidden}
+.landing-stats .ls::before{content:"";position:absolute;top:0;inset-inline:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(25,195,154,.55),transparent);
+  opacity:0;transition:opacity .25s}
+.landing-stats .ls:hover::before{opacity:1}
+.landing-stats .ls b{font-size:clamp(13.5px,1.05vw,15px)}
+
+/* ---------- 3. Module cards: icon motion + sheen sweep ---------- */
+.landing-grid .lcard i,.feed-card .fc-ic,.feed-vis-card i{transition:transform .25s ease, background .25s}
+.lcard:hover i,.feed-card:hover .fc-ic,.feed-vis-card:hover i{transform:scale(1.08) rotate(-4deg);background:rgba(25,195,154,.18)}
+.feed-card,.lcard{position:relative;overflow:hidden}
+.feed-card::after,.lcard::after{content:"";position:absolute;top:0;bottom:0;width:34%;left:-55%;
+  background:linear-gradient(105deg,transparent,rgba(25,195,154,.09),transparent);
+  transform:skewX(-18deg);transition:left .5s ease;pointer-events:none}
+.feed-card:hover::after,.lcard:hover::after{left:140%}
+
+/* ---------- 4. View transition: softer + subtle scale ---------- */
+@keyframes fade{from{opacity:0;transform:translateY(8px) scale(.995)}to{opacity:1;transform:none}}
+
+@keyframes fade{from{opacity:0;transform:translateY(8px) scale(.995)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){section.view.on{animation:none}}
+
+/* ---------- 5. Focus rings everywhere (a11y polish) ---------- */
+.lcard:focus-visible,.feed-card:focus-visible,.ws-card:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.tab{transition:color .18s, border-color .18s, background .18s}
+
+/* ---------- 6. Auth area polish ---------- */
+.auth-login-btn{transition:transform .16s, box-shadow .16s, border-color .16s}
+.auth-login-btn:hover{transform:translateY(-1px);border-color:rgba(25,195,154,.4);color:var(--acc)}
+.auth-avatar{box-shadow:0 2px 8px rgba(0,0,0,.2)}
+
+/* ---------- 7. Inputs: accent focus glow (unified) ---------- */
+input:focus,select:focus{border-color:rgba(25,195,154,.5);box-shadow:0 0 0 3px rgba(25,195,154,.09)}
+
+/* ---------- 8. Selection color ---------- */
+::selection{background:rgba(25,195,154,.28);color:inherit}
+
+/* ---------- 9. Light theme compatibility ---------- */
+html[data-theme=light] .btn.primary.lg{box-shadow:0 6px 18px rgba(25,195,154,.30)}
+html[data-theme=light] .btn.ghost.lg{background:#fff}
+html[data-theme=light] .landing-stats .ls{background:#fff;border-color:#e2e8f0}
+html[data-theme=light] .landing-grid .lcard{background:#fff;border-color:#e2e8f0;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
+
+
+/* hero subtitle: breakpoint type scale — always one line (fitFont shrinks further if needed) */
+@media(max-width:1279px){ .brand-hero-sub{font-size:14px} }
+@media(max-width:1024px){ .brand-hero-sub{font-size:13px} }
+@media(max-width:860px){ .brand-hero-sub{font-size:12.5px} }
+@media(max-width:720px){ .brand-hero-sub{font-size:12px} }
+@media(max-width:620px){ .brand-hero-sub{font-size:11.5px} }
+@media(max-width:560px){ .brand-hero-sub{font-size:11px} }
+@media(max-width:480px){ .brand-hero-sub{font-size:10.5px} }
+@media(max-width:420px){ .brand-hero-sub{font-size:10px} }
+@media(max-width:360px){ .brand-hero-sub{font-size:9.5px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ================= TOPBAR ================= -->
+<div class="topbar"><div class="topbar-in">
+  <a class="brand" href="/" data-go="/">
+    <span class="mark"><img src="logo_128.png" width="52" height="52" alt="آرین" data-alt-i18n="brand.name" style="object-fit:contain;display:block;border:none"></span>
+    <span><b><span data-i18n="app.short">سامانه هوشمند</span> <span data-i18n="brand.name">آرین</span></b><span class="tagline" data-i18n="app.tag">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی</span>
+<span class="uni" data-i18n="app.uni">گروه علوم دامی، دانشگاه تربیت مدرس</span></span>
+  </a>
+  <div class="hspace"></div>
+  <div class="hctl">
+    <div class="topclock" id="topclock" aria-live="off" data-title-i18n="hdr.clockTitle" title="تاریخ و ساعت کنونی">
+      <span class="tc-date" id="tc-date">—</span>
+      <span class="tc-sep">·</span>
+      <span class="tc-time" id="tc-time">—</span>
+    </div>
+
+    <div class="hgroup">
+      <span class="hlabel" data-i18n="hdr.lang">زبان</span>
+      <div class="langseg" role="group" aria-label="Language">
+        <button id="lang-fa" class="on" aria-pressed="true" lang="fa">فا</button><button id="lang-en" aria-pressed="false" lang="en">EN</button>
+      </div>
+    </div>
+    <button id="btn-help" class="icon-btn" aria-label="Help" data-title-i18n="hdr.help" title="؟"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button>
+    <div class="hgroup">
+      <span class="hlabel" data-i18n="hdr.theme">پوسته</span>
+      <div class="langseg" role="group" aria-label="Theme">
+        <button id="theme-dark" class="on" aria-pressed="true" title="Dark" data-title-i18n="theme.dark"><i class="fa-solid fa-moon" aria-hidden="true"></i></button><button id="theme-light" aria-pressed="false" title="Light" data-title-i18n="theme.light"><i class="fa-solid fa-sun" aria-hidden="true"></i></button>
+      </div>
+    </div>
+    <button id="btn-reset" class="icon-btn" title="Reset cycle data" data-title-i18n="btn.resetCycle" aria-label="Reset"><span class="rb-ic"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></span><span class="rb-label" data-i18n="btn.resetCycle">بازنشانی داده‌های دوره</span></button>
+    <div class="hpills">
+      <span class="pill tag ok" title="Weight MAE vs catalog"><span data-i18n="hdr.mae">MAE</span> <b id="h-mae">—</b></span>
+      <span class="pill tag bl" title="records per cycle">≈ <b id="h-rows">—</b> <span data-i18n="hdr.rows">رکورد</span></span>
+      <span class="vbadge" data-vbadge>v1.0.0</span>
+    </div>
+    </div><!-- /hctl -->
+  <div id="auth-area"></div>
+
+
+    <!-- Settings button + dropdown (desktop) -->
+    <div class="hsettings" role="group" aria-label="Settings">
+      <button id="btn-settings" class="icon-btn" aria-label="Settings" aria-expanded="false" aria-haspopup="true" data-title-i18n="hdr.settings" title="تنظیمات"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
+      <div id="settings-dropdown" class="settings-dropdown" role="menu" data-title-i18n="hdr.settingsAria" aria-label="تنظیمات" hidden>
+        <div class="settings-section">
+          <div class="settings-row">
+            <span class="settings-label" data-i18n="hdr.theme">پوسته</span>
+            <div class="langseg" role="group" aria-label="Theme">
+              <button id="theme-dark-dd" class="on" aria-pressed="true" title="Dark" data-title-i18n="theme.dark" role="menuitem"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
+              <button id="theme-light-dd" aria-pressed="false" title="Light" data-title-i18n="theme.light" role="menuitem"><i class="fa-solid fa-sun" aria-hidden="true"></i></button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label" data-i18n="hdr.lang">زبان</span>
+            <div class="langseg" role="group" aria-label="Language">
+              <button id="lang-fa-dd" class="on" aria-pressed="true" lang="fa" role="menuitem">فا</button>
+              <button id="lang-en-dd" aria-pressed="false" lang="en" role="menuitem">EN</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label" data-i18n="hdr.strain">سویه</span>
+            <div class="strain-select" role="combobox" data-title-i18n="hdr.strainAria" aria-label="سویه" aria-expanded="false" aria-controls="strain-list" tabindex="0">
+              <div class="strain-select__current" id="strain-current">
+                <span class="strain-select__value" id="strain-value">—</span>
+                <span class="strain-select__icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </span>
+              </div>
+              <ul class="strain-select__list" id="strain-list" role="listbox" hidden></ul>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label" data-i18n="hdr.dateFmt">تقویم</span>
+            <div class="langseg" role="group" aria-label="Calendar format">
+              <button id="df-auto" class="on" data-df="auto" role="menuitem" data-i18n="datefmt.auto">خودکار</button>
+              <button id="df-jalali" data-df="jalali" role="menuitem" data-i18n="datefmt.jalali">شمسی</button>
+              <button id="df-gregorian" data-df="gregorian" role="menuitem" data-i18n="datefmt.gregorian">میلادی</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label" data-i18n="hdr.tz">منطقه زمانی</span>
+            <select id="tz-select" aria-label="Timezone">
+              <option value="auto" data-i18n="tz.auto">خودکار (سیستم)</option>
+              <option value="Asia/Tehran">تهران (UTC+3:30)</option>
+              <option value="UTC">UTC</option>
+              <option value="Europe/Berlin">برلین (UTC+1)</option>
+              <option value="Europe/London">لندن (UTC+0)</option>
+              <option value="America/New_York">نیویورک (UTC-5)</option>
+              <option value="Asia/Dubai">دبی (UTC+4)</option>
+              <option value="Asia/Istanbul">استانبول (UTC+3)</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-section">
+          <button id="btn-help-dd" class="settings-action" role="menuitem" data-title-i18n="hdr.help" title="آموزش سریع">
+            <span class="settings-icon"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></span>
+            <span class="settings-text" data-i18n="hdr.help">آموزش سریع</span>
+          </button>
+          <button id="btn-reset-dd" class="settings-action" role="menuitem" data-title-i18n="btn.resetCycle" title="بازنشانی داده‌های دوره">
+            <span class="settings-icon"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></span>
+            <span class="settings-text" data-i18n="btn.resetCycle">بازنشانی داده‌های دوره</span>
+          </button>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-section settings-info">
+          <div class="hpills">
+            <span class="pill tag ok" title="Weight MAE vs catalog"><span data-i18n="hdr.mae">MAE</span> <b id="h-mae-dd">—</b></span>
+            <span class="pill tag bl" title="records per cycle">≈ <b id="h-rows-dd">—</b> <span data-i18n="hdr.rows">رکورد</span></span>
+            <span class="vbadge" data-vbadge>v1.0.0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="sheet-backdrop" hidden></div>
+<section id="account-sheet" class="account-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-user-name" hidden></section>
+
+<nav id="mainnav">
+  <button class="tab on" data-v="v-landing" id="tab-landing"><span data-i18n="nav.landing">صفحه اصلی</span></button>
+  <button class="tab" id="nav-feed-btn" data-v="v-feed"><span data-i18n="nav.feedGroup">سیستم پایش مصرف خوراک</span></button>
+  <button class="tab" data-v="v-env"><span data-i18n="nav.env">کنترل محیطی</span></button>
+  <button class="tab" data-v="v-sci"><span data-i18n="nav.sci">مبانی علمی</span></button>
+  <button class="tab" data-v="v-met"><span data-i18n="nav.met">روش‌شناسی</span></button>
+  <button class="tab" data-v="v-products"><span data-i18n="nav.products">محصولات و خدمات</span></button>
+  <button class="tab" data-v="v-about"><span data-i18n="nav.about">درباره ما</span></button>
+</nav>
+
+<main>
+
+<!-- ================= 01 DASHBOARD ================= -->
+<!-- ================= LANDING (public) ================= -->
+<section class="view on" id="v-landing" aria-label="Landing">
+  <div class="landing-hero">
+    <div class="landing-hero-bg"></div>
+    <div class="landing-hero-inner">
+      <div class="landing-badge" id="landing-facts" aria-live="off">
+        <span class="lb-fact"><i class="fa-solid fa-dna" aria-hidden="true"></i><b id="lb-strains">۴</b>&nbsp;<span data-i18n="landing.fact.strains">سویه استاندارد</span></span>
+        <span class="lb-sep" aria-hidden="true">·</span>
+        <span class="lb-fact"><i class="fa-solid fa-database" aria-hidden="true"></i><b id="lb-points">۲٬۳۸۰</b>&nbsp;<span data-i18n="landing.fact.points">نقطه داده مرجع</span></span>
+        <span class="lb-sep" aria-hidden="true">·</span>
+        <span class="lb-fact"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span data-i18n="landing.fact.verified">توسعه داده شده با مقالات و پژوهش‌های معتبر</span></span>
+      </div>
+      <h1 class="landing-title"><span class="brand-hero"><span data-i18n="landing.heroPrefix">سامانه پایش هوشمند</span><span class="brand-hero-accent"><span data-i18n="brand.name">آرین</span></span></span><span id="landing-typed" class="brand-hero-sub" data-text="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی" aria-label="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی</span></h1>
+      <div class="landing-cta">
+        <button class="btn primary lg" id="landing-login"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="landing.login">ورود به پنل</span></button>
+        <button class="btn ghost lg" id="landing-register" data-i18n="landing.register">ثبت‌نام رایگان</button>
+        <button class="btn ghost lg" id="landing-guest" data-i18n="landing.guest">مشاهده معرفی</button>
+      </div>
+      <div class="landing-stats">
+        <div class="ls"><b data-i18n="landing.stat.trials">طرح‌های آزمایشی</b></div>
+        <div class="ls"><b data-i18n="landing.stat.lab">آزمایشگاه مجازی و تخصصی</b></div>
+        <div class="ls"><b data-i18n="landing.stat.24h">۲۴ ساعته</b><span data-i18n="landing.stat.live">داده زنده دستگاه</span></div>
+        <div class="ls"><b data-i18n="landing.stat.user">کاربرمحور</b><span data-i18n="landing.stat.live">داده زنده دستگاه</span></div>
+      </div>
+    </div>
+    
+  </div>
+  <div class="landing-grid">
+    <div class="lcard" data-go="v-dash" role="button" tabindex="0"><i class="fa-solid fa-chart-line"></i><h3 data-i18n="landing.card.dash.t">داشبورد اعتبارسنجی</h3><p data-i18n="landing.card.dash.p">مقایسه لحظه‌ای نتایج شبیه‌سازی با عملکرد استاندارد سویه، همراه با نمودار رشد و ضریب تبدیل خوراک اختصاصی هر کاربر.</p></div>
+    <div class="lcard" data-go="v-exp" role="button" tabindex="0"><i class="fa-solid fa-vial"></i><h3 data-i18n="landing.card.exp.t">طرح آزمایش</h3><p data-i18n="landing.card.exp.p">تعریف دوره‌های پرورشی، گروه‌های تیمار و تکرارهای آزمایشی — هر دوره به‌صورت کامل و ایزوله در حساب کاربری شما ثبت می‌شود.</p></div>
+    <div class="lcard" data-go="v-farm" role="button" tabindex="0"><i class="fa-solid fa-map"></i><h3 data-i18n="landing.card.farm.t">نقشه فارم پویا</h3><p data-i18n="landing.card.farm.p">جانمایی جایگاه‌های پرورشی، حسگرها و نمایش وضعیت زنده فارم — داده‌ها به‌صورت اختصاصی و ایزوله در اختیار شما قرار دارد.</p></div>
+    <div class="lcard" data-go="v-sim" role="button" tabindex="0"><i class="fa-solid fa-satellite-dish"></i><h3 data-i18n="landing.card.sim.t">شبیه‌سازی زنده</h3><p data-i18n="landing.card.sim.p">اجرای سناریو با شناسه اختصاصی و مشاهده بلادرنگ نتایج و خروجی‌های شبیه‌سازی.</p></div>
+    <div class="lcard" data-go="v-scn" role="button" tabindex="0"><i class="fa-solid fa-layer-group"></i><h3 data-i18n="landing.card.scn.t">سناریوها</h3><p data-i18n="landing.card.scn.p">ذخیره‌سازی، مقایسه و اجرای مجدد سناریوهای شخصی‌سازی‌شده با امکان بازبینی دقیق نتایج.</p></div>
+    <div class="lcard" data-go="v-dev" role="button" tabindex="0"><i class="fa-solid fa-microchip"></i><h3 data-i18n="landing.card.dev.t">دستگاه و داده</h3><p data-i18n="landing.card.dev.p">ثبت و ذخیره‌سازی خودکار اطلاعات دستگاه‌های پایش — داده‌ها به‌صورت کامل کاربرمحور، ایمن و اختصاصی شما نگهداری می‌شود.</p></div>
+  </div>
+  <div class="landing-foot">
+    <p data-i18n="landing.foot.p">برای دسترسی به داشبورد، آزمایش‌ها و داده‌های دستگاه، وارد حساب کاربری خود شوید. داده‌ها و شبیه‌سازی‌ها کاملاً اختصاصی و بر اساس عملکرد شما ذخیره می‌شوند.</p>
+    <button class="btn primary" id="landing-enter"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="landing.foot.btn">ورود و شروع</span></button>
+  </div>
+</section>
+
+<section class="view" id="v-workspace" data-title-i18n="ws.aria" aria-label="محیط کاربری">
+  <div class="ws-wrap">
+    <div class="ws-head" id="ws-head">
+      <div class="ws-avatar" id="ws-avatar">ق</div>
+      <div class="ws-head-main">
+        <b id="ws-name" data-i18n="ws.title">محیط کاربری آرین</b>
+        <span id="ws-email" data-i18n="ws.subtitle">وارد شده — داده‌های شما کاملاً اختصاصی و ایزوله است</span>
+      </div>
+      <div class="ws-badges">
+        <span class="ws-badge ok" id="ws-role" data-i18n="ws.badge.user">کاربر</span>
+        <span class="ws-badge" id="ws-status" data-i18n="ws.badge.active">فعال • کاربرمحور</span>
+      </div>
+    </div>
+    <div class="ws-stats">
+      <div class="ws-stat ws-stat-btn" id="ws-cycles-stat" role="button" tabindex="0" aria-haspopup="true"><b id="ws-n-cycles">—</b><span data-i18n="ws.stat.cycles">دوره‌ها</span></div>
+      <div class="ws-stat"><b id="ws-n-scenarios">—</b><span data-i18n="ws.stat.scenarios">سناریوها</span></div>
+      <div class="ws-stat"><b id="ws-n-device">—</b><span data-i18n="ws.stat.device">رکورد دستگاه</span></div>
+      <div class="ws-stat"><b>۲۴ ساعته</b><span data-i18n="ws.stat.live">داده زنده</span></div>
+    </div>
+    <div id="ws-cycles-panel" hidden>
+      <div class="ws-cy-head"><b data-i18n="ws.cy.manage">مدیریت دوره‌ها</b><button id="ws-cy-close" class="icon-btn" aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
+      <div id="ws-cy-list"></div>
+    </div>
+    <div class="ws-grid">
+      <div class="ws-card" data-go="v-dash"><i class="fa-solid fa-chart-line"></i><h3 data-i18n="ws.card.dash.t">داشبورد اعتبارسنجی</h3><p data-i18n="ws.card.dash.p">مقایسه شبیه‌سازی با داده واقعی و نمودار رشد</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-exp"><i class="fa-solid fa-vial"></i><h3 data-i18n="ws.card.exp.t">طرح آزمایش</h3><p data-i18n="ws.card.exp.p">تعریف دوره‌ها، تیمارها و تکرارها</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-farm"><i class="fa-solid fa-map"></i><h3 data-i18n="ws.card.farm.t">نقشه فارم پویا</h3><p data-i18n="ws.card.farm.p">جانمایی پن‌ها و حسگرها به‌صورت زنده</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-sim"><i class="fa-solid fa-satellite-dish"></i><h3 data-i18n="ws.card.sim.t">شبیه‌سازی زنده</h3><p data-i18n="ws.card.sim.p">اجرای سناریو با نتیجه بلادرنگ</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-scn"><i class="fa-solid fa-layer-group"></i><h3 data-i18n="ws.card.scn.t">سناریوها</h3><p data-i18n="ws.card.scn.p">ذخیره، مقایسه و اجرای مجدد</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-dev"><i class="fa-solid fa-microchip"></i><h3 data-i18n="ws.card.dev.t">دستگاه و داده</h3><p data-i18n="ws.card.dev.p">ثبت خودکار داده‌ها — داده‌های کاربرمحور</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-sci"><i class="fa-solid fa-book-open"></i><h3 data-i18n="ws.card.sci.t">مبانی علمی</h3><p data-i18n="ws.card.sci.p">مدل‌های رشد و مصرف خوراک</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-met"><i class="fa-solid fa-flask-vial"></i><h3 data-i18n="ws.card.met.t">روش‌شناسی</h3><p data-i18n="ws.card.met.p">روش اندازه‌گیری و اعتبارسنجی</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+    </div>
+    <div class="ws-actions">
+      <button class="btn primary" id="ws-go-dash"><i class="fa-solid fa-gauge"></i> <span data-i18n="ws.btn.dash">رفتن به داشبورد</span></button>
+      <button class="btn ghost" id="ws-change-pass"><i class="fa-solid fa-key"></i> <span data-i18n="ws.btn.pass">تغییر رمز</span></button>
+      <button class="btn ghost" id="ws-logout"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="ws.btn.logout">خروج از حساب</span></button>
+      <button class="btn ghost" id="ws-back-landing"><i class="fa-solid fa-house"></i> <span data-i18n="ws.btn.home">بازگشت به صفحه اصلی</span></button>
+    </div>
+  </div>
+</section>
+<section class="view" id="v-404" aria-label="Not found">
+  <div class="nf-wrap">
+    <div class="nf-code">404</div>
+    <h2 data-i18n="nf.title">صفحه پیدا نشد</h2>
+    <p data-i18n="nf.p">آدرسی که وارد کرده‌اید وجود ندارد یا جابه‌جا شده است.</p>
+    <div class="nf-actions">
+      <button class="btn primary" data-goto="v-landing"><i class="fa-solid fa-house"></i> <span data-i18n="nf.home">صفحه اصلی</span></button>
+      <button class="btn ghost" data-goto="v-about"><i class="fa-solid fa-circle-info"></i> <span data-i18n="nav.about">درباره ما</span></button>
+    </div>
+  </div>
+</section>
+<section class="view" id="v-feed" aria-label="Feed Monitoring">
+  <div class="view-head">
+    <span class="eyebrow">FEED MONITORING · <span data-i18n="nav.feedGroup">سیستم پایش مصرف خوراک</span></span>
+    <h2 data-i18n="feed.h">سیستم پایش مصرف خوراک</h2>
+    <p data-i18n="feed.p">پایش لحظه‌ای مصرف خوراک هر پرنده با حسگرهای RFID و لودسل دوگانه — از طراحی آزمایش تا اعتبارسنجی و تحلیل سناریو، تمام داده‌ها به‌صورت ایزوله در حساب شما</p>
+  </div>
+
+  <div class="feed-hero">
+    <div class="feed-hero-bg"></div>
+    <div class="feed-hero-inner">
+      <div class="feed-badge"><i class="fa-solid fa-satellite-dish"></i> <span data-i18n="feed.badge">پایش ۲۴ ساعته · داده ایزوله</span></div>
+      <h2><span data-i18n="feed.hero.t">یکپارچه از مزرعه تا تحلیل</span></h2>
+      <p data-i18n="feed.hero.p">هفت ماژول تخصصی در یک گردش کار پیوسته: اعتبارسنجی، طراحی، نقشه زنده، شبیه‌سازی، سناریو، سخت‌افزار و روش‌شناسی</p>
+      <div class="feed-hero-cta">
+        <button class="btn primary" data-goto="v-sim"><i class="fa-solid fa-play"></i> <span data-i18n="feed.btn.sim">شروع شبیه‌سازی زنده</span></button>
+        <button class="btn ghost" data-goto="v-exp"><i class="fa-solid fa-vial"></i> <span data-i18n="feed.btn.exp">طراحی آزمایش</span></button>
+      </div>
+    </div>
+    <div class="feed-visual" aria-hidden="true">
+      <div class="feed-vis-grid">
+        <div class="feed-vis-card"><i class="fa-solid fa-chart-line"></i><b data-i18n="nav.dash">داشبورد اعتبارسنجی</b><span>MAE ۱–۲٪ · FCR</span></div>
+        <div class="feed-vis-card"><i class="fa-solid fa-map"></i><b data-i18n="nav.farm">نقشه فارم پویا</b><span>پخش زمانی · اشغال</span></div>
+        <div class="feed-vis-card"><i class="fa-solid fa-satellite-dish"></i><b data-i18n="nav.sim">شبیه‌سازی زنده</b><span>RFID + لودسل</span></div>
+        <div class="feed-vis-card"><i class="fa-solid fa-microchip"></i><b data-i18n="nav.dev">دستگاه و داده</b><span>۱۲ ستون · ۳ ردیف/وعده</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="feed-kpis">
+    <div class="feed-kpi"><b data-i18n="feed.kpi.acc.v">۱–۲٪</b><span class="kpi-l" data-i18n="feed.kpi.acc">دقت اعتبارسنجی</span><span class="kpi-s" data-i18n="feed.kpi.acc.s">MAE وزن در برابر کاتالوگ</span></div>
+    <div class="feed-kpi"><b data-i18n="feed.kpi.live.v">۲۴ ساعته</b><span class="kpi-l" data-i18n="feed.kpi.live">پوشش زمانی</span><span class="kpi-s" data-i18n="feed.kpi.live.s">رکورد ۳-ردیفه هر وعده</span></div>
+    <div class="feed-kpi"><b data-i18n="feed.kpi.iso.v">۱۰۰٪</b><span class="kpi-l" data-i18n="feed.kpi.iso">ایزوله کاربر</span><span class="kpi-s" data-i18n="feed.kpi.iso.s">هر حساب، داده اختصاصی</span></div>
+    <div class="feed-kpi"><b data-i18n="feed.kpi.through.v">۱۰k+</b><span class="kpi-l" data-i18n="feed.kpi.through">ظرفیت</span><span class="kpi-s" data-i18n="feed.kpi.through.s">رکورد در هر دوره</span></div>
+  </div>
+
+  <div class="feed-section">
+    <h3><i class="fa-solid fa-diagram-project"></i> <span data-i18n="feed.steps.t">گردش کار</span></h3>
+    <div class="feed-steps">
+      <div class="feed-step"><div class="step-no">۱</div><b data-i18n="feed.steps.s1.t">۱. طراحی</b><p data-i18n="feed.steps.s1.p">پن‌ها، تیمارها، تراکم</p></div>
+      <div class="feed-step"><div class="step-no">۲</div><b data-i18n="feed.steps.s2.t">۲. شبیه‌سازی</b><p data-i18n="feed.steps.s2.p">موتور Weibull + صف ۹۰ثانیه</p></div>
+      <div class="feed-step"><div class="step-no">۳</div><b data-i18n="feed.steps.s3.t">۳. پایش زنده</b><p data-i18n="feed.steps.s3.p">RFID + دو لودسل</p></div>
+      <div class="feed-step"><div class="step-no">۴</div><b data-i18n="feed.steps.s4.t">۴. اعتبارسنجی</b><p data-i18n="feed.steps.s4.p">منحنی رشد vs کاتالوگ</p></div>
+      <div class="feed-step"><div class="step-no">۵</div><b data-i18n="feed.steps.s5.t">۵. سناریو</b><p data-i18n="feed.steps.s5.p">تنش گرمایی / ایستگاه دوم</p></div>
+    </div>
+  </div>
+
+  <div class="feed-section">
+    <h3><i class="fa-solid fa-layer-group"></i> <span data-i18n="feed.grid.t">هفت ماژول — یک سامانه</span></h3>
+    <div class="feed-grid">
+      <div class="feed-card" data-goto="v-dash"><i class="fa-solid fa-chart-line"></i><h4 data-i18n="feed.card.dash.t">داشبورد اعتبارسنجی</h4><p data-i18n="feed.card.dash.p">مقایسه روزبه‌روز با کاتالوگ رسمی سویه، FCR پنجره‌ای و باند نر-ماده</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-exp"><i class="fa-solid fa-vial"></i><h4 data-i18n="feed.card.exp.t">طرح آزمایش</h4><p data-i18n="feed.card.exp.p">تعریف پن، تعداد، تیمار و تکرار — مبنای فارم و آمار</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-farm"><i class="fa-solid fa-map"></i><h4 data-i18n="feed.card.farm.t">نقشه فارم پویا</h4><p data-i18n="feed.card.farm.p">پخش زمانی با پرندگان متحرک، اشغال پن و انتخاب پرنده</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-sim"><i class="fa-solid fa-satellite-dish"></i><h4 data-i18n="feed.card.sim.t">شبیه‌سازی زنده</h4><p data-i18n="feed.card.sim.p">جریان لحظه‌ای RFID/وزن، نمودار زنده و خروجی</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-scn"><i class="fa-solid fa-layer-group"></i><h4 data-i18n="feed.card.scn.t">سناریوها</h4><p data-i18n="feed.card.scn.p">مقایسه جفت‌شده با seed یکسان — اثر تیمار</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-dev"><i class="fa-solid fa-microchip"></i><h4 data-i18n="feed.card.dev.t">دستگاه و داده</h4><p data-i18n="feed.card.dev.p">معماری سنسور، منطق صف و schema ۱۲-ستونه</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-met"><i class="fa-solid fa-flask-vial"></i><h4 data-i18n="feed.card.met.t">روش‌شناسی</h4><p data-i18n="feed.card.met.p">زنجیره مدل، معادلات و محدودیت‌های شفاف</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+    </div>
+  </div>
+
+  <div class="feed-cta">
+    <div><h4 data-i18n="feed.cta.t">آماده پایش هستید؟</h4><p data-i18n="feed.cta.p">طرح خود را بسازید یا شبیه‌سازی زنده را آغاز کنید — داده‌ها به‌صورت خودکار ذخیره می‌شود.</p></div>
+    <div class="cta-actions">
+      <button class="btn primary" data-goto="v-sim"><i class="fa-solid fa-play"></i> <span data-i18n="feed.btn.sim">شروع شبیه‌سازی زنده</span></button>
+      <button class="btn ghost" data-goto="v-exp"><i class="fa-solid fa-vial"></i> <span data-i18n="feed.btn.exp">طراحی آزمایش</span></button>
+    </div>
+  </div>
+</section>
+<section class="view" id="v-dash">
+  <div class="view-head">
+    <span class="eyebrow">DASH · <span data-i18n="dash.h">dash.h</span></span>
+    <h2 data-i18n="dash.h.t">dash.h.t</h2>
+    <p data-i18n="dash.p">dash.p</p>
+  </div>
+  <div class="strainbanner">
+    🧬 <span data-i18n="dash.active">کاتالوگ فعال:</span> <b id="db-strain">—</b>
+    <span class="dm">·</span><span id="db-guide">—</span>
+    <a class="src-lnk srcs" id="db-glink" href="#" target="_blank" rel="noopener" data-i18n="dash.source">منبع رسمی ↗</a>
+  </div>
+
+  <div class="grid g4">
+    <div class="card kpi"><h3><span class="ic">⚖️</span><span data-i18n="kpi.bw">وزن نهایی تجمعی d۶۰</span></h3>
+      <div class="v acc"><span id="k-bw">—</span><small style="font-size:13px"> g</small></div>
+      <div class="u"><span data-i18n="kpi.poTarget">هدف کاتالوگ:</span> <b id="k-bw-po">—</b> g · <span data-i18n="kpi.dev">انحراف</span> <b id="k-bw-dev">—</b></div></div>
+    <div class="card kpi"><h3><span class="ic">🎯</span><span data-i18n="kpi.mae">MAE وزن مقابل کاتالوگ</span></h3>
+      <div class="v blue" id="k-mae" dir="ltr">—</div>
+      <div class="u" data-i18n="kpi.maeSub">میانگین قدرمطلق خطا، همه پن‌ها</div></div>
+    <div class="card kpi"><h3><span class="ic">🔁</span><span data-i18n="kpi.fcr">FCR پنجره‌ای d۱۵–۶۰</span></h3>
+      <div class="v org" id="k-fcr" dir="ltr">—</div>
+      <div class="u"><span data-i18n="kpi.ref">مرجع:</span> <b id="k-fcr-po">—</b></div></div>
+    <div class="card kpi"><h3><span class="ic">🍽️</span><span data-i18n="kpi.visits">وعده روزانه هر پرنده</span></h3>
+      <div class="v prp" id="k-visits">—</div>
+      <div class="u">p5–p95: <b id="k-vrange">—</b></div></div>
+  </div>
+
+  <div class="grid g4" style="margin-top:13px">
+    <div class="ministat"><span class="mv bad" id="ms-deaths">—</span><span class="ml" data-i18n-html="ms.deaths">تلفات تجمعی<br>(۰٫۰۸٪/روز از d۲۱)</span></div>
+    <div class="ministat"><span class="mv blue" id="ms-fills">—</span><span class="ml" data-i18n-html="ms.fills">شارژ مخزن<br>(آستانه ۳kg ← ۲۵kg)</span></div>
+    <div class="ministat"><span class="mv org" id="ms-ovl">—</span><span class="ml" data-i18n-html="ms.ovl">رویداد هم‌زمانی<br>(صرف‌نظر از صف >۹۰s)</span></div>
+    <div class="ministat"><span class="mv acc" id="ms-rows">—</span><span class="ml" data-i18n-html="ms.rows">رکورد دستگاه<br>(۳ ردیف/وعده)</span></div>
+  </div>
+
+  <div class="grid g2" style="margin-top:13px">
+    <div class="card">
+      <h3><span class="ic">📈</span><span data-i18n="ch.growth">منحنی رشد — شبیه‌سازی vs کاتالوگ</span>
+        <small class="src" id="ch-growth-src">(Aviagen)</small></h3>
+      <div class="chart-box tall"><canvas id="c-growth"></canvas></div>
+      <div class="legend">
+        <span class="lg"><span class="sw" style="background:var(--acc)"></span><span data-i18n="lg.sim">شبیه‌سازی</span></span>
+        <span class="lg"><span class="sw" style="background:#8a95ab"></span><span data-i18n="lg.po">کاتالوگ رسمی</span></span>
+        <span class="lg"><span class="sw bar" style="background:rgba(139,92,246,.25)"></span><span data-i18n="lg.band">باند نر–ماده</span></span>
+      </div>
+    </div>
+    <div class="card">
+      <h3><span class="ic">🌾</span><span data-i18n="ch.intake">مصرف خوراک روزانه هر پرنده</span></h3>
+      <div class="chart-box tall"><canvas id="c-intake"></canvas></div>
+      <div class="legend">
+        <span class="lg"><span class="sw bar" style="background:rgba(61,123,253,.85)"></span><span data-i18n="lg.sim">شبیه‌سازی</span></span>
+        <span class="lg"><span class="sw" style="background:var(--warn)"></span><span data-i18n="lg.target">هدف کاتالوگ</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid g2" style="margin-top:13px">
+    <div class="card">
+      <h3><span class="ic">🔁</span><span data-i18n="ch.fcr">FCR پنجره‌ای به تفکیک اندازه پن</span></h3>
+      <div class="chart-box"><canvas id="c-fcr"></canvas></div>
+      <div class="note gd" id="fcr-note" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <h3><span class="ic">🌗</span><span data-i18n="ch.diurnal">الگوی شبانه‌روزی خوراک‌خوری</span>
+        <small class="src">(18L:6D — [8])</small></h3>
+      <div class="chart-box"><canvas id="c-diurnal"></canvas></div>
+      <div class="legend">
+        <span class="lg"><span class="sw bar" style="background:rgba(139,92,246,.8)"></span><span data-i18n="lg.hourShare">سهم ساعت از مصرف</span></span>
+        <span class="lg"><span class="sw bar" style="background:#232d44"></span><span data-i18n="lg.dark">تاریکی</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid g2" style="margin-top:13px">
+    <div class="card">
+      <h3><span class="ic">🚦</span><span data-i18n="ch.station">تحلیل اشباع ایستگاه تغذیه</span></h3>
+      <div id="st-list"></div>
+      <div class="note wn" style="margin-top:11px" data-i18n-html="dash.stationNote">💡 یافته طراحی: از پن ۱۰تایی به بالا اشباع ساعات پیک معنادار می‌شود؛ پن ۱۲تایی از ظرفیت عبور می‌کند ⇒ برای پن ≥۱۰ ایستگاه دوم توصیه می‌شود (تب سناریوها).</div>
+    </div>
+    <div class="card">
+      <h3><span class="ic">📋</span><span data-i18n="ch.valTable">جدول تطبیق روزانه</span></h3>
+      <div class="tbl-scroll">
+        <table><thead><tr>
+          <th data-i18n="t.day">روز</th><th class="num" data-i18n="t.simBW">وزن sim</th><th class="num">PO</th>
+          <th class="num" data-i18n="t.dev">انحراف</th><th class="num" data-i18n="t.simFI">FI sim</th>
+          <th class="num">FI PO</th><th data-i18n="t.status">وضعیت</th>
+        </tr></thead><tbody id="tb-val"></tbody></table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 02 EXPERIMENT DESIGNER ================= -->
+<section class="view" id="v-exp">
+  <div class="view-head">
+    <span class="eyebrow">EXP · <span data-i18n="exp.h">exp.h</span></span>
+    <h2 data-i18n="exp.h.t">exp.h.t</h2>
+    <p data-i18n="exp.p">exp.p</p>
+  </div>
+  <div class="card">
+    <h3><span class="ic">🐔</span><span data-i18n="exp.title">طراح آزمایش — پن، تعداد و تیمار</span>
+      <small class="src" data-i18n="exp.sub">پایه نقشه فارم و خروجی‌ها</small></h3>
+    <div class="controls">
+      <div class="ctrl"><label data-i18n="exp.preset">قالب آماده</label>
+        <select id="exp-preset">
+          <option value="std" data-i18n="pre.std">استاندارد پروژه — ۶ پن ۳ تا ۱۲ شاهد</option>
+          <option value="t4x2" data-i18n="pre.t4x2">۴ تیمار × ۲ تکرار — ۸ پن × ۱۵</option>
+          <option value="heatcmp" data-i18n="pre.heatcmp">تنش حرارتی — ۲ شاهد + ۲ تنش × ۲۰</option>
+          <option value="vax" data-i18n="pre.vax">اثر واکسیناسیون — ۳+۳ × ۲۵</option>
+          <option value="big" data-i18n="pre.big">پن بزرگ واحد — ۵۰</option>
+        </select></div>
+      <button class="btn ghost" id="btn-exp-preset" data-i18n="btn.apply">↥ اعمال قالب</button>
+      <button class="btn ghost" id="btn-exp-add" data-i18n="btn.addPen">＋ افزودن پن</button>
+      <button class="btn ghost" id="btn-exp-defaults">↺ <span data-i18n="btn.defaults">بازگشت به پیش‌فرض</span></button>
+      <span style="flex:1"></span>
+      <span class="pill tag bl" id="exp-totals">—</span>
+    </div>
+    <div class="tbl-scroll" style="max-height:340px;margin-top:12px">
+      <table><thead><tr>
+        <th>#</th><th data-i18n="exp.penId">شناسه پن</th><th data-i18n="exp.n">تعداد پرنده</th>
+        <th data-i18n="exp.treat">تیمار</th><th></th></tr></thead>
+        <tbody id="exp-rows"></tbody></table>
+    </div>
+    <div class="note" style="margin-top:12px" data-i18n-html="exp.effectsNote">
+      <b data-i18n="sci.effectTitle">اثر تیمارها</b> (ضرایب کالیبره جهت‌دار): شاهد = مسیر کاتالوگ · پروبیوتیک ≈ +۱٪ مصرف/+۱٫۵٪ وزن · افزاینده رشد ≈ +۲٪/+۲٫۵٪ · واکسن افت موقت ~۱۰٪ d۱۹–۲۲ · کم‌پروتئین +۴٪ مصرف/−۲٫۵٪ وزن · تنش حرارتی موج +۵°C در d۳۲–۳۸.</div>
+    <div class="note wn" data-i18n-html="exp.blockNote">🎲 بند‌بندی تصادفی فعال است: پرنده i-امِ همه پن‌ها هم‌ویژگی ساخته می‌شود تا اختلاف پن‌ها اثر واقعی تیمار باشد؛ برای توان آماری، هر تیمار ≥۳ تکرار (پن) بدهید.</div>
+    <div class="controls" style="margin-top:14px">
+      <button class="btn" id="btn-exp-farm" data-i18n="btn.buildFarm">🗺️ ساخت نقشه فارم و اجرای دوره</button>
+      <span class="dm" style="font-size:11px;align-self:center">seed = 308 · <span data-i18n="exp.repro">اجرای تکرارپذیر</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 03 FARM MAP ================= -->
+<section class="view" id="v-farm">
+  <div class="view-head">
+    <span class="eyebrow">FARM · <span data-i18n="farm.h">farm.h</span></span>
+    <h2 data-i18n="farm.h.t">farm.h.t</h2>
+    <p data-i18n="farm.p">farm.p</p>
+  </div>
+  <div class="card">
+    <div class="controls">
+      <button class="btn" id="fm-play">▶ <span data-i18n="btn.play">پخش</span></button>
+      <button class="btn ghost" id="fm-nextday">⏭ <span data-i18n="btn.nextDay">روز بعد</span></button>
+      <button class="btn ghost" id="fm-restart">🔄 <span data-i18n="btn.restart">از روز ۱۵</span></button>
+      <div class="ctrl"><label data-i18n="fm.speed">سرعت زمان</label>
+        <select id="fm-speed">
+          <option value="600">×600</option>
+          <option value="1800" selected>×1800</option>
+          <option value="3600">×3600</option>
+          <option value="10800">×10800</option>
+        </select></div>
+      <div class="fm-clock"><b id="fm-day">—</b><span id="fm-hour">—:—</span></div>
+      <span style="flex:1"></span>
+      <button class="btn blue" id="fm-xlsx" disabled data-i18n="btn.xlsx">📊 اکسل کامل</button>
+      <button class="btn ghost" id="fm-csv" disabled data-i18n="btn.csvRaw">⬇ CSV خام</button>
+    </div>
+    <div class="prog" style="margin-top:13px"><i id="fm-pg"></i></div>
+    <div class="fm-meta"><span id="fm-lbl"></span><span id="fm-env"></span></div>
+  </div>
+
+  <div class="farm-grid" style="margin-top:13px">
+    <div class="card barn-card">
+      <h3><span class="ic">🏡</span><span data-i18n="farm.barn">سالن تحقیقاتی — نمای زنده</span>
+        <small class="src" data-i18n="farm.locked">هر وعده موتور = یک حرکت جوجه</small>
+        <button id="fm-tags" class="tag bl" style="cursor:pointer;border:none" data-on="1">🏷 <span data-i18n="farm.tags">تگ‌ها</span></button>
+        <span class="lightchip" id="fm-light">💡 <span data-i18n="farm.light">روشنایی</span></span></h3>
+      <div class="barn">
+        <div class="fanrow"><span class="fan">🌀</span><span class="fan">🌀</span><span class="fan">🌀</span></div>
+        <div id="pens-wrap" class="pens-wrap"></div>
+        <div class="darkveil" id="fm-veil">🌙 <span data-i18n="farm.dark">دوره تاریکی — 18L:6D</span></div>
+        <div class="fm-empty" id="fm-empty">
+          <div class="inner"><div class="e">🏡</div>
+            <p data-i18n="farm.emptyP">هنوز دوره‌ای ساخته نشده است. از تب «طرح آزمایش» پن‌ها و تیمارها را تعریف کنید.</p>
+            <button class="btn" id="btn-goto-exp" data-i18n="farm.goExp">🐔 رفتن به طراح آزمایش</button>
+          </div></div>
+      </div>
+    </div>
+    <div class="side-col">
+      <div class="card insp">
+        <h3><span class="ic">🔍</span><span data-i18n="farm.insp">اینسپکتور —</span> <span id="insp-title" class="acc" data-i18n="farm.wholeFarm">کل فارم</span></h3>
+        <div id="insp-body"></div>
+        <div class="chart-box sm" style="margin-top:9px"><canvas id="c-insp"></canvas></div>
+      </div>
+      <div class="card tickercard">
+        <h3><span class="ic">📡</span><span data-i18n="farm.ticker">جریان رویدادها</span></h3>
+        <ul id="ticker"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid g2" style="margin-top:13px">
+    <div class="card"><h3><span class="ic">📈</span><span data-i18n="ch.farmGrowth">رشد به تفکیک تیمار ±SE</span></h3>
+      <div class="chart-box tall"><canvas id="c-farm-growth"></canvas></div>
+      <div class="legend" id="lg-farm-growth"></div></div>
+    <div class="card"><h3><span class="ic">🌾</span><span data-i18n="ch.farmFi">مصرف روزانه به تفکیک تیمار</span></h3>
+      <div class="chart-box tall"><canvas id="c-farm-fi"></canvas></div>
+      <div class="legend" id="lg-farm-fi"></div></div>
+  </div>
+
+  <div class="card" style="margin-top:13px">
+    <h3><span class="ic">📐</span><span data-i18n="bio.title">آزمایشگاه آمار زیستی</span>
+      <small class="src" data-i18n="bio.sub">واحد نمونه = پن · Welch t / ANOVA یک‌راهه / η² / Holm</small></h3>
+    <div class="controls">
+      <div class="ctrl"><label data-i18n="bio.metric">متغیر پاسخ</label>
+        <select id="bio-metric">
+          <option value="bw" data-i18n="bio.bw">وزن پایان دوره (g)</option>
+          <option value="fi" data-i18n="bio.fi">کل مصرف هر پرنده (g)</option>
+          <option value="fcr" data-i18n="bio.fcr">FCR پنجره‌ای</option>
+          <option value="mort" data-i18n="bio.mort">تلفات (%)</option>
+        </select></div>
+      <button class="btn ghost" id="btn-bio-run" data-i18n="btn.runStats">⚡ تحلیل آماری</button>
+    </div>
+    <div id="bio-out" style="margin-top:12px"></div>
+  </div>
+</section>
+
+<!-- ================= 04 LIVE SIM ================= -->
+<section class="view" id="v-sim">
+  <div class="view-head">
+    <span class="eyebrow">SIM · <span data-i18n="sim.h">sim.h</span></span>
+    <h2 data-i18n="sim.h.t">sim.h.t</h2>
+    <p data-i18n="sim.p">sim.p</p>
+  </div>
+  <div class="card">
+    <div class="controls">
+      <div class="ctrl"><label data-i18n="sim.age0">سن شروع</label><input type="number" id="in-age0" value="15" min="10" max="45"></div>
+      <div class="ctrl"><label data-i18n="sim.age1">سن پایان</label><input type="number" id="in-age1" value="60" min="20" max="70"></div>
+      <div class="ctrl"><label data-i18n="sim.pen">پن</label>
+        <select id="in-pen">
+          <option value="P01">P01 — 3</option><option value="P02">P02 — 5</option>
+          <option value="P03">P03 — 7</option><option value="P04">P04 — 8</option>
+          <option value="P05" selected>P05 — 10</option><option value="P06">P06 — 12</option>
+        </select></div>
+      <div class="ctrl"><label data-i18n="sim.speed">سرعت</label>
+        <select id="in-speed">
+          <option value="1">🐢 ×1</option><option value="4" selected>▶ ×4</option>
+          <option value="12">⏩ ×12</option><option value="40">⚡ ×40</option>
+          <option value="999">🚀 <span data-i18n="sim.instant">فوری</span></option>
+        </select></div>
+      <div class="ctrl"><label>seed</label><input type="number" id="in-seed" value="308" min="1" max="99999"></div>
+      <button class="btn" id="btn-run">▶ <span data-i18n="btn.run">اجرا</span></button>
+      <button class="btn ghost" id="btn-jump" disabled>⏭ <span data-i18n="btn.toEnd">پرش به پایان</span></button>
+      <button class="btn ghost" id="btn-pause" disabled>⏸ <span data-i18n="btn.pause">توقف موقت</span></button>
+      <button class="btn ghost" id="btn-stop" disabled>⏹ <span data-i18n="btn.stop">پایان</span></button>
+      <button class="btn blue" id="btn-export" disabled>⬇ CSV</button>
+      <button class="btn warn" id="btn-export-xlsx" disabled>📊 Excel</button>
+    </div>
+    <div class="prog" style="margin-top:13px"><i id="pg"></i></div>
+    <div style="display:flex;justify-content:space-between;margin-top:7px;font-size:11px;color:var(--mut)">
+      <span id="pg-lbl"></span><span id="pg-rows"></span>
+    </div>
+  </div>
+
+  <div class="grid g4" style="margin-top:13px">
+    <div class="card kpi"><h3><span class="ic">📅</span><span data-i18n="sim.day">روز جاری</span></h3>
+      <div class="v" id="l-day">—</div><div class="u" id="l-date">—</div></div>
+    <div class="card kpi"><h3><span class="ic">⚖️</span><span data-i18n="sim.meanBw">میانگین وزن پن</span></h3>
+      <div class="v acc" id="l-bw" dir="ltr">—</div>
+      <div class="u">PO: <b id="l-bwpo" dir="ltr">—</b> g · 🌡 <b id="l-temp" dir="ltr">—</b>°C</div></div>
+    <div class="card kpi"><h3><span class="ic">🌾</span><span data-i18n="sim.fiToday">مصرف امروز هر پرنده</span></h3>
+      <div class="v blue" id="l-fi" dir="ltr">—</div>
+      <div class="u"><span data-i18n="sim.visits">وعده‌ها</span>: <b id="l-visits">—</b></div></div>
+    <div class="card kpi"><h3><span class="ic">🚦</span><span data-i18n="sim.busy">اشباع ایستگاه</span></h3>
+      <div class="v org" id="l-busy" dir="ltr">—</div>
+      <div class="u" data-i18n="sim.capacity">ظرفیت سوراخ تغذیه واحد</div></div>
+  </div>
+
+  <div class="grid g2" style="margin-top:13px">
+    <div class="card">
+      <h3><span class="ic">🔧</span><span data-i18n="sim.device">دستگاه در لحظه</span></h3>
+      <div class="dev">
+        <div class="dpart"><div class="dbox" id="d-rfid"><span class="led" id="led-rfid"></span>📡 RFID
+          <b style="font-size:15px" id="dv-bird">—</b><span>RSSI <b id="dv-rssi">—</b> dBm</span></div></div>
+        <div class="dpart"><div class="dbox" id="d-scale"><span class="led" id="led-scale"></span>⚖️ LC1
+          <span class="big"><span id="dv-w" dir="ltr">—</span> g</span><span>raw: <b id="dv-raw" dir="ltr">—</b></span></div></div>
+        <div class="dpart"><div class="dbox" id="d-bin"><span class="led" id="led-bin"></span>🗄️ LC2
+          <div class="gauge" id="dv-gauge"><i id="dv-gfill"></i><span id="dv-binval" dir="ltr">—</span></div>
+          <span>Δ: <b id="dv-delta" dir="ltr">—</b> g</span></div></div>
+      </div>
+      <div class="statusline" id="dv-status"></div>
+    </div>
+    <div class="card" style="padding-bottom:0">
+      <h3><span class="ic">🖥️</span><span data-i18n="sim.stream">جریان خام داده</span></h3>
+      <div class="feedwrap">
+        <div class="feedhead"><i></i><i></i><i></i><span>sensor_data — live</span></div>
+        <div class="feed" id="feed"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid g2" style="margin-top:13px">
+    <div class="card"><h3><span class="ic">📈</span><span data-i18n="ch.liveGrowth">رشد زنده vs کاتالوگ</span></h3>
+      <div class="chart-box"><canvas id="c-live-growth"></canvas></div></div>
+    <div class="card"><h3><span class="ic">📊</span><span data-i18n="ch.liveCum">مصرف تجمعی vs هدف</span></h3>
+      <div class="chart-box"><canvas id="c-live-cum"></canvas></div></div>
+  </div>
+</section>
+
+<!-- ================= 05 SCENARIOS ================= -->
+<section class="view" id="v-scn">
+  <div class="view-head">
+    <span class="eyebrow">SCN · <span data-i18n="scn.h">scn.h</span></span>
+    <h2 data-i18n="scn.h.t">scn.h.t</h2>
+    <p data-i18n="scn.p">scn.p</p>
+  </div>
+  <div class="card">
+    <h3><span class="ic">🌡️</span><span data-i18n="scn.title">طراحی سناریوی مقایسه‌ای</span>
+      <small class="src" data-i18n="scn.paired">seed جفت‌شده — فقط عامل سناریو تغییر می‌کند</small></h3>
+    <div class="controls">
+      <div class="ctrl"><label data-i18n="scn.type">سناریو</label>
+        <select id="scn-type">
+          <option value="heat" data-i18n="scn.heat">🌡️ استرس حرارتی</option>
+          <option value="stn" data-i18n="scn.stn">🏗️ ایستگاه دوم تغذیه</option>
+        </select></div>
+      <div id="f-heat" style="display:contents">
+        <div class="ctrl"><label data-i18n="scn.from">شروع موج (روز)</label><input type="number" id="in-from" value="32" min="16" max="58"></div>
+        <div class="ctrl"><label data-i18n="scn.days">طول (روز)</label><input type="number" id="in-days" value="7" min="1" max="20"></div>
+        <div class="ctrl"><label>ΔT °C</label>
+          <select id="in-dt"><option>2</option><option>4</option><option selected>5</option><option>6</option><option>8</option></select></div>
+      </div>
+      <div id="f-stn" style="display:none">
+        <div class="ctrl"><label data-i18n="scn.config">پیکربندی</label>
+          <select id="in-stn"><option value="2" data-i18n="scn.twoSt">۲ ایستگاه</option>
+          <option value="1" data-i18n="scn.oneSt">۱ ایستگاه (پایه)</option></select></div>
+      </div>
+      <button class="btn warn" id="btn-scn">⚡ <span data-i18n="btn.compare">اجرای مقایسه</span></button>
+    </div>
+    <div class="note wn" data-i18n-html="scn.modelNote">فرضیات کالیبره گرما: FI×exp(−0.045·ΔT) حین موج + افت مستقیم وزن ≈۱٫۲٪/°C با بازیابی جزئی پس از تنش. ضرایب جهت‌دارند نه قطعی؛ مسیر پایه دقیقاً نتایج اعتبارسنجی است.</div>
+  </div>
+
+  <div id="scn-res" style="display:none">
+    <div class="grid g4" style="margin-top:13px">
+      <div class="card kpi"><h3><span data-i18n="scn.dBw">Δ وزن نهایی</span></h3><div class="v" id="d-bw" dir="ltr">—</div><div class="u" id="d-bw-sub">—</div></div>
+      <div class="card kpi"><h3><span data-i18n="scn.dip">حداکثر افت حین رویداد</span></h3><div class="v org" id="d-dip" dir="ltr">—</div><div class="u" id="d-dip-sub">—</div></div>
+      <div class="card kpi"><h3><span data-i18n="scn.dFcr">FCR پایه→سناریو</span></h3><div class="v blue" id="d-fcr" dir="ltr">—</div><div class="u" id="d-fcr-sub">—</div></div>
+      <div class="card kpi"><h3><span data-i18n="scn.dBusy">اشباع پیک بدترین پن</span></h3><div class="v prp" id="d-busy" dir="ltr">—</div><div class="u" id="d-busy-sub">—</div></div>
+    </div>
+    <div class="grid g2" style="margin-top:13px">
+      <div class="card"><h3><span data-i18n="scn.chGrowth">رشد پایه vs سناریو</span></h3>
+        <div class="chart-box"><canvas id="c-scn-growth"></canvas></div>
+        <div class="legend">
+          <span class="lg"><span class="sw" style="background:var(--acc)"></span><span data-i18n="scn.base">پایه</span></span>
+          <span class="lg"><span class="sw" style="background:var(--warn)"></span><span data-i18n="scn.scenario">سناریو</span></span>
+          <span class="lg"><span class="sw" style="background:#8a95ab"></span>PO</span></div></div>
+      <div class="card"><h3><span data-i18n="scn.chFi">مصرف روزانه پایه vs سناریو</span></h3>
+        <div class="chart-box"><canvas id="c-scn-fi"></canvas></div></div>
+    </div>
+    <div class="card" style="margin-top:13px">
+      <h3><span data-i18n="scn.table">جدول مقایسه پن‌ها</span></h3>
+      <div class="tbl-scroll"><table><thead><tr>
+        <th data-i18n="exp.penId">پن</th><th class="num">n</th>
+        <th class="num" data-i18n="scn.bwBase">وزن پایه</th><th class="num" data-i18n="scn.bwScn">وزن سناریو</th>
+        <th class="num">Δ%</th><th class="num" data-i18n="scn.fcrBase">FCR پایه</th><th class="num" data-i18n="scn.fcrScn">FCR سناریو</th>
+        <th class="num" data-i18n="scn.busyBase">اشباع پایه</th><th class="num" data-i18n="scn.busyScn">اشباع سناریو</th>
+      </tr></thead><tbody id="tb-scn"></tbody></table></div>
+      <div class="note gd" id="scn-note" style="margin-top:11px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 06 DEVICE & DATA ================= -->
+<section class="view" id="v-dev">
+  <div class="view-head">
+    <span class="eyebrow">DEV · <span data-i18n="dev.h">dev.h</span></span>
+    <h2 data-i18n="dev.h.t">dev.h.t</h2>
+    <p data-i18n="dev.p">dev.p</p>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <h3><span class="ic">🔧</span><span data-i18n="dev.arch">معماری دستگاه شبیه‌سازی‌شده</span></h3>
+      <div class="srcs" style="line-height:2.2">
+        <p data-i18n-html="dev.lc1"><b>① لودسل ۱ — سکوی توزین:</b> نویز خام σ≈4g روی raw_weight_g و فیلتر EMA برای weight_g مطابق نمونه مرجع کاربر.</p>
+        <p data-i18n-html="dev.lc2"><b>② لودسل ۲ — مخزن ۲۵kg:</b> کاهش لحظه‌ای جرم = مصرف؛ شارژ خودکار در آستانه ۳kg.</p>
+        <p data-i18n-html="dev.rfid"><b>③ RFID بال:</b> شناسایی هنگام ورود؛ ۰٫۴٪ بدون ID و RSSI میانگین −۶۵dBm — سازگار با دقت UHF-RFID منتشرشده [7].</p>
+        <p data-i18n-html="dev.queue"><b>④ منطق صف:</b> سوراخ واحد؛ انتظار ≤۹۰ ثانیه وگرنه رویداد هم‌زمانی — گلوگاه پن‌های بزرگ.</p>
+      </div>
+      <div class="note" data-i18n="dev.threeRows">هر وعده دقیقاً ۳ ردیف تولید می‌کند (شروع/میانه/پایان) مثل نمونه سه‌ردیفی مرجع.</div>
+    </div>
+    <div class="card">
+      <h3><span class="ic">🗄️</span><span data-i18n="dev.schema">Schema رکورد دستگاه</span></h3>
+      <div class="feed" data-skip-i18n-scan style="height:auto;max-height:none;border-radius:9px">
+timestamp,flock_id,bird_id,sensor_id,age_day,raw_weight_g,
+weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
+
+<span class="dm">— sample (S04, d18) —</span>
+2026-08-22 08:00:01,F01,B023,S04,18,641,642,16.70,-38,23.9,58.6,-63
+2026-08-22 08:00:11,F01,B023,S04,18,638,641,16.66,-71,23.9,58.6,-63
+2026-08-22 08:00:21,F01,B023,S04,18,640,640,16.62,-104,23.9,58.7,-64</div>
+      <div class="note" style="margin-top:12px" data-i18n-html="dev.excelNote"><b>خروجی Excel</b> چهار شیت دارد: خلاصه روزانه · داده دستگاه · طرح آزمایش · کاتالوگ PO مرجع — با هدر فریز و نمای RTL.</div>
+    </div>
+  </div>
+
+  <!-- ===== Cycle manager + live device stream ===== -->
+  <div class="dev-grid">
+    <!-- Cycle manager card -->
+    <div class="card dev-card">
+      <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></span><span data-i18n="dev.cycles">دوره‌های پرورشی</span></h3>
+
+      <form class="cy-form" id="cy-form" autocomplete="off">
+        <div class="field">
+          <input id="cy-code" class="field__input" type="text" placeholder=" " maxlength="12" />
+          <label class="field__label" for="cy-code" data-i18n="form.codeLabel">کد دوره (مثلاً F01)</label>
+          <span class="field__bar"></span>
+        </div>
+        <div class="field field--grow">
+          <input id="cy-label" class="field__input" type="text" placeholder=" " />
+          <label class="field__label" for="cy-label" data-i18n="form.nameLabel">نام دوره</label>
+          <span class="field__bar"></span>
+        </div>
+        <div class="field field--select">
+          <div class="strain-select" id="cy-strain" role="combobox" data-title-i18n="hdr.strainAria" aria-label="سویه" aria-expanded="false" aria-controls="cy-strain-list" tabindex="0">
+            <div class="strain-select__current" id="cy-strain-current">
+              <span class="strain-select__value" id="cy-strain-value">Ross 308</span>
+              <span class="strain-select__icon" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span>
+            </div>
+            <ul class="strain-select__list" id="cy-strain-list" role="listbox" hidden>
+              <li class="strain-select__option" role="option" data-key="ross308" aria-selected="true" tabindex="-1"><span class="strain-select__radio" aria-hidden="true"></span>Ross 308</li>
+              <li class="strain-select__option" role="option" data-key="cobb500" aria-selected="false" tabindex="-1"><span class="strain-select__radio" aria-hidden="true"></span>Cobb 500</li>
+              <li class="strain-select__option" role="option" data-key="aaplus" aria-selected="false" tabindex="-1"><span class="strain-select__radio" aria-hidden="true"></span>AA+</li>
+              <li class="strain-select__option" role="option" data-key="hubbardep" aria-selected="false" tabindex="-1"><span class="strain-select__radio" aria-hidden="true"></span>Hubbard EP</li>
+            </ul>
+          </div>
+        </div>
+        <button type="submit" id="cy-create" class="btn pri cy-form__submit">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i> <span data-i18n="dev.newCycle">ایجاد دوره</span>
+        </button>
+      </form>
+
+      <div id="cy-list" class="cy-list"></div>
+    </div>
+
+    <!-- Live stream card -->
+    <div class="card dev-card">
+      <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-wave-square" aria-hidden="true"></i></span><span data-i18n="dev.live">جریان داده دستگاه (زنده)</span>
+        <span id="ws-dot" class="ws-dot off" title="WebSocket"></span></h3>
+      <div id="live-feed" class="live-feed" data-skip-i18n-scan></div>
+      <div class="note" data-i18n="dev.liveNote">رویدادهای خام دستگاه (RFID ورود + لودسل مخزن + تایم وعده) به‌صورت زنده از بک‌اند دریافت می‌شوند.</div>
+    </div>
+  </div>
+
+  <div class="card dev-stats" style="margin-top:14px">
+    <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-chart-simple" aria-hidden="true"></i></span><span data-i18n="dev.stats">آمار دوره انتخاب‌شده</span></h3>
+    <div id="cy-stats" class="ministats" data-skip-i18n-scan>
+      <div class="mstat"><span class="mv" id="st-visits">—</span><span class="ml" data-i18n="dev.stat.visits">بازدید</span></div>
+      <div class="mstat"><span class="mv" id="st-birds">—</span><span class="ml" data-i18n="dev.stat.birds">پرندگان یکتا</span></div>
+      <div class="mstat"><span class="mv" id="st-rows">—</span><span class="ml" data-i18n="dev.stat.rows">ردیف دستگاه</span></div>
+      <div class="mstat"><span class="mv" id="st-intake">—</span><span class="ml" data-i18n="dev.stat.intake">مصرف کل (g)</span></div>
+      <div class="mstat"><span class="mv" id="st-avgw">—</span><span class="ml" data-i18n="dev.stat.avgw">میانگین وزن اولیه (g)</span></div>
+      <div class="mstat"><span class="mv" id="st-miss">—</span><span class="ml" data-i18n="dev.stat.miss">RFID ازدست‌رفته</span></div>
+    </div>
+  </div>
+
+  <!-- ===== Realtime registrations (bird tag + initial weight + exact timestamp) ===== -->
+  <div class="card dev-regs" style="margin-top:14px">
+    <h3 class="dev-card__title">
+      <span class="ic"><i class="fa-solid fa-tag" aria-hidden="true"></i></span><span data-i18n="dev.regs">ثبت‌های لحظه‌ای ورود پرنده</span>
+      <span class="dev-regs__live"><i class="fa-solid fa-circle" aria-hidden="true"></i> <span data-i18n="dev.live">زنده</span></span>
+    </h3>
+    <div class="reg-table" data-skip-i18n-scan>
+      <div class="reg-thead">
+        <span class="reg-cell reg-cell--feed" data-i18n="dev.reg.feed">غذای مصرف‌شده (g)</span>
+        <span class="reg-cell reg-cell--w" data-i18n="dev.reg.weight">وزن مرغ (g)</span>
+        <span class="reg-cell reg-cell--elapsed" data-i18n="dev.reg.elapsed">زمان سپری‌شده (s)</span>
+        <span class="reg-cell reg-cell--dt" data-i18n="dev.reg.datetime">تاریخ و ساعت</span>
+        <span class="reg-cell reg-cell--tag" data-i18n="dev.reg.tag">شناسه مرغ</span>
+        <span class="reg-cell reg-cell--sensor" data-i18n="dev.reg.sensor">شناسه دستگاه</span>
+      </div>
+      <div id="reg-body" class="reg-body"></div>
+    </div>
+    <div class="note dev-regs__note" data-i18n="dev.regsNote">هر پرنده هنگام ورود به دستگاه تگ‌خوانی می‌شود؛ وزن اولیه، تاریخ و ساعت ثبت دقیقاً در لحظه ورود ثبت و در دیتابیس ذخیره می‌گردد — این پنل همان داده‌ها را زنده نمایش می‌دهد.</div>
+  </div>
+</section>
+
+<!-- ================= 07 SCIENCE ================= -->
+<section class="view" id="v-sci">
+  <div class="view-head">
+    <span class="eyebrow">SCI · <span data-i18n="sci.h">sci.h</span></span>
+    <h2 data-i18n="sci.h.t">sci.h.t</h2>
+    <p data-i18n="sci.p">sci.p</p>
+  </div>
+  <div class="card">
+    <h3><span class="ic">📚</span><span data-i18n="sci.sources">منابع علمی — با نقل‌قول مستقیم</span></h3>
+    <div class="srcs">
+      <p><b>[1] Aviagen — Ross Broiler Management Handbook (2025)</b>
+        <a href="https://aviagen.com/assets/Tech_Center/Ross_Broiler/Aviagen-ROSS-Broiler-Handbook-EN.pdf" target="_blank" rel="noopener">↗</a><br>
+        <span dir="ltr">“After 27 days of age, the temperature should remain at 20°C”</span> → <span data-i18n="sci.use1">جدول وزن↔دما و برنامه نوری مدل.</span></p>
+      <p><b>[2] Marcato et al. (2008). R. Bras. Zootec.</b>
+        <a href="https://redalyc.org/pdf/1797/179713999007.pdf" target="_blank" rel="noopener">↗</a><br>
+        «the Gompertz function is the one that best describes them» → <span data-i18n="sci.use2">پارامترهای گومپرتز Ross.</span></p>
+      <p><b>[3] Aviagen — Ross 308 Performance Objectives (2007)</b>
+        <a href="https://www.elsitioavicola.com/downloads/download/90" target="_blank" rel="noopener">↗</a> ·
+        <b>Cobb-Vantress Supplement (2022)</b>
+        <a href="https://www.cobbgenetics.com/assets/Cobb-Files/2022-Cobb500-Broiler-Performance-Nutrition-Supplement.pdf" target="_blank" rel="noopener">↗</a> ·
+        <b>AA+ Objectives (2022)</b>
+        <a href="https://aviagen.com/assets/Tech_Center/AA_Broiler/ArborAcres-BroilerPerformanceObjectives2022-EN.pdf" target="_blank" rel="noopener">↗</a> ·
+        <b>Hubbard Efficiency Plus (2019 metric)</b>
+        <a href="https://www.hubbardbreeders.com/media/broiler_performance_objectives_efficiency_plus_enptes_20190717__026422600_1023_23082019.pdf" target="_blank" rel="noopener">↗</a><br>
+        <span data-i18n="sci.use3">کاتالوگ کامل وزن/مصرف/FCR هر سویه — عیناً از اسناد رسمی و بدون تکرار بین سویه‌ها.</span></p>
+      <p><b>[5] van der Sluis et al. (2025). Poultry Science 104:105103</b>
+        <a href="https://edepot.wur.nl/691892" target="_blank" rel="noopener">↗</a><br>
+        <span dir="ltr">“The NFV decreased as the birds grew older”</span> → <span data-i18n="sci.use5">موتور وعده‌ها (−۲٫۲۱/day؛ مدت +۲٫۱۹s/day).</span></p>
+      <p><b>[6] Erensoy et al. (2022). Arch Anim Breed 65:171</b>
+        <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9097258" target="_blank" rel="noopener">↗</a><br>
+        <span dir="ltr">“Feed efficiency worsened with larger group size”</span> → <span data-i18n="sci.use6">جهت اثر اندازه گروه.</span></p>
+      <p><b>[7] Li et al. (2018). animal — UHF-RFID</b>
+        <a href="https://www.sciencedirect.com/science/article/pii/S1751731118003440" target="_blank" rel="noopener">↗</a><br>
+        IBN 92.5% / TS 99% · «1.3 to 2.0 min per visit» → <span data-i18n="sci.use7">مدل RFID و مدت وعده.</span></p>
+      <p><b>[8] Li et al. (2021). Poultry Science</b>
+        <a href="https://pubmed.ncbi.nlm.nih.gov/33662663/" target="_blank" rel="noopener">↗</a><br>
+        <span dir="ltr">“less than 60 s… lights ON/OFF peaks”</span> → <span data-i18n="sci.use8">دیورنال دوقله و هم‌زمانی آخور.</span></p>
+    </div>
+  </div>
+
+  <div class="grid g2" style="margin-top:13px">
+    <div class="card"><h3><span class="ic">🔗</span><span data-i18n="sci.chain">زنجیره مدل‌سازی</span></h3>
+      <div class="srcs" style="line-height:2.3">
+        <p><span class="step ok" data-i18n="st.1">گام ۱</span><span data-i18n="chain.1">کاتالوگ سویه = هدف قفل‌شده هر روز (BW/FI نر و ماده)</span></p>
+        <p><span class="step ok" data-i18n="st.2">گام ۲</span><span data-i18n="chain.2">انحراف فردی CV≈۵٪ + AR(1) + بند‌بندی بین پن‌ها</span></p>
+        <p><span class="step ok" data-i18n="st.3">گام ۳</span><span data-i18n="chain.3">رگرسیون‌های RFID = تعداد/مدت وعده (Weibull shares)</span></p>
+        <p><span class="step ok" data-i18n="st.4">گام ۴</span><span data-i18n="chain.4">دیورنال دوقله + نور 18L:6D</span></p>
+        <p><span class="step ok" data-i18n="st.5">گام ۵</span><span data-i18n="chain.5">اندازه گروه = تعدیل جزئی FI/BW پن</span></p>
+        <p><span class="step ok" data-i18n="st.6">گام ۶</span><span data-i18n="chain.6">فیزیک لودسل/RFID = نویز، EMA، صف ≤۹۰s، شارژ مخزن</span></p>
+        <p><span class="step wn" data-i18n="st.stat">آمار</span><span data-i18n="chain.7">اثر تصادفی پن (~۱٫۲٪) → واریانس واقعی تکرارها برای ANOVA/Welch</span></p>
+        <p><span class="step ok" data-i18n="st.out">خروجی</span><span data-i18n="chain.8">MAE وزن ≈ ۱–۲٪ نسبت به کاتالوگ سویه فعال</span></p>
+      </div></div>
+    <div class="card"><h3><span class="ic">⚖️</span><span data-i18n="sci.limits">شفافیت و محدودیت‌ها</span></h3>
+      <div class="srcs" style="line-height:2.05">
+        <p data-i18n="lim.1">① Ross booklet سال ۲۰۰۷ است؛ نسخه‌های جدیدتر اهداف متفاوت ولی روند یکسان دارند.</p>
+        <p data-i18n="lim.2">② اثر اندازه گروه در ۳–۱۲ پرنده غالباً غیرمعنی‌دار؛ ضرایب کوچک و جهت‌دارند.</p>
+        <p data-i18n="lim.3">③ مدل صف ساده (≤۹۰s)؛ رقابت اجتماعی واقعی پیچیده‌تر است.</p>
+        <p data-i18n="lim.4">④ تلفات احتمال ثابت روزانه از d۲۱ [تأییدنشده].</p>
+        <p data-i18n="lim.5">⑤ ضرایب تیمارها و سناریو گرما کالیبره‌اند نه استخراج مستقیم منبع.</p>
+        <p data-i18n="lim.6">⑥ آمار استنباطی روی «پن» به‌عنوان واحد نمونه است؛ n کم = توان کم.</p>
+      </div></div>
+  </div>
+
+  <div class="card" style="margin-top:13px">
+    <h3><span class="ic">👤</span><span data-i18n="about.title">درباره و مالکیت</span></h3>
+    <div class="srcs" style="line-height:2.2">
+      <p data-i18n-html="about.body">آرین نسخه ۳٫۰ — ساخته و نگهداری‌شده توسط <b>Arsalan Rezazadeh</b>. شبیه‌ساز آکادمیک دستگاه RFID + دو لودسل برای سویه‌های گوشتی صنعتی با کاتالوگ‌های رسمی Aviagen/Cobb-Vantress/Hubbard، موتور وعده‌محور و آزمایشگاه آمار زیستی. اجرای کاملاً آفلاین، بدون سرور، seed تکرارپذیر.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ================= VIEW: METHODOLOGY ================= -->
+<section class="view" id="v-met">
+  <div class="card">
+    <h3><span class="ic">📝</span><span data-i18n="met.abstractT">چکیده</span></h3>
+    <p class="abstract" style="font-size:12.5px;color:var(--mut);line-height:2.2" data-i18n-html="met.abstract">
+      آرین یک شبیه‌ساز گسسته-رویداد از ایستگاه پایش مصرف خوراک طیور است که داده‌های سطح دستگاه
+      (RFID + دو لودسل) را با وضوح سه‌ردیفی به‌ازای هر وعده تولید می‌کند. موتور وعده‌محور آن روی
+      کاتالوگ‌های عملکردی رسمی چهار سویه صنعتی قفل شده و فیزیک سنسورها مطابق ادبیات داوری‌شده کالیبره شده است.
+      اعتبارسنجی در برابر جداول مرجع MAE وزن ۱–۲٪ نشان می‌دهد.</p>
+  </div>
+  <div class="grid g2" style="margin-top:13px">
+    <div class="card">
+      <h3><span class="ic">🔀</span><span data-i18n="met.pipeline">خط تولید داده</span></h3>
+      <div class="pipe">
+        <div class="pstep"><b>۱</b><span data-i18n="met.p1">کاتالوگ سویه</span><small data-i18n="met.p1s">BW/FI روزانه نر و ماده</small></div>
+        <div class="parrow" dir="ltr">→</div>
+        <div class="pstep"><b>۲</b><span data-i18n="met.p2">مدل فردی</span><small data-i18n="met.p2s" dir="ltr">CV≈۵٪ + AR(1) + بند‌بندی</small></small></div>
+<div class="parrow" dir="ltr">→</div>
+        <div class="pstep"><b>۳</b><span data-i18n="met.p3">موتور وعده</span><small data-i18n="met.p3s">Weibull shares + دیورنال دوقله</small></div>
+<div class="parrow" dir="ltr">→</div>
+        <div class="pstep"><b>۴</b><span data-i18n="met.p4">فیزیک دستگاه</span><small data-i18n="met.p4s" dir="ltr">لودسل + RFID + صف ≤۹۰s</small></small></div>
+        <div class="parrow">→</div>
+        <div class="pstep accent"><b>۵</b><span data-i18n="met.p5">رکورد خام</span><small data-i18n="met.p5s">۳ ردیف schema ۱۲ستونه</small></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3><span class="ic">🧮</span><span data-i18n="met.eqTitle">معادلات مدل</span></h3>
+      <div class="eqs">
+        <div class="eq"><code>W(t) = W<sub>cat</sub>(t)·(1+CV+ε_t)·m_pen·γ(t)</code>
+          <small data-i18n="met.e1">وزن فردی = کاتالوگ × انحراف ژنتیکی × اثر پن × ضریب تنش</small></div>
+        <div class="eq"><code>ε_t = 0.9·ε_{t−1} + N(0,0.008²)</code>
+          <small data-i18n="met.e2">فرایند خودرگرسیون AR(1) برای نوسان روزانه</small></div>
+        <div class="eq"><code>n = max(6, round(FI/rate × 60/D))</code>
+          <small data-i18n="met.e3">تعداد وعده = مصرف ÷ نرخ ÷ مدت وعده [5]</small></div>
+        <div class="eq"><code>D(a) = min(135, 45+2.192×(a−15))</code>
+          <small data-i18n="met.e4">مدت وعده؛ شیب +۲٫۱۹ s/day [5]</small></div>
+        <div class="eq"><code>w ~ Weibull(β=1.35)</code>
+          <small data-i18n="met.e5">توزیع اندازه وعده؛ بیشتر &lt;60s [7][8]</small></div>
+        <div class="eq"><code>raw = W + N(0,4²); EMA_0.5 → weight_g</code>
+          <small data-i18n="met.e6">لودسل: نویز σ≈4g و فیلتر EMA</small></div>
+        <div class="eq"><code>RSSI ~ clamp(N(−65,5²))</code>
+          <small data-i18n="met.e7">RFID؛ 0.4% خطا، 2% ضعیف [7]</small></div>
+        <div class="eq"><code>m_pen ~ N(0,0.012²)</code>
+          <small data-i18n="met.e8">اثر تصادفی پن برای واریانس واقعی تکرارها</small></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:13px">
+    <h3><span class="ic">🎯</span><span data-i18n="met.accTitle">ماتریکس صحت — زنده</span>
+      <small class="src" data-i18n="met.accSub">اجرای کامل هر سویه و مقایسه با کاتالوگ خودش</small></h3>
+    <div class="controls">
+      <button class="btn" id="btn-met-run">⚡ <span data-i18n="btn.runAcc">اجرای اعتبارسنجی ۴ سویه</span></button>
+      <span class="dm" id="met-lbl"></span>
+    </div>
+    <div class="tbl-scroll" style="max-height:none;margin-top:12px">
+      <table><thead><tr>
+        <th>Strain</th><th>Horizon</th>
+        <th class="num">BW d42 (g)</th><th class="num">PO</th>
+        <th class="num">Dev%</th><th class="num">FCR d15+</th>
+        <th class="num">PO FCR</th><th class="num">Visits/bird</th>
+        <th class="num">MAE%</th>
+      </tr></thead><tbody id="tb-met"></tbody></table>
+    </div>
+    <div class="note gd" style="margin-top:11px" data-i18n-html="met.note">
+      💡 هر سویه مستقل شبیه‌سازی و در برابر کاتالوگ خودش مقایسه می‌شود — بدون تکرار بین سویه‌ها.
+      MAE = میانگین قدرمطلق انحراف وزن روزانه نسبت به PO همان روز؛ FCR = مصرف تجمعی ÷ افزایش وزن d۱۵ تا پایان افق.</div>
+  </div>
+
+  <div class="grid g2" style="margin-top:13px">
+    <div class="card">
+      <h3><span class="ic">📐</span><span data-i18n="met.statT">روش آماری</span></h3>
+      <div class="srcs" style="line-height:2.15">
+        <p><span class="step ok">EU</span><span data-i18n="met.euText">پن آزمایشی واحد نمونه آماری است؛ مشاهدات درون پن همبسته‌اند و تحلیل استنباطی بین‌پنی انجام می‌شود.</span></p>
+        <p><span class="step ok">CRN</span><span data-i18n="met.crnText">بند‌بندی تصادفی: پرنده i-ام همه پن‌ها هم‌ویژگی ساخته می‌شود تا اختلاف تیمارها از شانس تفکیک شود (Common Random Numbers).</span></p>
+        <p><span class="step ok">TEST</span><span data-i18n="met.testText">ANOVA یک‌راهه برای اثر کلی + مقایسه‌های زوجی Welch-t (مقاوم به ناهمگنی واریانس) با اصلاح Holm برای کنترل FWER.</span></p>
+        <p><span class="step ok">η²</span><span data-i18n="met.etaText">η² نسبت واریانس بین‌گروهی به کل را گزارش می‌کند؛ مقدار >۰٫۱۴ بزرگ و <۰٫۰۶ کوچک تلقی می‌شود.</span></p>
+        <p><span class="step wn">POWER</span><span data-i18n="met.powerText">با σ_pen ≈ ۱٫۲٪ و α=۰٫۰۵، تشخیص اثر ۲٪ نیاز به ≥۳ تکرار در هر تیمار دارد.</span></p>
+      </div>
+    </div>
+    <div class="card">
+      <h3><span class="ic">🔬</span><span data-i18n="met.noiseT">بودجه عدم‌قطعیت سنسورها</span></h3>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>Component</th><th>Model</th><th class="num">σ</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>LC1 raw weight</td><td class="num" dir="ltr">N(0,4²)</td><td class="num">4 g</td><td class="dm" data-i18n="nz.s1">Commercial platform load-cell spec</td></tr>
+          <tr><td>LC1 EMA filter</td><td class="num" dir="ltr">α=0.5</td><td class="dm">—</td><td class="dm" data-i18n="nz.s2">Exponential moving average</td></tr>
+          <tr><td>RFID read OK</td><td class="num" dir="ltr">99.6%</td><td>—</td><td class="dm">Li 2018: IBN=92.5%±4.2%</td></tr>
+          <tr><td>RFID miss</td><td class="num" dir="ltr">0.4%</td><td>—</td><td class="dm">=1−99.6%</td></tr>
+          <tr><td>RSSI</td><td class="num" dir="ltr">N(−65,5²)</td><td class="num">5 dBm</td><td class="dm">UHF band typical [7]</td></tr>
+          <tr><td>FI noise</td><td class="num" dir="ltr">exp(N(0,0.10²))</td><td class="num">10%</td><td class="dm" data-i18n="nz.s6">Individual feeding variability</td></tr>
+          <tr><td>Pen effect</td><td class="num" dir="ltr">N(0,1.2%)</td><td class="num">1.2%</td><td class="dm" data-i18n="nz.s7">Between-pen lab variance</td></tr>
+        </tbody></table></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:13px">
+    <h3><span class="ic">🔁</span><span data-i18n="met.reproT">تکرارپذیری</span></h3>
+    <div class="srcs">
+      <p data-i18n-html="met.reproBody">هر اجرا با seed=<code>308</code> و مولد mulberry32 آغاز می‌شود؛ بلوک‌سازی پرندگان از جریان مستقل (<code>seed×7919+13</code>) تغذیه می‌شود تا ترکیب ژنتیکی همه پن‌های هم‌تیمار یکسان باشد (Common Random Numbers). نتیجه: دو اجرا با seed یکسان بیت‌به‌بیت یکسان‌اند و مقایسه تیمارها فقط اثر واقعی را منعکس می‌کند.</p>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- ================= VIEW: ENV CONTROL ================= -->
+<section class="view" id="v-env">
+  <div class="view-head">
+    <span class="eyebrow">ENV · <span data-i18n="env.eyebrow">کنترل محیطی</span></span>
+    <h2 data-i18n="env.h.t">سیستم کنترل محیطی</h2>
+    <p data-i18n="env.p">پایش لحظه‌ای دما، رطوبت، رطوبت بستر، مصرف خوراک و آب، گازها، فن‌ها و روشنایی سالن — با داده مستقیم سنسورها از طریق MQTT و سلامت گله با بینایی ماشین.</p>
+  </div>
+
+  <!-- status banner: single source of "is the house healthy" -->
+  <div class="env-banner" id="env-banner">
+    <div class="env-banner-main">
+      <span class="env-banner-dot" aria-hidden="true"></span>
+      <div>
+        <b data-i18n="env.banner.ok">همه سیستم‌ها نرمال</b>
+        <small id="env-banner-sub" data-i18n="env.banner.sub">آخرین پیام سنسورها چند ثانیه پیش</small>
+      </div>
+    </div>
+    <div class="env-banner-kpis" id="env-banner-kpis"></div>
+  </div>
+
+  <!-- house selector rail -->
+  <div class="env-houses" id="env-houses" role="tablist" aria-label="Houses"></div>
+
+  <div class="env-grid">
+
+    <!-- climate tiles (live) -->
+    <div class="card env-tiles-card">
+      <h3><span class="ic">🌡️</span><span data-i18n="env.tiles.t">شرایط لحظه‌ای سالن</span>
+        <small class="src" data-i18n="env.tiles.s">به‌روزرسانی زنده · MQTT</small></h3>
+      <div class="env-tiles" id="env-tiles"></div>
+    </div>
+
+    <!-- house temperature chart -->
+    <div class="card">
+      <h3><span class="ic">📈</span><span data-i18n="env.chart.t">دمای سالن‌ها — لحظه‌ای</span></h3>
+      <div class="chart-box tall"><canvas id="env-chart"></canvas></div>
+      <div class="controls" style="margin-top:8px">
+        <span class="dm" id="env-chart-note"></span>
+      </div>
+    </div>
+
+    <!-- herd health (machine vision) -->
+    <div class="card">
+      <h3><span class="ic">👁️</span><span data-i18n="env.health.t">سلامت گله — بینایی ماشین</span>
+        <small class="src" data-i18n="env.health.s">دوربین‌های سالن · تحلیل رفتار</small></h3>
+      <div class="env-health" id="env-health"></div>
+    </div>
+
+    <!-- hardware status -->
+    <div class="card">
+      <h3><span class="ic">🧩</span><span data-i18n="env.hw.t">سلامت سخت‌افزار و سنسورها</span>
+        <small class="src" data-i18n="env.hw.s">آخرین پیام هر دستگاه</small></h3>
+      <div class="tbl-scroll" style="max-height:290px">
+        <table><thead><tr>
+          <th data-i18n="env.hw.device">دستگاه</th>
+          <th data-i18n="env.hw.metric">سنجه</th>
+          <th class="num" data-i18n="env.hw.rssi">قدرت سیگنال</th>
+          <th data-i18n="env.hw.last">آخرین پیام</th>
+          <th data-i18n="env.hw.state">وضعیت</th>
+        </tr></thead><tbody id="tb-env-hw"></tbody></table>
+      </div>
+    </div>
+
+    <!-- trends report (گزارش تغییرات) — segmented scope picker -->
+    <div class="card env-export-card">
+      <h3><span class="ic">📤</span><span data-i18n="env.export.t">گزارش تغییرات</span>
+        <small class="src" data-i18n="env.export.s">میانگین‌های تجمیعی · ساعتی/روزانه/ماهانه/بازه دلخواه</small></h3>
+      <p class="env-export-hint" data-i18n="env.export.hint">نوع گزارش را انتخاب و فایل را دریافت کنید — شامل همه سنجه‌های محیطی همان سالن.</p>
+      <div class="env-export-bar">
+        <div class="env-scope" id="env-scope" role="group" aria-label="Report scope">
+          <button id="btn-env-exp-hour" class="on" data-scope="hour"><span class="sc-ic">⏱</span><span data-i18n="env.export.hour">ساعتی</span></button>
+          <button id="btn-env-exp-day" data-scope="day"><span class="sc-ic">📅</span><span data-i18n="env.export.day">روزانه</span></button>
+          <button id="btn-env-exp-month" data-scope="month"><span class="sc-ic">🗓</span><span data-i18n="env.export.month">ماهانه</span></button>
+          <button id="btn-env-exp-range" data-scope="range"><span class="sc-ic">🧾</span><span data-i18n="env.export.range">بازه دلخواه</span></button>
+        </div>
+        <div class="env-export-fields hidden" id="env-range-fields">
+          <label class="env-field">
+            <span data-i18n="env.export.from">از تاریخ</span>
+            <input type="date" id="env-exp-from">
+          </label>
+          <span class="env-arrow" dir="ltr">→</span>
+          <label class="env-field">
+            <span data-i18n="env.export.to">تا تاریخ</span>
+            <input type="date" id="env-exp-to">
+          </label>
+        </div>
+        <div class="env-export-actions">
+          <button class="btn primary" id="btn-env-exp-go">⬇ <span data-i18n="env.export.go">دریافت فایل اکسل</span></button>
+          <span class="env-exp-status" id="env-exp-lbl" role="status" aria-live="polite"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ================= VIEW: ABOUT ================= -->
+<section class="view" id="v-products" aria-label="Products and Services">
+  <div class="prod-hero">
+    <h2 data-i18n="prod.hero.t">محصولات و خدمات آرین</h2>
+    <p data-i18n="prod.hero.p">سامانه‌های هوشمند پرورش و اصلاح نژاد طیور گوشتی — از ثبت دقیق داده در واحد آزمایشی تا کنترل خودکار شرایط محیطی سالن؛ طراحی‌شده برای مراکز تحقیقاتی، واحدهای مادر و فارم‌های تجاری.</p>
+  </div>
+  <div class="prod-grid">
+
+    <article class="prod-card">
+      <div class="prod-ic"><i class="fa-solid fa-utensils" aria-hidden="true"></i></div>
+      <div>
+        <div class="prod-tag" data-i18n="prod.p1.tag">محصول ۱</div>
+        <h3 data-i18n="prod.p1.t">سیستم پایش مصرف خوراک</h3>
+      </div>
+      <p class="prod-desc" data-i18n="prod.p1.d">ثبت خودکار بازدید هر پرنده از ایستگاه تغذیه با شناسایی الکترونیکی و توزین هم‌زمان؛ محاسبه دقیق مصرف خوراک فردی، وزن‌کشی پیوسته و تشخیص هوشمند وعده‌های تغذیه‌ای — بدون دخالت انسانی و بدون استرس گله.</p>
+      <ul class="prod-feats">
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f1">شناسایی الکترونیکی هر پرنده با بال‌تگ و ثبت لحظه‌ای ورود و خروج</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f2">حسگرهای وزن‌کشی با هموارسازی نویز و دقت در حد گرم</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f3">محاسبه خودکار مصرف خوراک فردی، شمارش بازدید و بستن وعده</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f4">مدیریت دوره‌های پرورشی با داده‌های کاملاً اختصاصی هر کاربر</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f5">ثبت و ذخیره‌سازی خودکار داده‌ها و استریم زنده به داشبورد</span></li>
+      </ul>
+      <div class="prod-foot">
+        <span class="prod-status"><span class="dot"></span> <span data-i18n="prod.p1.status">فعال · داده زنده ۲۴ ساعته</span></span>
+        <button class="prod-cta" data-goto="v-dev"><i class="fa-solid fa-microchip"></i> <span data-i18n="prod.demo">مشاهده دمو</span></button>
+      </div>
+    </article>
+
+    <article class="prod-card">
+      <div class="prod-ic"><i class="fa-solid fa-temperature-half" aria-hidden="true"></i></div>
+      <div>
+        <div class="prod-tag" data-i18n="prod.p2.tag">محصول ۲</div>
+        <h3 data-i18n="prod.p2.t">سیستم هوشمند کنترل محیطی</h3>
+      </div>
+      <p class="prod-desc" data-i18n="prod.p2.d">پایش و کنترل خودکار دما، رطوبت و تهویه سالن بر اساس استانداردهای رسمی پرورش؛ تنظیم هوشمند شرایط محیطی در هر سن، کاهش تنش گرمایی و بهبود ضریب تبدیل خوراک — همه‌چیز از یک داشبورد واحد.</p>
+      <ul class="prod-feats">
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f1">حسگرهای دما و رطوبت با ثبت پیوسته در هر نقطه سالن</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f2">منطق کنترل خودکار تهویه و گرمایش بر اساس سن گله</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f3">هشدار لحظه‌ای انحراف از بازه استاندارد هر سویه</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f4">سناریوهای محیطی قابل تعریف و اجرای آزمایشی</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f5">گزارش‌گیری دوره‌ای و هم‌راستایی با اهداف عملکردی سویه</span></li>
+      </ul>
+      <div class="prod-foot">
+        <span class="prod-status"><span class="dot"></span> <span data-i18n="prod.p2.status">فعال · پایش ۲۴ ساعته</span></span>
+        <button class="prod-cta" data-goto="v-scn"><i class="fa-solid fa-sliders"></i> <span data-i18n="prod.demo">مشاهده دمو</span></button>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section class="view" id="v-about">
+  <div class="card">
+    <h3><span class="ic">🏛️</span><span data-i18n="about.uniT">دانشگاه تربیت مدرس — گروه علوم دامی</span></h3>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:15px">
+      <div style="width:64px;height:64px;border-radius:14px;display:grid;place-items:center;
+        border:2px solid rgba(25,195,154,.38);border-radius:16px;box-shadow:0 0 16px rgba(25,195,154,.2)"><img src="logo_128.png" width="56" height="56" style="object-fit:contain;display:block" alt="آرین" data-alt-i18n="brand.name"></div>
+      <div>
+        <b style="font-size:17px" data-i18n="footer.brand">آرین v1.0.0</b><br>
+        <small class="dm" data-i18n="about.subTitle">شبیه‌ساز آکادمیک دستگاه پایش مصرف خوراک طیور گوشتی</small>
+      </div>
+    </div>
+    <div class="srcs">
+      <p data-i18n-html="about.history"><b>تاریخچه:</b> این پروژه از یک ایده ساده آغاز شد: چگونه می‌توان بدون صرف هزینه پرورش واقعی، الگوریتم پردازش داده دستگاه پایش مصرف خوراک را طراحی، تست و بهینه کرد؟ نسخه اول (Python) برای اعتبارسنجی مدل ریاضی ساخته شد؛ سپس موتور به JavaScript منتقل و رابط وب تعاملی اضافه گردید تا محققان بتوانند بدون نصب نرم‌افزار، سناریوهای مختلف را آزموده و توان آماری طرح خود را بسنجند.</p>
+      <p data-i18n-html="about.teamT"><b>تیم:</b> طراحی، برنامه‌نویسی و نگهداری توسط Arsalan Rezazadeh انجام شده است. راهنمایی علمی و بازبینی روش‌شناسی توسط گروه علوم دامی دانشگاه تربیت مدرس صورت گرفته است.</p>
+      <p data-i18n-html="about.dataNote"><b>منابع داده:</b> جداول عملکردی Ross 308, Cobb 500, Arbor Acres Plus, Hubbard Efficiency Plus عیناً از اسناد رسمی شرکت‌های اصلاح‌نژادی استخراج و در فایل strains.js تعبیه شده‌اند. رفتار تغذیه‌ای بر اساس مقالات داوری‌شده Poultry Science و animal کالیبره شده است.</p>
+      <p data-i18n-html="about.future"><b>نقشه راه:</b> افزودن سویه‌های جدید (Indian River)، تحلیل کوواریانس با وزن شروع، خروجی PDF گزارش آماری، اتصال به سنسورهای IoT واقعی.</p>
+    </div>
+
+    <div class="own" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">
+      <a href="https://github.com/arsalan-codes" target="_blank" rel="noopener"
+         style="display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--mut);font-size:12.5px">
+        🐙 <b>github.com/arsalan-codes</b></a>
+      <a href="https://www.linkedin.com/in/arsalan-rezazadeh/" target="_blank" rel="noopener"
+         style="display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--mut);font-size:12.5px">
+        💼 <b>linkedin.com/in/arsalan-rezazadeh</b></a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="f-top">
+    <div class="f-brand">
+      <img src="logo_32.png" alt="" width="22" height="22" style="border-radius:6px;object-fit:contain">
+      <b data-i18n="brand.name">آرین</b>
+      <span class="f-ver" data-vbadge>v1.0.0</span>
+    </div>
+    <div class="own">
+      <a href="https://github.com/arsalan-codes" target="_blank" rel="noopener"><i class="fa-brands fa-github" aria-hidden="true"></i><span>arsalan-codes</span></a>
+      <a href="https://www.linkedin.com/in/arsalan-rezazadeh/" target="_blank" rel="noopener"><i class="fa-brands fa-linkedin" aria-hidden="true"></i><span>arsalan-rezazadeh</span></a>
+    </div>
+  </div>
+  <div class="f-meta" data-i18n="foot.data">داده‌ها: Aviagen · Cobb-Vantress · Hubbard · Poultry Science · animal · Arch Anim Breed</div>
+  <div class="f-meta" data-i18n="foot.offline">اجرای کامل آفلاین · seed تکرارپذیر = 308 · واحد نمونه آماری: پن</div>
+  <div class="f-copy">© 2026 Arsalan Rezazadeh</div>
+</footer>
+
+</div><!-- /wrap -->
+<div id="tip"></div>
+<div id="toast"></div>
+
+<script src="strains.js?v=1.8.53" defer></script>
+<script src="engine.js?v=1.8.53" defer></script>
+<script src="xlsx.js?v=1.8.53" defer></script>
+<script src="stats.js?v=1.8.53" defer></script>
+<script src="version.js?v=1.8.53" defer></script>
+  <script src="locales/fa.js?v=1.8.53" defer></script>
+<script src="locales/en.js?v=1.8.53" defer></script>
+<script src="i18n.js?v=1.8.53" defer></script>
+<script src="utils/formatters.js?v=1.8.53" defer></script>
+<script src="shamsi.js?v=1.8.53" defer></script>
+<script src="auth.js?v=1.8.53" defer></script>
+<script src="device-panel.js?v=1.8.53" defer></script>
+<script src="dialog.js?v=1.8.53" defer></script>
+<script src="router.js?v=1.8.53" defer></script>
+<script src="components/chart.js?v=1.8.53" defer></script>
+<script src="dd-select.js?v=1.8.53" defer></script>
+<script src="env-control.js?v=1.8.53" defer></script>
+<script src="services/export.js?v=1.8.53" defer></script>
+<script src="app.js?v=1.8.53" defer></script>
+
+<!-- ================= EXPORT CENTER MODAL ================= -->
+<div id="ex-modal" class="modal-wrap" style="display:none">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="dhead"><b data-i18n="ex.title">مرکز خروجی داده</b>
+      <button id="ex-close" class="icon-btn" aria-label="Close">✕</button></div>
+    <div class="mrow">
+      <span class="hlabel" data-i18n="ex.source">منبع:</span><b id="ex-src" class="dir-ltr">—</b>
+    </div>
+    <div class="mrow">
+      <span class="hlabel" data-i18n="ex.format">قالب</span>
+      <div class="langseg" id="ex-format" role="group">
+        <button data-fmt="xlsx" class="on">📊 Excel</button><button data-fmt="csv">⬇ CSV</button>
+      </div>
+    </div>
+    <div id="ex-sheets"></div>
+    <div id="ex-cols" style="display:none;margin-top:10px"></div>
+    <div id="ex-csvp" style="display:none">
+      <span class="hlabel" data-i18n="ex.dataset">مجموعه‌داده</span>
+      <select id="ex-dataset"></select>
+    </div>
+    <div class="note wn" id="ex-warn" style="display:none"></div>
+  </div>
+  <div class="mfoot">
+    <span class="dm" id="ex-size"></span>
+    <button class="btn ghost" id="ex-back">↩ <span data-i18n="ex.back">بازگشت</span></button>
+    <button class="btn blue" id="ex-go">⬇ <span data-i18n="ex.generate">تولید و دریافت</span></button>
+  </div>
+</div>
+
+<!-- ================= GUIDED TOUR ================= -->
+<div id="tour-tip" style="display:none" role="dialog" aria-modal="true" aria-labelledby="tt-title">
+  <div class="tt-progress"><i id="tt-bar"></i></div>
+  <div class="tt-head"><span class="tt-icon" id="tt-icon"><i class="fa-solid fa-graduation-cap"></i></span><b id="tt-title"></b><span id="tt-step" class="tag bl" style="margin-inline-start:auto"></span></div>
+  <div id="tt-text"></div>
+  <div class="tt-foot">
+    <button id="tt-skip" class="btn ghost" data-i18n="tour.skip">رد کردن</button>
+    <span class="dots" id="tt-dots"></span>
+    <button id="tt-prev" class="btn ghost" aria-label="Previous">‹ <span data-i18n="tour.prev">قبلی</span></button>
+    <button id="tt-next" class="btn primary" aria-label="Next"><span data-i18n="tour.next">بعدی</span> ›</button>
+  </div>
+</div>
+<div id="tour-shade"></div>
+
+<script>
+/* landing facts chip — real numbers from strains.js (single source of truth) */
+(function(){
+  function fill(){
+    try{
+      var el=document.getElementById('lb-strains'), pt=document.getElementById('lb-points');
+      if(!el||!pt) return;
+      var S=window.STRAINS||{}, n=0, pts=0;
+      for(var k in S){ if(!S.hasOwnProperty(k)) continue;
+        n++;
+        var st=S[k]; var dl=st.day?st.day.length:0;
+        pts+=dl*10; /* 10 reference series per strain: day + 3×(bw,fi,fcr) */
+      }
+      el.textContent=(window.num?window.num(n,0):String(n));
+      pt.textContent=(window.num?window.num(pts,0):String(pts));
+    }catch(e){}
+  }
+  function tryFill(){ fill(); if((document.getElementById('lb-points')||{}).textContent==='0'){ setTimeout(tryFill,120); } }
+  if(document.readyState==='complete') tryFill();
+  else window.addEventListener('load', tryFill);   /* deferred strains.js must be ready */
+  window.addEventListener('rossim:lang', fill);    /* re-render digits per locale */
+})();
+(function(){
+  /* hero subtitle typer — LOOP: type → hold → erase → retype.
+     Respects prefers-reduced-motion (static full text), replays on language switch. */
+  var el = document.getElementById('landing-typed');
+  if(!el) return;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var target = el.getAttribute('data-text') || el.textContent || '';
+  var timer = null, i = 0, mode = 'type';
+  function paint(txt){ el.textContent = txt; }
+  function stop(){ if(timer){ clearTimeout(timer); timer=null; } }
+  function tick(){
+    if(mode==='type'){
+      i++; paint(target.slice(0, i));
+      if(i >= target.length){ fitFont(); mode='hold'; timer=setTimeout(function(){ mode='erase'; tick(); }, 1800); return; }
+      timer=setTimeout(tick, 34);
+    } else {
+      i-=3; if(i<0) i=0;
+      paint(target.slice(0, i));
+      if(i <= 0){ mode='type'; timer=setTimeout(tick, 500); return; }
+      timer=setTimeout(tick, 16);
+    }
+  }
+  function fitFont(){
+    /* shrink-to-fit one line: measure at base size, scale down to container width */
+    try{
+      var title = el.closest('.landing-title') || el.parentElement;
+      var maxW = title.getBoundingClientRect().width || el.parentElement.getBoundingClientRect().width;
+      if (maxW < 100) return;                            /* layout not ready — skip */
+      var cs = getComputedStyle(el);
+      var base = parseFloat(cs.fontSize);                /* from breakpoint ladder */
+      /* measure with the FULL target text at ladder size */
+      el.style.removeProperty('font-size');
+      var saved = el.textContent;
+      el.textContent = target || saved;
+      var w = el.scrollWidth;
+      var max = maxW - 4;
+      var w = el.scrollWidth;
+      var max = maxW - 4;
+      if (w > max) {
+        var fs = Math.max(9, Math.floor((base * max / w) * 10) / 10);
+        el.style.fontSize = fs + 'px';
+      } else {
+        el.style.removeProperty('font-size');            /* let the breakpoint ladder govern */
+      }
+      el.textContent = saved;                            /* restore typed progress */
+    }catch(e){}
+  }
+  fitFont();
+  window.addEventListener('resize', function(){ fitFont(); });
+  window.addEventListener('rossim:lang', function(){ setTimeout(fitFont, 60); });
+  function run(){
+    stop(); i = 0; mode = 'type';
+    if(reduce){ paint(target); return; }
+    el.textContent=''; timer=setTimeout(tick, 250);
+  }
+  if(document.readyState === 'complete' || document.readyState === 'interactive') run();
+  else window.addEventListener('DOMContentLoaded', run);
+  window.addEventListener('rossim:lang', function(){
+    target = el.getAttribute('data-text') || target;
+    run();
+  });
+})();
+</script>
+<!-- Material Dialog -->
+<div class="m-dialog-backdrop" id="m-dialog" hidden aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="m-dialog" role="document">
+    <div class="m-dialog-icon info" id="m-dialog-icon"><i class="fa-solid fa-circle-info"></i></div>
+    <h3 id="m-dialog-title"></h3>
+    <p id="m-dialog-msg"></p>
+    <input class="m-dialog-input" id="m-dialog-input" type="password" hidden>
+    <input class="m-dialog-input" id="m-dialog-input2" type="password" hidden placeholder="">
+    <div class="m-dialog-error" id="m-dialog-error"></div>
+    <div class="m-dialog-actions">
+      <button class="btn btn-ghost" id="m-dialog-cancel"></button>
+      <button class="btn btn-primary" id="m-dialog-confirm"></button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
