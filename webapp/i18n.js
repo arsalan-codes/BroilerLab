@@ -56,6 +56,10 @@ function _useJalali() {
 function _tzOpts(extra) {
   var o = extra || {};
   if (DATE_PREFS.tz && DATE_PREFS.tz !== "auto") o.timeZone = DATE_PREFS.tz;
+  // fa-IR's default Intl calendar is PERSIAN — pin the calendar explicitly so
+  // fmt=gregorian renders گریگوری even in the fa locale (and jalali stays persian).
+  if (DATE_PREFS.fmt === "gregorian") o.calendar = "gregory";
+  else if (DATE_PREFS.fmt === "jalali" || (DATE_PREFS.fmt === "auto" && LANG === "fa")) o.calendar = "persian";
   return o;
 }
 
