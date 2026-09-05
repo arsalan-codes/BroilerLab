@@ -986,6 +986,33 @@ function bindSettingsDropdown(){
   /* lang buttons in dropdown */
   on("lang-fa-dd","click",()=>{setLang("fa");closeSettingsDropdown()});
   on("lang-en-dd","click",()=>{setLang("en");closeSettingsDropdown()});
+  /* calendar format buttons (date prefs) */
+  ["auto","jalali","gregorian"].forEach(function(fmt){
+    var b=document.getElementById("df-"+fmt);
+    if(b) b.addEventListener("click",function(){
+      if(window.setDatePrefs) window.setDatePrefs({fmt:fmt});
+      applyDatePrefButtons();
+      applyLang();
+      try{ if(typeof DASH!=="undefined"&&DASH) runDashboard(); }catch(e){}
+      try{ if(typeof FM!=="undefined"&&FM&&!FM.stale) updateFarmDay(true); }catch(e){}
+      if(typeof window.EnvControl!=="undefined"&&window.EnvControl) window.EnvControl.tick(true);
+      if(typeof startClock==="function") startClock();
+    });
+  });
+  /* timezone select */
+  var tzs=document.getElementById("tz-select");
+  if(tzs) tzs.addEventListener("change",function(){
+    if(window.setDatePrefs) window.setDatePrefs({tz:tzs.value});
+    try{ if(typeof DASH!=="undefined"&&DASH) runDashboard(); }catch(e){}
+    if(typeof window.EnvControl!=="undefined"&&window.EnvControl) window.EnvControl.tick(true);
+    if(typeof startClock==="function") startClock();
+  });
+  /* restore stored prefs into the controls */
+  try{
+    var _st=JSON.parse(localStorage.getItem("rossim_date_prefs")||"{}");
+    if(_st.fmt) applyDatePrefButtons();
+    if(_st.tz && tzs) tzs.value=_st.tz;
+  }catch(e){}
   /* help button in dropdown */
   on("btn-help-dd","click",()=>{showHelp();closeSettingsDropdown()});
   /* reset button in dropdown */
@@ -997,6 +1024,16 @@ function syncSettingsInfo(){
   const rows=$("h-rows")?.textContent||"—";
   if($("h-mae-dd"))$("h-mae-dd").textContent=mae;
   if($("h-rows-dd"))$("h-rows-dd").textContent=rows;}
+
+/* highlight the calendar-format segment matching the stored pref */
+function applyDatePrefButtons(){
+  var prefs={fmt:"auto"};
+  try{ prefs=JSON.parse(localStorage.getItem("rossim_date_prefs")||"{}"); }catch(e){}
+  ["auto","jalali","gregorian"].forEach(function(fmt){
+    var b=document.getElementById("df-"+fmt);
+    if(b){ b.classList.toggle("on", (prefs.fmt||"auto")===fmt);
+           b.setAttribute("aria-pressed", (prefs.fmt||"auto")===fmt ? "true":"false"); }
+  });}
 
 /* dropdown action helpers */
 function showHelp(){tourStart(true)}

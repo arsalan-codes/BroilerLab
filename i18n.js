@@ -32,29 +32,57 @@ function lnum(v,d=0){
   }
   return s;
 }
+/* ---- user date & timezone preferences (settings dropdown) ----
+   DATE_FMT: auto | jalali | gregorian   TZ: auto | IANA zone string
+   Persisted in localStorage "rossim_date_prefs"; "auto" follows LANG. */
+var DATE_PREFS = { fmt: "auto", tz: "auto" };
+try {
+  var _dp = JSON.parse(localStorage.getItem("rossim_date_prefs") || "{}");
+  if (_dp.fmt) DATE_PREFS.fmt = _dp.fmt;
+  if (_dp.tz) DATE_PREFS.tz = _dp.tz;
+} catch (e) {}
+function setDatePrefs(prefs) {
+  if (prefs && prefs.fmt) DATE_PREFS.fmt = prefs.fmt;
+  if (prefs && prefs.tz !== undefined) DATE_PREFS.tz = prefs.tz;
+  try { localStorage.setItem("rossim_date_prefs", JSON.stringify(DATE_PREFS)); } catch (e) {}
+  try { window.dispatchEvent(new CustomEvent("rossim:dateprefs", { detail: DATE_PREFS })); } catch (e) {}
+}
+try { window.setDatePrefs = setDatePrefs; } catch (e) {}
+function _fmtLocale() { return LANG === "fa" ? "fa-IR" : "en-US"; }
+function _useJalali() {
+  return DATE_PREFS.fmt === "jalali" ||
+    (DATE_PREFS.fmt === "auto" && LANG === "fa");
+}
+function _tzOpts(extra) {
+  var o = extra || {};
+  if (DATE_PREFS.tz && DATE_PREFS.tz !== "auto") o.timeZone = DATE_PREFS.tz;
+  return o;
+}
+
 /* centralized locale-aware formatters — single source for numbers/dates/times */
 function formatNumber(v,d=0){ return num(v,d) }
 function formatDate(input, opts){
   // opts: {longMonth:boolean, withTime:boolean}
   opts=opts||{};
   try{
-    if(LANG==="fa" && window.Shamsi && typeof window.Shamsi.toShamsi==="function"){
-      return window.Shamsi.toShamsi(input, opts);
-    }
     var dt=(input instanceof Date)?input:new Date(input);
     if(isNaN(dt)) return String(input);
-    if(opts.longMonth){
-      return new Intl.DateTimeFormat(LANG==="fa"?"fa-IR":"en-US",{year:"numeric",month:"long",day:"numeric"}).format(dt);
+    if(_useJalali() && window.Shamsi && typeof window.Shamsi.toShamsi==="function"){
+      return window.Shamsi.toShamsi(input, opts);
     }
-    return new Intl.DateTimeFormat(LANG==="fa"?"fa-IR":"en-US",{year:"numeric",month:"2-digit",day:"2-digit"}).format(dt);
+    if(opts.longMonth){
+      return new Intl.DateTimeFormat(_fmtLocale(),_tzOpts({year:"numeric",month:"long",day:"numeric"})).format(dt);
+    }
+    return new Intl.DateTimeFormat(_fmtLocale(),_tzOpts({year:"numeric",month:"2-digit",day:"2-digit"})).format(dt);
   }catch(e){ return String(input) }
 }
 function formatTime(input){
   try{
     var dt=(input instanceof Date)?input:new Date(input);
     if(isNaN(dt)) dt=new Date();
-    var s=String(dt.getHours()).padStart(2,"0")+":"+String(dt.getMinutes()).padStart(2,"0");
-    if(dt.getSeconds) s+=":"+String(dt.getSeconds()).padStart(2,"0");
+    var tzo={hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false};
+    if(DATE_PREFS.tz && DATE_PREFS.tz!=="auto") tzo.timeZone=DATE_PREFS.tz;
+    var s=new Intl.DateTimeFormat(_fmtLocale(),tzo).format(dt);
     if(LANG==="fa"){
       var FA=["۰","۱","۲","۳","۴","۵","۶","۷","۸","۹"];
       return s.replace(/[0-9]/g,function(c){return FA[+c]});
