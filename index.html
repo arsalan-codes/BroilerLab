@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.49"></script>
-<script src="services/api.js?v=1.8.49"></script>
+<script src="config.js?v=1.8.50"></script>
+<script src="services/api.js?v=1.8.50"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -402,7 +402,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 .hctl .vbadge{align-self:center;display:inline-flex;align-items:center}
 .hpills{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.49).
+/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.50).
    .hctl (desktop inline controls) is display:none on mobile; every drawer
    entry lives in the user menu (dropdown + bottom sheet). ---------- */
 @media(max-width:992px){
@@ -1275,19 +1275,42 @@ html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
 @media(prefers-reduced-motion:reduce){.prod-status .dot{animation:none}}
 
 
-/* ================= ENV CONTROL (v-env) ================= */
+/* ================= ENV CONTROL (v-env) — site-token design ================= */
+/* banner: ambient accent glow, mirrors .prod-hero language */
+.env-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:16px 20px;border-radius:18px;border:1px solid var(--line);margin-bottom:13px;
+  background:linear-gradient(135deg,color-mix(in srgb, var(--acc) 9%, transparent),
+              color-mix(in srgb, var(--acc2) 7%, transparent)),var(--card);
+  box-shadow:var(--sh-sm)}
+.env-banner-main{display:flex;align-items:center;gap:12px}
+.env-banner-main b{display:block;font-size:14.5px;font-weight:900;color:var(--txt)}
+.env-banner-main small{display:block;font-size:11.5px;color:var(--mut);margin-top:2px}
+.env-banner-dot{width:11px;height:11px;border-radius:50%;background:var(--acc);flex:none;
+  box-shadow:0 0 0 0 color-mix(in srgb, var(--acc) 55%, transparent);animation:tc-pulse 2.2s ease-out infinite}
+.env-banner.warn .env-banner-dot{background:var(--warn)}
+.env-banner.bad .env-banner-dot{background:var(--bad);animation:none}
+.env-banner-kpis{display:flex;gap:18px;flex-wrap:wrap}
+.env-kpi{display:flex;flex-direction:column;gap:1px}
+.env-kpi b{font-size:17px;font-weight:900;color:var(--txt);font-variant-numeric:tabular-nums}
+.env-kpi b small{font-size:11px;color:var(--dim);font-weight:700}
+.env-kpi span{font-size:10.5px;font-weight:700;color:var(--mut);letter-spacing:.02em}
+
 .env-houses{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px}
 .env-house{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:11px;
   border:1px solid var(--line);background:var(--card);color:var(--mut);cursor:pointer;
   font-family:inherit;font-size:12.5px;font-weight:700;transition:.15s}
 .env-house b{color:var(--txt);font-variant-numeric:tabular-nums}
+.env-house:hover{border-color:color-mix(in srgb, var(--acc) 35%, transparent)}
 .env-house.on{background:color-mix(in srgb, var(--acc) 14%, transparent);border-color:color-mix(in srgb, var(--acc) 45%, transparent);color:var(--acc)}
 .env-house .dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
 .env-house.on .dot{background:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb, var(--acc) 20%, transparent)}
+
 .env-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:13px}
+.env-tiles-card{grid-column:1/-1}
 .env-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .env-tile{position:relative;padding:12px 13px;border-radius:13px;background:var(--bg2);
-  border:1px solid var(--line);overflow:hidden}
+  border:1px solid var(--line);overflow:hidden;transition:border-color .15s}
+.env-tile:hover{border-color:color-mix(in srgb, var(--acc) 30%, transparent)}
 .env-tile .tl{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--mut)}
 .env-tile .tv{font-size:clamp(19px,2vw,23px);font-weight:900;color:var(--txt);margin-top:5px;
   font-variant-numeric:tabular-nums;line-height:1.1}
@@ -1297,13 +1320,65 @@ html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
 .env-tile.warn .tb i{background:var(--warn)} .env-tile.warn .tv{color:var(--warn)}
 .env-tile.bad .tb i{background:var(--bad)} .env-tile.bad .tv{color:var(--bad)}
 .env-tile .tic{margin-inline-start:auto;font-size:14px;color:var(--dim)}
+
 .env-health{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .env-hcard{padding:12px 13px;border-radius:13px;background:var(--bg2);border:1px solid var(--line)}
 .env-hcard .hh{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--mut)}
 .env-hcard .hv{font-size:clamp(18px,1.9vw,22px);font-weight:900;margin-top:5px;font-variant-numeric:tabular-nums}
 .env-hcard .hs{font-size:10.5px;margin-top:4px;font-weight:700}
 .env-hcard.ok .hs{color:var(--acc)} .env-hcard.wn .hs{color:var(--warn)} .env-hcard.bad .hs{color:var(--bad)}
-@media(max-width:620px){.env-grid{grid-template-columns:1fr}.env-tiles{grid-template-columns:repeat(2,1fr)}.env-health{grid-template-columns:repeat(2,1fr)}}
+
+/* trends report (گزارش تغییرات): segmented scope picker + date range —
+   rides the site's own design system (cards, langseg-style segments,
+   gradient primary btn, tabular numerals) */
+.env-export-hint{font-size:12px;color:var(--mut);margin:6px 0 14px;line-height:1.9}
+.env-export-bar{display:flex;flex-direction:column;gap:13px}
+.env-export-fields{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.env-field{display:flex;flex-direction:column;gap:5px}
+.env-field span{font-size:10.5px;font-weight:800;color:var(--mut);letter-spacing:.02em}
+.env-field input{background:var(--bg2);border:1px solid var(--line);color:var(--txt);
+  padding:8px 12px;border-radius:9px;font-family:inherit;font-size:12.5px;min-height:40px;
+  transition:border-color .15s, box-shadow .15s}
+.env-field input:focus{outline:none;border-color:rgba(25,195,154,.55);
+  box-shadow:0 0 0 3px rgba(25,195,154,.08)}
+.env-arrow{color:var(--dim);font-weight:900;padding-bottom:9px}
+/* scope picker: pill segments like .langseg, active = accent fill */
+.env-scope{display:inline-flex;border:1px solid var(--line);border-radius:11px;
+  overflow:hidden;background:var(--bg2)}
+.env-scope button{background:none;border:none;color:var(--mut);cursor:pointer;
+  padding:9px 16px;font-family:inherit;font-size:12px;font-weight:700;
+  display:inline-flex;align-items:center;gap:6px;min-height:40px;
+  transition:background .15s,color .15s}
+.env-scope button + button{border-inline-start:1px solid var(--line)}
+.env-scope button:hover{color:var(--txt);background:color-mix(in srgb, var(--txt) 4%, transparent)}
+.env-scope button.on{background:color-mix(in srgb, var(--acc) 16%, transparent);color:var(--acc)}
+.env-scope button .sc-ic{font-size:12px;opacity:.9}
+/* range date fields reveal only for the custom scope */
+.env-export-fields.hidden{display:none}
+/* primary action = site gradient btn with shine sweep */
+.env-export-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.env-export-actions .btn{margin:0;position:relative;overflow:hidden}
+.env-export-actions .btn.primary{background:linear-gradient(135deg,#1ad3a6,#128d72);color:#fff;
+  box-shadow:0 6px 20px rgba(25,195,154,.28), 0 1px 0 rgba(255,255,255,.22) inset}
+.env-export-actions .btn.primary:hover{box-shadow:0 10px 28px rgba(25,195,154,.38), 0 1px 0 rgba(255,255,255,.25) inset;filter:brightness(1.04)}
+.env-export-actions .btn.primary::after{content:"";position:absolute;top:0;bottom:0;width:38%;left:-60%;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.35),transparent);
+  transform:skewX(-18deg);transition:left .55s ease}
+.env-export-actions .btn.primary:hover::after{left:135%}
+/* busy/ready status line */
+.env-exp-status{display:inline-flex;align-items:center;gap:7px;font-size:12px;
+  font-weight:700;color:var(--mut);min-height:22px}
+.env-exp-status.busy::before{content:"";width:12px;height:12px;border-radius:50%;
+  border:2px solid color-mix(in srgb, var(--acc) 30%, transparent);
+  border-top-color:var(--acc);animation:envSpin .8s linear infinite}
+.env-exp-status.done{color:var(--acc)}
+.env-exp-status.err{color:var(--bad)}
+@keyframes envSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){
+  .env-export-actions .btn.primary::after{display:none}
+  .env-exp-status.busy::before{animation:none}
+}
+@media(max-width:620px){.env-grid{grid-template-columns:1fr}.env-tiles{grid-template-columns:repeat(2,1fr)}.env-health{grid-template-columns:repeat(2,1fr)}.env-export-actions .btn{flex:1 1 auto;justify-content:center}.env-scope{width:100%}.env-scope button{flex:1;justify-content:center}}
 
 /* view header */
 .view-head{margin-bottom:15px}
@@ -1342,7 +1417,7 @@ html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
   padding:8px 10px;border-radius:8px;border:none;background:transparent;color:var(--txt);cursor:pointer;font-family:inherit;font-size:12.5px}
 .auth-dropdown-item:hover{background:var(--bg2)}
 .auth-dropdown-item.danger{color:var(--bad)}
-/* merged hamburger entries (v1.8.49): divider + language/theme segments */
+/* merged hamburger entries (v1.8.50): divider + language/theme segments */
 .auth-sep{border-top:1px solid var(--line);margin:6px 2px}
 .auth-seg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:6px 10px;font-size:12px;color:var(--mut);font-weight:600}
@@ -2587,6 +2662,18 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
     <p data-i18n="env.p">پایش لحظه‌ای دما، رطوبت، رطوبت بستر، مصرف خوراک و آب، گازها، فن‌ها و روشنایی سالن — با داده مستقیم سنسورها از طریق MQTT و سلامت گله با بینایی ماشین.</p>
   </div>
 
+  <!-- status banner: single source of "is the house healthy" -->
+  <div class="env-banner" id="env-banner">
+    <div class="env-banner-main">
+      <span class="env-banner-dot" aria-hidden="true"></span>
+      <div>
+        <b data-i18n="env.banner.ok">همه سیستم‌ها نرمال</b>
+        <small id="env-banner-sub" data-i18n="env.banner.sub">آخرین پیام سنسورها چند ثانیه پیش</small>
+      </div>
+    </div>
+    <div class="env-banner-kpis" id="env-banner-kpis"></div>
+  </div>
+
   <!-- house selector rail -->
   <div class="env-houses" id="env-houses" role="tablist" aria-label="Houses"></div>
 
@@ -2630,24 +2717,33 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
       </div>
     </div>
 
-    <!-- export -->
+    <!-- trends report (گزارش تغییرات) — segmented scope picker -->
     <div class="card env-export-card">
-      <h3><span class="ic">📤</span><span data-i18n="env.export.t">گزارش اکسل</span>
-        <small class="src" data-i18n="env.export.s">ساعتی · روزانه · ماهانه · بازه دلخواه</small></h3>
-      <div class="controls">
-        <div class="ctrl">
-          <label data-i18n="env.export.from">از تاریخ</label>
-          <input type="date" id="env-exp-from">
+      <h3><span class="ic">📤</span><span data-i18n="env.export.t">گزارش تغییرات</span>
+        <small class="src" data-i18n="env.export.s">میانگین‌های تجمیعی · ساعتی/روزانه/ماهانه/بازه دلخواه</small></h3>
+      <p class="env-export-hint" data-i18n="env.export.hint">نوع گزارش را انتخاب و فایل را دریافت کنید — شامل همه سنجه‌های محیطی همان سالن.</p>
+      <div class="env-export-bar">
+        <div class="env-scope" id="env-scope" role="group" aria-label="Report scope">
+          <button id="btn-env-exp-hour" class="on" data-scope="hour"><span class="sc-ic">⏱</span><span data-i18n="env.export.hour">ساعتی</span></button>
+          <button id="btn-env-exp-day" data-scope="day"><span class="sc-ic">📅</span><span data-i18n="env.export.day">روزانه</span></button>
+          <button id="btn-env-exp-month" data-scope="month"><span class="sc-ic">🗓</span><span data-i18n="env.export.month">ماهانه</span></button>
+          <button id="btn-env-exp-range" data-scope="range"><span class="sc-ic">🧾</span><span data-i18n="env.export.range">بازه دلخواه</span></button>
         </div>
-        <div class="ctrl">
-          <label data-i18n="env.export.to">تا تاریخ</label>
-          <input type="date" id="env-exp-to">
+        <div class="env-export-fields hidden" id="env-range-fields">
+          <label class="env-field">
+            <span data-i18n="env.export.from">از تاریخ</span>
+            <input type="date" id="env-exp-from">
+          </label>
+          <span class="env-arrow" dir="ltr">→</span>
+          <label class="env-field">
+            <span data-i18n="env.export.to">تا تاریخ</span>
+            <input type="date" id="env-exp-to">
+          </label>
         </div>
-        <button class="btn" id="btn-env-exp-hour">⏱ <span data-i18n="env.export.hour">ساعتی</span></button>
-        <button class="btn" id="btn-env-exp-day">📅 <span data-i18n="env.export.day">روزانه</span></button>
-        <button class="btn" id="btn-env-exp-month">🗓 <span data-i18n="env.export.month">ماهانه</span></button>
-        <button class="btn primary" id="btn-env-exp-range">🧾 <span data-i18n="env.export.range">بازه دلخواه</span></button>
-        <span class="dm" id="env-exp-lbl"></span>
+        <div class="env-export-actions">
+          <button class="btn primary" id="btn-env-exp-go">⬇ <span data-i18n="env.export.go">دریافت فایل اکسل</span></button>
+          <span class="env-exp-status" id="env-exp-lbl" role="status" aria-live="polite"></span>
+        </div>
       </div>
     </div>
   </div>
@@ -2757,24 +2853,24 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.8.49" defer></script>
-<script src="engine.js?v=1.8.49" defer></script>
-<script src="xlsx.js?v=1.8.49" defer></script>
-<script src="stats.js?v=1.8.49" defer></script>
-<script src="version.js?v=1.8.49" defer></script>
-  <script src="locales/fa.js?v=1.8.49" defer></script>
-<script src="locales/en.js?v=1.8.49" defer></script>
-<script src="i18n.js?v=1.8.49" defer></script>
-<script src="utils/formatters.js?v=1.8.49" defer></script>
-<script src="shamsi.js?v=1.8.49" defer></script>
-<script src="auth.js?v=1.8.49" defer></script>
-<script src="device-panel.js?v=1.8.49" defer></script>
-<script src="dialog.js?v=1.8.49" defer></script>
-<script src="router.js?v=1.8.49" defer></script>
-<script src="components/chart.js?v=1.8.49" defer></script>
-<script src="env-control.js?v=1.8.49" defer></script>
-<script src="services/export.js?v=1.8.49" defer></script>
-<script src="app.js?v=1.8.49" defer></script>
+<script src="strains.js?v=1.8.50" defer></script>
+<script src="engine.js?v=1.8.50" defer></script>
+<script src="xlsx.js?v=1.8.50" defer></script>
+<script src="stats.js?v=1.8.50" defer></script>
+<script src="version.js?v=1.8.50" defer></script>
+  <script src="locales/fa.js?v=1.8.50" defer></script>
+<script src="locales/en.js?v=1.8.50" defer></script>
+<script src="i18n.js?v=1.8.50" defer></script>
+<script src="utils/formatters.js?v=1.8.50" defer></script>
+<script src="shamsi.js?v=1.8.50" defer></script>
+<script src="auth.js?v=1.8.50" defer></script>
+<script src="device-panel.js?v=1.8.50" defer></script>
+<script src="dialog.js?v=1.8.50" defer></script>
+<script src="router.js?v=1.8.50" defer></script>
+<script src="components/chart.js?v=1.8.50" defer></script>
+<script src="env-control.js?v=1.8.50" defer></script>
+<script src="services/export.js?v=1.8.50" defer></script>
+<script src="app.js?v=1.8.50" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">

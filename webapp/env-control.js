@@ -85,6 +85,33 @@
     });
   }
 
+  function renderBanner(d) {
+    var el = document.getElementById("env-banner");
+    if (!el) return;
+    var h = d.houses.filter(function (x) { return x.id === CUR.house; })[0] || d.houses[0];
+    var t = h.tiles || {};
+    var offline = !h.online;
+    var warn = !offline && ((t.nh3 != null && t.nh3 > 12) || (t.o2 != null && t.o2 < 19.5));
+    el.classList.toggle("warn", warn && !offline);
+    el.classList.toggle("bad", offline);
+    var title = el.querySelector("b"), sub = el.querySelector("small");
+    if (title) title.textContent = offline ? tr("env.banner.bad") : warn ? tr("env.banner.warn") : tr("env.banner.ok");
+    if (sub) sub.textContent = tr("env.banner.sub");
+    var kpis = document.getElementById("env-banner-kpis");
+    if (kpis) {
+      var items = [
+        { k: "temp", v: t.temp, u: "°C", d: 1 },
+        { k: "rh", v: t.rh, u: "%", d: 0 },
+        { k: "nh3", v: t.nh3, u: "ppm", d: 0 },
+        { k: "fan", v: t.fan, u: "%", d: 0 }
+      ];
+      kpis.innerHTML = items.map(function (it) {
+        return '<div class="env-kpi"><b>' + (it.v == null ? "—" : fmt(it.v, it.d)) +
+          '<small> ' + it.u + '</small></b><span>' + tr("env.banner.kpi." + it.k) + "</span></div>";
+      }).join("");
+    }
+  }
+
   function renderTiles(d) {
     var wrap = document.getElementById("env-tiles");
     if (!wrap) return;
@@ -160,7 +187,7 @@
   function renderAll(d) {
     if (!d) return;
     CUR.data = d;
-    renderHouses(d); renderTiles(d); renderHealth(d); renderHw(d); drawChart(d);
+    renderBanner(d); renderHouses(d); renderTiles(d); renderHealth(d); renderHw(d); drawChart(d);
   }
 
   function tick(force) {
@@ -177,6 +204,17 @@
   }
   function stop() { if (CUR.timer) { clearInterval(CUR.timer); CUR.timer = null; } }
 
+  var SCOPE = "hour";
+  function setScope(scope) {
+    SCOPE = scope;
+    var wrap = document.getElementById("env-scope");
+    if (wrap) wrap.querySelectorAll("button").forEach(function (b) {
+      b.classList.toggle("on", b.getAttribute("data-scope") === scope);
+    });
+    var range = document.getElementById("env-range-fields");
+    if (range) range.classList.toggle("hidden", scope !== "range");
+  }
+
   function exportXlsx(scope) {
     var lbl = document.getElementById("env-exp-lbl");
     var from = (document.getElementById("env-exp-from") || {}).value || "";
@@ -184,26 +222,31 @@
     var qs = "scope=" + encodeURIComponent(scope) + "&house=" + CUR.house +
       (from ? "&from=" + from : "") + (to ? "&to=" + to : "");
     var url = (API || "") + "/api/env/export?" + qs;
-    if (lbl) lbl.textContent = "…";
+    if (lbl) { lbl.className = "env-exp-status busy"; lbl.textContent = ""; }
     fetch(url, { headers: { Authorization: "Bearer " + tok() } })
       .then(function (r) {
         if (!r.ok) throw new Error("http " + r.status);
         return r.blob().then(function (b) {
           var a = document.createElement("a");
           a.href = URL.createObjectURL(b);
-          a.download = "Arian_env_" + scope + ".xlsx";
+          a.download = "Arian_env_trends_" + scope + ".xlsx";
           document.body.appendChild(a); a.click(); a.remove();
-          if (lbl) lbl.textContent = tr("env.export.done");
+          if (lbl) { lbl.className = "env-exp-status done"; lbl.textContent = tr("env.export.done"); }
         });
       })
-      .catch(function () { if (lbl) lbl.textContent = "✗ " + scope; });
+      .catch(function () {
+        if (lbl) { lbl.className = "env-exp-status err"; lbl.textContent = "✗ " + scope; }
+      });
   }
 
   function bind() {
-    ["hour", "day", "month", "range"].forEach(function (scope) {
-      var b = document.getElementById("btn-env-exp-" + scope);
-      if (b) b.addEventListener("click", function () { exportXlsx(scope); });
+    var wrap = document.getElementById("env-scope");
+    if (wrap) wrap.addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-scope]");
+      if (b) setScope(b.getAttribute("data-scope"));
     });
+    var go = document.getElementById("btn-env-exp-go");
+    if (go) go.addEventListener("click", function () { exportXlsx(SCOPE); });
     window.addEventListener("arian:route", function (e) {
       if (e && e.detail && e.detail.view === "v-env") start(); else stop();
     });
