@@ -131,15 +131,21 @@ if ($Check) {
 }
 git add -A
 $st = git status --porcelain
-if ([string]::IsNullOrWhiteSpace($st)) {
+$ahead = ""
+try { $ahead = (git rev-list --count "@{u}..HEAD" 2>$null).Trim() } catch { $ahead = "" }
+if ([string]::IsNullOrWhiteSpace($st) -and ($ahead -eq "" -or $ahead -eq "0")) {
   Write-Host "nothing to deploy - working tree clean." -ForegroundColor Yellow
   exit 0
 }
-Write-Host "changes:"; Write-Host $st
-if ([string]::IsNullOrWhiteSpace($Message)) { $Message = "deploy: v$newVer sync + fixes" }
-git commit -m $Message | Out-Null
-if ($LASTEXITCODE -ne 0) { Fail "git commit failed" }
-Ok "committed: $Message"
+if (-not [string]::IsNullOrWhiteSpace($st)) {
+  Write-Host "changes:"; Write-Host $st
+  if ([string]::IsNullOrWhiteSpace($Message)) { $Message = "deploy: v$newVer sync + fixes" }
+  git commit -m $Message | Out-Null
+  if ($LASTEXITCODE -ne 0) { Fail "git commit failed" }
+  Ok "committed: $Message"
+} else {
+  Write-Host "pushing $ahead already-committed change(s) ahead of origin..."
+}
 git push origin $branch
 if ($LASTEXITCODE -ne 0) { Fail "git push failed (check credentials: git credential-manager / PAT)" }
 Ok "pushed to origin/$branch"
