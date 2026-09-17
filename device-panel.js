@@ -17,8 +17,11 @@
 
   function $(id) { return document.getElementById(id); }
   function esc(s) {
+    // Quote-escaping is required: output lands inside attributes too
+    // (e.g. title="..."), where " alone breaks out without any < >.
     return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
   function tr(k, fb) { return (window.tr && window.tr(k)) || fb || k; }
 
@@ -124,24 +127,50 @@
     if (body) body.innerHTML = '<div class="reg-empty"><i class="fa-solid fa-inbox" aria-hidden="true"></i>'+(window.tr?window.tr("dev.regEmpty"):"هنوز ثبت لحظه‌ای دریافت نشده است.<br>پرنده‌ها هنگام ورود اینجا ظاهر می‌شوند.")+'</div>';
   }
 
-  // ---------- Live WebSocket ----------
+  // ---------- Live WebSocket (auth via ?token=, polling fallback) ----------
+  var wsFails = 0, pollTimer = null;
+  function currentToken() {
+    try {
+      if (window.Auth && window.Auth.getToken) return window.Auth.getToken() || "";
+      return localStorage.getItem("arian_token") || "";
+    } catch (e) { return ""; }
+  }
   function setDot(on) {
     var d = $("ws-dot");
     if (!d) return;
     d.className = "ws-dot " + (on ? "on" : "off");
   }
+  function startPoll() {
+    // Fallback for transports without WS (serverless): refresh the selected
+    // cycle on a timer instead of hammering reconnects.
+    if (pollTimer) return;
+    pollTimer = setInterval(function () {
+      if (selectedCycle) { loadStats(selectedCycle); loadRegistrations(selectedCycle); }
+    }, 15000);
+  }
+  function stopPoll() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
   function connectWS() {
-    if (!("WebSocket" in window)) return;
-    try { ws = new WebSocket(WS + "/ws/device"); }
-    catch (e) { setDot(false); return; }
-    ws.onopen = function () { setDot(true); };
-    ws.onclose = function () { setDot(false); setTimeout(connectWS, 3000); };
-    ws.onerror = function () { setDot(false); };
+    if (!("WebSocket" in window)) { startPoll(); return; }
+    var tk = currentToken();
+    var url = WS + "/ws/device" + (tk ? "?token=" + encodeURIComponent(tk) : "");
+    try { ws = new WebSocket(url); }
+    catch (e) { setDot(false); scheduleRetry(); return; }
+    ws.onopen = function () { setDot(true); wsFails = 0; stopPoll(); };
+    ws.onclose = function () { setDot(false); scheduleRetry(); };
+    ws.onerror = function () { try { ws.close(); } catch (e) {} };
     ws.onmessage = function (ev) {
       var d; try { d = JSON.parse(ev.data); } catch (e) { return; }
       pushLive(d);
       pushReg(d);
     };
+  }
+  function scheduleRetry() {
+    // After repeated failures (auth rejected, serverless WS, offline),
+    // switch to polling instead of a tight reconnect loop.
+    if (++wsFails >= 3) { startPoll(); setTimeout(connectWS, 60000); }
+    else setTimeout(connectWS, 3000);
   }
   function pushLive(d) {
     var feed = $("live-feed");

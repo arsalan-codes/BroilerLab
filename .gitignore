@@ -11,5 +11,12 @@ __pycache__/
 *.db-journal
 backend-8755.log
 
-# local runtime overrides (URLs/keys) — never commit
+# local runtime overrides (URLs/keys/secrets) — never commit
 config.local.js
+.env
+.env.*
+*.sqlite
+*.sqlite3
+venv/
+backend/.dev_jwt_secret
+api/backend/.dev_jwt_secret

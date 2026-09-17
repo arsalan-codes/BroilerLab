@@ -1,5 +1,11 @@
 """
-BroilerLab Device Backend — MQTT consumer.
+BroilerLab Device Backend — MQTT consumer (FUTURE REPLACEMENT PATH).
+
+Status: dormant by design. Hardware data currently arrives over the HTTP
+ingest API (POST /api/cycles/{id}/ingest); nothing in the app calls
+start_mqtt() yet. When the firmware moves to MQTT, wire start_mqtt() into
+the lifespan (single-process only — the in-memory CycleProcessor does not
+share state across workers) and retire the HTTP path per device.
 
 Subscribes to broilerlab/device/# and feeds raw events into the per-cycle
 processor. Payload is JSON matching the 12-col schema, plus a "cycle" field
@@ -84,7 +90,12 @@ def _on_message(client, userdata, msg):
     if cycle_id is None:
         return
     proc = get_processor(cycle_id)
-    proc.ingest(payload)
+    log_d = proc.ingest(payload)
+    try:
+        import hub
+        hub.publish(log_d)
+    except Exception:
+        pass  # live push is best-effort on the ingest path
 
 
 def start_mqtt():

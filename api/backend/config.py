@@ -88,7 +88,34 @@ UKTECH_POLL_SECONDS = int(os.getenv("UKTECH_POLL_SECONDS", "120"))
 UKTECH_CYCLE_ID = int(os.getenv("UKTECH_CYCLE_ID", "0") or 0)
 
 # ---- Auth / JWT ----
-# No usable default in the repo: empty forces env var; dev-only fallback random per-boot.
-JWT_SECRET = (os.getenv("ARIAN_JWT_SECRET") or os.getenv("BROILER_JWT_SECRET") or ("dev-" + secrets.token_hex(16)))
+# Explicit secret (production must set BROILER_JWT_SECRET — lifespan refuses to
+# boot with an ephemeral key when BROILER_REQUIRE_JWT_SECRET=1 or on Vercel).
+JWT_SECRET_EXPLICIT = bool(os.getenv("ARIAN_JWT_SECRET") or os.getenv("BROILER_JWT_SECRET"))
+
+
+def _dev_secret() -> str:
+    """Stable dev-only fallback: persisted to an untracked local file so login
+    sessions survive backend restarts. Read-only filesystems (Vercel) fall back
+    to an ephemeral key with no persistence (production must set the env var)."""
+    try:
+        here = os.path.dirname(os.path.abspath(__file__))
+        path = os.path.join(here, ".dev_jwt_secret")
+        if os.path.isfile(path):
+            with open(path, "r", encoding="utf-8") as f:
+                saved = f.read().strip()
+            if saved:
+                return saved
+        fresh = "dev-" + secrets.token_hex(16)
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(fresh)
+        except OSError:
+            pass  # read-only host (serverless): ephemeral key for this boot
+        return fresh
+    except Exception:
+        return "dev-" + secrets.token_hex(16)
+
+
+JWT_SECRET = (os.getenv("ARIAN_JWT_SECRET") or os.getenv("BROILER_JWT_SECRET") or _dev_secret())
 JWT_ALG = "HS256"
 JWT_EXPIRE_MIN = int(__import__("os").getenv("ARIAN_JWT_EXPIRE_MIN") or os.getenv("BROILER_JWT_EXPIRE_MIN") or "1440")  # 24h

@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import os
 from sqlalchemy import (
     create_engine, Column, Integer, String, Float, Boolean, DateTime,
-    ForeignKey, Index, inspect, text,
+    ForeignKey, Index, UniqueConstraint, inspect, text,
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
@@ -32,6 +32,9 @@ class User(Base):
     username = Column(String(60), unique=True, nullable=True, index=True)
     full_name = Column(String(120), nullable=True)
     hashed_password = Column(String(200), nullable=False)
+    # Bumped on password change — JWTs carry this value, so old tokens die
+    # with the old password (see auth.authenticate_token).
+    token_version = Column(Integer, nullable=False, default=0, server_default="0")
     is_active = Column(Boolean, default=True, nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow)
@@ -53,9 +56,15 @@ class Organization(Base):
 class Cycle(Base):
     """A rearing period. Each cycle is owned by exactly one User."""
     __tablename__ = "cycles"
+    __table_args__ = (
+        # cycle_code is unique PER OWNER, not globally: one tenant must not
+        # be able to probe or squat another tenant's codes (fail-closed 404
+        # on duplicates within the same account instead).
+        UniqueConstraint("user_id", "cycle_code", name="uq_cycle_user_code"),
+    )
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
-    cycle_code = Column(String(32), unique=True, nullable=False, index=True)
+    cycle_code = Column(String(32), nullable=False, index=True)
     label = Column(String(120), nullable=False)
     strain = Column(String(40), nullable=False, default="ross308")
     start_date = Column(DateTime(timezone=True), nullable=False, default=utcnow)
@@ -203,22 +212,35 @@ def init_db():
         _run_alembic_upgrade()
         return
     Base.metadata.create_all(engine)
-    # --- migration: add user_id to existing cycles table if missing ---
-    # Works on PostgreSQL: check information_schema and ALTER if needed.
+    # --- ad-hoc migrations for dev (create_all) databases -----------------
+    # Alembic-managed production DBs get these via migrations/004 + 005.
+    # Dialect-agnostic via the inspector so sqlite dev DBs migrate too.
     try:
+        insp = inspect(engine)
+        cycle_cols = {c["name"] for c in insp.get_columns("cycles")}
+        user_cols = {c["name"] for c in insp.get_columns("users")}
         with engine.begin() as conn:
-            res = conn.execute(text(
-                "SELECT column_name FROM information_schema.columns "
-                "WHERE table_name='cycles' AND column_name='user_id'"
-            )).fetchone()
-            if res is None:
+            if "user_id" not in cycle_cols:
                 conn.execute(text("ALTER TABLE cycles ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE"))
                 conn.execute(text("CREATE INDEX IF NOT EXISTS ix_cycles_user_id ON cycles(user_id)"))
                 print("[migrate] added cycles.user_id FK -> users.id")
-            # Ensure users table exists already via create_all; if old DB had no users, backfill a default admin
-            # (admin creation is done lazily in auth module, not here)
+            if "token_version" not in user_cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0"))
+                print("[migrate] added users.token_version")
+            # scope cycle_code uniqueness per owner (drop legacy global index)
+            idx_names = {i["name"] for i in insp.get_indexes("cycles")}
+            try:
+                idx_names |= {u["name"] for u in insp.get_unique_constraints("cycles") if u.get("name")}
+            except Exception:
+                pass
+            if "ix_cycles_cycle_code" in idx_names:
+                conn.execute(text("DROP INDEX IF EXISTS ix_cycles_cycle_code"))
+                print("[migrate] dropped global ix_cycles_cycle_code")
+            if "uq_cycle_user_code" not in idx_names:
+                conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_cycle_user_code ON cycles(user_id, cycle_code)"))
+                print("[migrate] added uq_cycle_user_code(user_id, cycle_code)")
     except Exception as e:
-        print(f"[migrate] cycles.user_id check failed: {e}")
+        print(f"[migrate] dev schema check failed: {e}")
     # --- uktech online-ingest columns (004_uktech_sync, alembic path on prod) ---
     # create_all above makes fresh tables, but long-lived dev DBs predate the
     # new columns: patch them idempotently on every boot (ALTER is safe to

@@ -34,6 +34,8 @@ def verify_password(plain: str, hashed: str) -> bool:
 def create_access_token(data: dict, expires_minutes: Optional[int] = None) -> str:
     to_encode = data.copy()
     exp = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes or JWT_EXPIRE_MIN)
+    # tv (token version) lets password changes invalidate outstanding tokens.
+    to_encode.setdefault("tv", 0)
     to_encode.update({"exp": exp})
     return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALG)
 
@@ -54,6 +56,14 @@ def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
     return db.query(User).filter(User.id == user_id).first()
 
 # -------- FastAPI dependency: require auth --------
+def _token_version_ok(payload: dict, user: User) -> bool:
+    """Reject tokens issued before the last password change."""
+    try:
+        return int(payload.get("tv", 0)) == int(user.token_version or 0)
+    except (TypeError, ValueError):
+        return False
+
+
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     # Fail-closed: no token => 401, never return anonymous user for tenant-scoped queries
     if not token:
@@ -67,7 +77,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     except (JWTError, ValueError, TypeError):
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     user = get_user_by_id(db, uid)
-    if not user or not user.is_active:
+    if not user or not user.is_active or not _token_version_ok(payload, user):
         raise HTTPException(status_code=401, detail="User not found or inactive")
     return user
 
@@ -78,7 +88,30 @@ async def get_current_user_optional(token: str = Depends(oauth2_scheme), db: Ses
         payload = decode_token(token)
         uid = int(payload.get("sub"))
         u = get_user_by_id(db, uid)
-        return u if u and u.is_active else None
+        return u if u and u.is_active and _token_version_ok(payload, u) else None
+    except Exception:
+        return None
+
+
+def authenticate_token(token: str) -> Optional[User]:
+    """Validate a JWT outside a request context (websocket query param).
+
+    Returns the detached User on success, None on any failure (fail-closed).
+    """
+    if not token:
+        return None
+    try:
+        payload = decode_token(token)
+        uid = int(payload.get("sub"))
+    except Exception:
+        return None
+    try:
+        with SessionLocal() as s:
+            u = s.get(User, uid)
+            if not u or not u.is_active or not _token_version_ok(payload, u):
+                return None
+            s.expunge(u)
+            return u
     except Exception:
         return None
 

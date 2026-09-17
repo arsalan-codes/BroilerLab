@@ -53,6 +53,7 @@ E2E = textwrap.dedent('''
             "age_day": 18, "feed_bin_kg": 16.62, "feed_delta_g": 4.0, "temp_c": 23.9},
         ]
         logs = [c.post(f"/api/cycles/{cid}/ingest", headers=h, json=r).json() for r in rows]
+        assert logs[2]["is_visit_end"] is True, logs[2]  # closing row ends, no ghost visit
         assert logs[1]["elapsed_s"] == 11.0, logs[1]
         assert logs[1]["visit_feed_g"] == 40.0, logs[1]  # 0.04kg bin drop -> g
         regs = c.get(f"/api/cycles/{cid}/registrations", headers=h).json()

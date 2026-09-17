@@ -22,12 +22,31 @@ from processor import get_processor
 STRAINS = {"ross308": 42.0, "cobb500": 40.0, "aaplus": 44.0, "hubbardep": 41.0}
 
 
-def make_cycle(code, label, strain, birds):
+def ensure_user(email, password):
+    """Register-or-login the seed owner; seeded cycles belong to a real user
+    (orphan cycles are invisible to non-admins by design)."""
+    import requests
+    base = f"http://{API_HOST}:{API_PORT}"
+    r = requests.post(f"{base}/api/auth/register",
+                      json={"email": email, "password": password}, timeout=5)
+    if r.status_code not in (200, 201):
+        r = requests.post(f"{base}/api/auth/login",
+                          json={"email": email, "password": password}, timeout=5)
+    r.raise_for_status()
+    return r.json()["access_token"]
+
+
+def make_cycle(code, label, strain, birds, user_id=None):
     with SessionLocal() as s:
-        if s.query(Cycle).filter(Cycle.cycle_code == code).first():
-            return s.query(Cycle).filter(Cycle.cycle_code == code).first().id
+        q = s.query(Cycle).filter(Cycle.cycle_code == code)
+        if user_id is not None:
+            q = q.filter(Cycle.user_id == user_id)
+        existing = q.first()
+        if existing:
+            return existing.id
         c = Cycle(cycle_code=code, label=label, strain=strain,
-                  bird_count=birds, start_date=datetime.now(timezone.utc))
+                  bird_count=birds, start_date=datetime.now(timezone.utc),
+                  user_id=user_id)
         s.add(c); s.commit()
         return c.id
 
@@ -77,13 +96,17 @@ def gen_visit(cycle_id, cycle_code, bird_id, start, strain, start_date, sensor="
     return rows
 
 
-def seed_rest(cycle_id, cycle_code, strain, n_visits):
-    import requests
+def seed_rest(cycle_id, cycle_code, strain, n_visits, token):
+    try:
+        import requests
+    except ImportError:
+        raise SystemExit("seed.py needs the 'requests' package: pip install requests")
     # cycle start date for age calc
     with SessionLocal() as s:
         c = s.get(Cycle, cycle_id)
         start_date = c.start_date if c else datetime.now(timezone.utc)
     url = f"http://{API_HOST}:{API_PORT}/api/cycles/{cycle_id}/ingest"
+    headers = {"Authorization": f"Bearer {token}"}
     base_t = start_date
     birds = [f"E{1000+i}" for i in range(40)]
     count = 0
@@ -91,7 +114,7 @@ def seed_rest(cycle_id, cycle_code, strain, n_visits):
         b = random.choice(birds)
         t0 = base_t + timedelta(minutes=random.randint(0, 28000))
         for row in gen_visit(cycle_id, cycle_code, b, t0, strain, start_date):
-            r = requests.post(url, json=row, timeout=5)
+            r = requests.post(url, json=row, headers=headers, timeout=5)
             if r.status_code == 200:
                 count += 1
     return count
@@ -103,12 +126,22 @@ def main():
     ap.add_argument("--visits", type=int, default=200)
     ap.add_argument("--direct", action="store_true",
                     help="use processor directly (no HTTP)")
+    ap.add_argument("--email", default="demo@local",
+                    help="seed owner account (registered if missing)")
+    ap.add_argument("--password", default="DemoSeed123")
     args = ap.parse_args()
 
     init_db()
+    token, owner_id = None, None
+    if not args.direct:
+        from models import User as _U
+        token = ensure_user(args.email, args.password)
+        with SessionLocal() as s:
+            u = s.query(_U).filter(_U.email == args.email.lower().strip()).first()
+            owner_id = u.id if u else None
     total = 0
     for code in args.cycles:
-        cid = make_cycle(code, f"Demo Flock {code}", "ross308", 40)
+        cid = make_cycle(code, f"Demo Flock {code}", "ross308", 40, user_id=owner_id)
         if args.direct:
             from models import Cycle as _C
             with SessionLocal() as s:
@@ -123,7 +156,7 @@ def main():
                     proc.ingest(row)
             total += args.visits
         else:
-            total += seed_rest(cid, code, "ross308", args.visits)
+            total += seed_rest(cid, code, "ross308", args.visits, token)
         print(f"  cycle {code} (id={cid}): {args.visits} visits seeded")
     print(f"done: {total} visits")
 

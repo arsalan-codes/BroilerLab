@@ -40,6 +40,14 @@ GZIP_TYPES = (
     ".js", ".css", ".json", ".svg", ".html", ".txt", ".xml", ".map",
 )
 
+# Never serve backend sources, logs, databases or secrets over HTTP —
+# only the public frontend asset types below.
+ALLOWED_EXTS = {
+    ".html", ".css", ".js", ".json", ".svg", ".map", ".txt", ".xml",
+    ".png", ".webp", ".jpg", ".jpeg", ".ico", ".woff", ".woff2",
+    ".ttf", ".eot", ".otf",
+}
+
 
 def cache_for(path):
     _, ext = os.path.splitext(path.lower())
@@ -53,7 +61,7 @@ def cache_for(path):
 
 
 class Handler(SimpleHTTPRequestHandler):
-    server_version = "ArianStatic/1.8.57"
+    server_version = "ArianStatic/1.8.58"
 
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=ROOT, **kw)
@@ -86,6 +94,11 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._send_file(idx, head_only)
             return self._send_file(os.path.join(ROOT, "index.html"), head_only)
         if os.path.isfile(fs_path):
+            _, fext = os.path.splitext(fs_path.lower())
+            _base = os.path.basename(fs_path)
+            if (_base.startswith(".") or _base == "config.local.js"
+                    or (fext and fext not in ALLOWED_EXTS)):
+                return self._send_file(os.path.join(ROOT, "404.html"), head_only, code=404)
             return self._send_file(fs_path, head_only)
         # no extension -> SPA fallback (History-API deep links)
         _, ext = os.path.splitext(raw)

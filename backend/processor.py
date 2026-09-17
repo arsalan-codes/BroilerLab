@@ -57,6 +57,7 @@ class CycleProcessor:
             for v in rows:
                 self.open[v.bird_id] = {
                     "visit_id": v.id,
+                    "bird_id": v.bird_id,
                     "start": v.visit_start,
                     "init_w": v.initial_weight_g,
                     "sensor": v.sensor_id,
@@ -98,6 +99,7 @@ class CycleProcessor:
         # We treat the first row of a bird with no open context as the start.
         is_start = False
         is_end = False
+        closed_id = None
         if bird_id and ctx is None:
             is_start = True
             ctx = self._open_visit(bird_id, ts, sensor_id, rssi, weight_g,
@@ -118,11 +120,19 @@ class CycleProcessor:
                 ctx["intake"] += end_inc
                 if bin_kg is not None:
                     ctx["bin_prev"] = bin_kg
+                closed_id = ctx["visit_id"]
                 self._close_visit(ctx, ts, weight_g, temp_c, humidity,
                                   final_inc=end_inc)
-                is_start = True
-                ctx = self._open_visit(bird_id, ts, sensor_id, rssi,
-                                       weight_g, age_day, bin_kg)
+                is_end = True
+                # Reopen only when this row carries weight data (a genuine new
+                # start). Pure exit/closing rows belong to the visit that just
+                # ended — reopening would mint empty ghost visits.
+                if weight_g is not None or raw is not None:
+                    is_start = True
+                    ctx = self._open_visit(bird_id, ts, sensor_id, rssi,
+                                           weight_g, age_day, bin_kg)
+                else:
+                    ctx = None
             else:
                 # mid or end: update bin intake + weight EMA
                 self._step(ctx, ts, raw, weight_g, bin_kg, feed_delta,
@@ -137,8 +147,8 @@ class CycleProcessor:
                 raw_weight_g=raw, weight_g=weight_g,
                 feed_bin_kg=bin_kg, feed_delta_g=feed_delta,
                 temp_c=temp_c, humidity=humidity, rssi=rssi,
-                visit_id=ctx["visit_id"] if ctx else None,
-                is_visit_start=is_start, is_visit_end=False,
+                visit_id=ctx["visit_id"] if ctx else closed_id,
+                is_visit_start=is_start, is_visit_end=is_end,
             )
             s.add(log)
             s.commit()
@@ -162,16 +172,28 @@ class CycleProcessor:
                     bin_kg=None):
         ema_w = weight_g
         with SessionLocal() as s:
-            v = Visit(
-                cycle_id=self.cycle_id, bird_id=bird_id,
-                visit_start=ts, sensor_id=sensor,
-                initial_weight_g=weight_g, age_day=age_day,
-                rssi=rssi, read_ok=(bird_id is not None),
-            )
-            s.add(v); s.commit()
-            vid = v.id
+            # Converge instead of duplicating: another worker process (or a
+            # pre-restart row) may already hold this bird's open visit.
+            existing = (s.query(Visit)
+                        .filter(Visit.cycle_id == self.cycle_id,
+                                Visit.bird_id == bird_id,
+                                Visit.visit_end.is_(None))
+                        .order_by(Visit.visit_start.desc())
+                        .first())
+            if existing is not None:
+                v = existing
+            else:
+                v = Visit(
+                    cycle_id=self.cycle_id, bird_id=bird_id,
+                    visit_start=ts, sensor_id=sensor,
+                    initial_weight_g=weight_g, age_day=age_day,
+                    rssi=rssi, read_ok=(bird_id is not None),
+                )
+                s.add(v); s.commit()
+            vid, start, init_w = v.id, v.visit_start, v.initial_weight_g
         ctx = {
-            "visit_id": vid, "start": ts, "init_w": weight_g,
+            "visit_id": vid, "bird_id": bird_id, "start": start,
+            "init_w": init_w if init_w is not None else weight_g,
             "sensor": sensor, "rssi": rssi, "read_ok": bird_id is not None,
             "last_ts": ts, "intake": 0.0, "bin_prev": bin_kg,
             "last_raw": weight_g, "ema_w": ema_w, "age_day": age_day,
@@ -224,18 +246,28 @@ class CycleProcessor:
         if val is None:
             return _now()
         if isinstance(val, datetime):
-            return val if val.tzinfo else val.replace(tzinfo=timezone.utc)
-        # ISO string or "YYYY-MM-DD HH:MM:SS"
-        s = str(val).strip().replace("T", " ").replace("Z", "")
+            # aware datetimes convert to UTC; naive ones are assumed UTC
+            return val.astimezone(timezone.utc) if val.tzinfo else val.replace(tzinfo=timezone.utc)
+        # ISO string or "YYYY-MM-DD HH:MM:SS" (trailing Zulu marker optional)
+        s = str(val).strip()
+        if s.endswith(("Z", "z")):
+            s = s[:-1] + "+00:00"
         try:
-            return datetime.fromisoformat(s).replace(tzinfo=timezone.utc)
+            dt = datetime.fromisoformat(s)
         except ValueError:
-            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"):
+            dt = None
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S.%f",
+                        "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f"):
                 try:
-                    return datetime.strptime(s, fmt).replace(tzinfo=timezone.utc)
+                    dt = datetime.strptime(s, fmt)
+                    break
                 except ValueError:
                     continue
-        return _now()
+        if dt is None:
+            return _now()
+        # .replace() here would SHIFT wall-clock times carrying a UTC offset
+        # (e.g. +03:30) by hours — convert instead, assume UTC only if naive.
+        return dt.astimezone(timezone.utc) if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
 _processors = {}  # cycle_id -> CycleProcessor

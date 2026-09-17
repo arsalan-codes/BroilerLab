@@ -12,8 +12,10 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.middleware.gzip import GZipMiddleware
+from sqlalchemy import func, or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from config import API_HOST, API_PORT
+from config import API_HOST, API_PORT, JWT_SECRET_EXPLICIT
 from models import init_db, SessionLocal, Cycle, Visit, DeviceLog, User, EnvSample
 from processor import get_processor
 import hub
@@ -38,13 +40,16 @@ _db_state = {"ok": False, "error": None}
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
-    # Phase 10: fail fast on missing critical env (production will crash at cold-start with clear message)
-    _required = [("BROILER_JWT_SECRET", "JWT signing key")]
-    for _k, _h in _required:
-        if not os.getenv(_k):
-            _log = get_logger(__name__)
-            _log.warning("Missing env %s (%s) — using dev-only fallback", _k, _h)
-    hub.register_loop(asyncio.get_event_loop())
+    # Fail fast on missing JWT secret where it matters: production (Vercel or
+    # BROILER_REQUIRE_JWT_SECRET=1) refuses to boot with an ephemeral dev key,
+    # because every restart would silently invalidate all sessions.
+    _log = get_logger(__name__)
+    _strict_jwt = (os.getenv("BROILER_REQUIRE_JWT_SECRET", "") == "1") or bool(os.getenv("VERCEL"))
+    if not JWT_SECRET_EXPLICIT:
+        if _strict_jwt:
+            raise RuntimeError("Missing BROILER_JWT_SECRET — refusing to boot with an ephemeral dev key")
+        _log.warning("Missing env BROILER_JWT_SECRET (JWT signing key) — using local dev-only fallback")
+    hub.register_loop(asyncio.get_running_loop())
     _uk_task = _maybe_start_uktech_poll()
     try:
         init_db()
@@ -57,7 +62,7 @@ async def lifespan(app: FastAPI):
     yield
     if _uk_task is not None:
         _uk_task.cancel()
-app = FastAPI(title="BroilerLab Device Backend", version="1.5.8", lifespan=lifespan)
+app = FastAPI(title="BroilerLab Device Backend", version="1.8.58", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=400)
 
 
@@ -99,7 +104,16 @@ _RATE_LIMIT = {}  # ip -> (count, window_start)
 
 
 def _check_rate_limit(ip: str, max_requests: int = 10, window_s: int = 60) -> bool:
+    # NOTE: per-process only — each serverless invocation / worker has its own
+    # table, so this is a best-effort brake, not a global guarantee.
     now = _rtime.monotonic()
+    # purge expired windows so the table cannot grow without bound (DoS-safe)
+    for _ip, (_cnt, _start) in list(_RATE_LIMIT.items()):
+        if now - _start > window_s:
+            del _RATE_LIMIT[_ip]
+    if len(_RATE_LIMIT) > 10000:  # hard cap: evict oldest windows first
+        for _ip, (_cnt, _start) in sorted(_RATE_LIMIT.items(), key=lambda kv: kv[1][1])[:1000]:
+            del _RATE_LIMIT[_ip]
     entry = _RATE_LIMIT.get(ip)
     if entry is None or now - entry[1] > window_s:
         _RATE_LIMIT[ip] = (1, now)
@@ -161,6 +175,13 @@ for _f in _STATIC_FILES:
         def _serve(_p=_path):
             headers={"Cache-Control":"public, max-age=86400"}
             if _p.endswith((".woff2",".ttf",".png")): headers["Cache-Control"]="public, max-age=604800, immutable"
+            # Explicit charset: some clients must not guess. Starlette only
+            # appends charset for text/*, so application/javascript (+json/svg)
+            # would otherwise go out with no declared encoding.
+            import mimetypes as _mt
+            _ct, _ = _mt.guess_type(_p)
+            if _ct and (_ct.startswith("text/") or _ct in ("application/javascript", "application/json", "image/svg+xml")):
+                headers["Content-Type"] = _ct + "; charset=utf-8"
             return FileResponse(_p, headers=headers)
         app.get(f"/{_f}")(_serve)
 @app.get("/api/health")
@@ -241,16 +262,22 @@ def register(payload: RegisterIn):
         raise HTTPException(400, "email and password are required")
     if not authmod.EMAIL_RE.match(email):
         raise HTTPException(400, "invalid email")
-    if len(password) < 6:
-        raise HTTPException(400, "password must be at least 6 characters")
+    if len(password) < 8:
+        raise HTTPException(400, "password must be at least 8 characters")
     with SessionLocal() as s:
         if s.query(User).filter(User.email == email).first():
             raise HTTPException(409, "email already registered")
         if username and s.query(User).filter(User.username == username).first():
             raise HTTPException(409, "username taken")
         u = User(email=email, username=username, full_name=full_name, hashed_password=authmod.hash_password(password))
-        s.add(u); s.commit(); s.refresh(u)
-        token = authmod.create_access_token({"sub": str(u.id)})
+        s.add(u)
+        try:
+            s.commit()
+        except IntegrityError:
+            s.rollback()
+            raise HTTPException(409, "email already registered")
+        s.refresh(u)
+        token = authmod.create_access_token({"sub": str(u.id), "tv": u.token_version or 0})
         return {"access_token": token, "token_type": "bearer", "user": _user_to_dict(u)}
 @app.post("/api/auth/login")
 def login(payload: LoginIn):
@@ -268,7 +295,7 @@ def login(payload: LoginIn):
             raise HTTPException(403, "account disabled")
         u.last_login = datetime.now(timezone.utc)
         s.commit()
-        token = authmod.create_access_token({"sub": str(u.id)})
+        token = authmod.create_access_token({"sub": str(u.id), "tv": u.token_version or 0})
         return {"access_token": token, "token_type": "bearer", "user": _user_to_dict(u)}
 @app.get("/api/auth/me")
 def me(current: User = Depends(authmod.get_current_user)):
@@ -279,25 +306,27 @@ def change_password(payload: ChangePasswordIn, current: User = Depends(authmod.g
     new = payload.new_password or ""
     if not old or not new:
         raise HTTPException(400, "old_password and new_password required")
-    if len(new) < 6:
-        raise HTTPException(400, "new password too short")
+    if len(new) < 8:
+        raise HTTPException(400, "new password must be at least 8 characters")
     with SessionLocal() as s:
         u = s.get(User, current.id)
         if not authmod.verify_password(old, u.hashed_password):
             raise HTTPException(401, "old password incorrect")
         u.hashed_password = authmod.hash_password(new)
+        # invalidate every outstanding token (they carry the old tv)
+        u.token_version = (u.token_version or 0) + 1
         s.commit()
         return {"ok": True}
 def _require_owner_cycle(s: Session, cycle_id: int, user: User) -> Cycle:
+    """Fail-closed ownership: legacy user_id NULL cycles are visible to admins
+    only — they are never auto-adopted (first-claimer-wins let any fresh
+    account hijack another tenant's legacy data). Single-user upgrades: run
+    `UPDATE cycles SET user_id=<id> WHERE user_id IS NULL;` once."""
     c = s.get(Cycle, cycle_id)
     if not c:
         raise HTTPException(404, "cycle not found")
     if c.user_id is None:
         if user.is_admin:
-            return c
-        if s.query(Cycle).filter(Cycle.user_id == user.id).count() == 0:
-            c.user_id = user.id
-            s.commit()
             return c
         raise HTTPException(404, "cycle not found")
     if c.user_id != user.id and not user.is_admin:
@@ -350,10 +379,17 @@ def create_cycle(payload: CycleIn, current: User = Depends(authmod.get_current_u
     if not code or not label:
         raise HTTPException(400, "cycle_code and label are required")
     with SessionLocal() as s:
-        if s.query(Cycle).filter(Cycle.cycle_code == code).first():
+        # uniqueness is per-owner (uq_cycle_user_code): never probe or squat
+        # another tenant's codes — duplicates inside your own account get 409.
+        if s.query(Cycle).filter(Cycle.cycle_code == code, Cycle.user_id == current.id).first():
             raise HTTPException(409, f"cycle '{code}' already exists")
         c = Cycle(cycle_code=code, label=label, strain=payload.strain, bird_count=int(payload.bird_count or 0), pen_id=((payload.pen_id or "").strip() or None), notes=((payload.notes or "").strip() or None), user_id=current.id)
-        s.add(c); s.commit()
+        s.add(c)
+        try:
+            s.commit()
+        except IntegrityError:
+            s.rollback()
+            raise HTTPException(409, f"cycle '{code}' already exists")
         return _cycle_to_dict(c)
 @app.delete("/api/cycles/{cycle_id}")
 def delete_cycle(cycle_id: int, current: User = Depends(authmod.get_current_user)):
@@ -378,15 +414,18 @@ def reset_cycle_data(cycle_id: int, current: User = Depends(authmod.get_current_
 def cycle_stats(cycle_id: int, current: User = Depends(authmod.get_current_user)):
     with SessionLocal() as s:
         c = _require_owner_cycle(s, cycle_id, current)
-        visits = s.query(Visit).filter(Visit.cycle_id == cycle_id).all()
-        logs = s.query(DeviceLog).filter(DeviceLog.cycle_id == cycle_id).count()
-        birds = {v.bird_id for v in visits if v.bird_id}
-        total_intake = sum((v.feed_intake_g or 0) for v in visits)
-        avg_init = (sum(v.initial_weight_g for v in visits if v.initial_weight_g) / max(1, len([v for v in visits if v.initial_weight_g])))
-        missed = sum(1 for v in visits if not v.read_ok)
-        return {"cycle_id": cycle_id, "label": c.label, "visits": len(visits), "unique_birds": len(birds), "device_rows": logs, "total_intake_g": round(total_intake, 1), "avg_initial_weight_g": round(avg_init, 1), "missed_rfid": missed}
+        # aggregate in the DB: never materialize the whole visit history
+        vf = Visit.cycle_id == cycle_id
+        visits_n = s.query(func.count(Visit.id)).filter(vf).scalar() or 0
+        birds_n = s.query(func.count(func.distinct(Visit.bird_id))).filter(vf, Visit.bird_id.isnot(None)).scalar() or 0
+        logs = s.query(func.count(DeviceLog.id)).filter(DeviceLog.cycle_id == cycle_id).scalar() or 0
+        total_intake = s.query(func.coalesce(func.sum(Visit.feed_intake_g), 0)).filter(vf).scalar() or 0
+        avg_init = s.query(func.avg(Visit.initial_weight_g)).filter(vf, Visit.initial_weight_g.isnot(None)).scalar() or 0
+        missed = s.query(func.count(Visit.id)).filter(vf, or_(Visit.read_ok.is_(False), Visit.read_ok.is_(None))).scalar() or 0
+        return {"cycle_id": cycle_id, "label": c.label, "visits": visits_n, "unique_birds": birds_n, "device_rows": logs, "total_intake_g": round(float(total_intake), 1), "avg_initial_weight_g": round(float(avg_init), 1), "missed_rfid": missed}
 @app.get("/api/cycles/{cycle_id}/visits")
 def recent_visits(cycle_id: int, limit: int = 50, current: User = Depends(authmod.get_current_user)):
+    limit = max(1, min(int(limit or 50), 500))
     with SessionLocal() as s:
         _require_owner_cycle(s, cycle_id, current)
         rows = (s.query(Visit).filter(Visit.cycle_id == cycle_id).order_by(Visit.visit_start.desc()).limit(limit).all())
@@ -399,6 +438,7 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
     elapsed time (s), datetime, bird id, device id. For still-open visits
     (visit_end NULL) elapsed is measured up to now.
     """
+    limit = max(1, min(int(limit or 50), 500))
     with SessionLocal() as s:
         _require_owner_cycle(s, cycle_id, current)
         rows = (s.query(Visit).filter(Visit.cycle_id == cycle_id, Visit.bird_id.isnot(None)).order_by(Visit.visit_start.desc()).limit(limit).all())
@@ -422,15 +462,16 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
 def env_summary(current: User = Depends(authmod.get_current_user)):
     """Latest per-house climate snapshot + last 10 temperature samples.
 
-    Single query per table; ownership enforced by env_samples.house_id being
-    minted only from cycles owned by the requesting user (fail-closed like
-    every other endpoint). Falls back to an empty (not demo) payload when no
-    rows exist yet — the frontend renders offline placeholders.
+    Climate telemetry carries no tenant key, so houses are shared,
+    read-only operational data for every authenticated user: the list comes
+    from distinct house_ids actually present in env_samples (never from an
+    arbitrary cycle.id mapping). Falls back to an empty (not demo) payload
+    when no rows exist yet — the frontend renders offline placeholders.
     """
     out = {"houses": [], "series": {"temps": []}}
     with SessionLocal() as s:
-        owned = s.query(Cycle.id).filter(Cycle.user_id == current.id, Cycle.active == True).all()  # noqa: E712
-        house_ids = sorted({(c.id % 100) or 1 for (c.id,) in owned}) or [1]
+        present = s.query(EnvSample.house_id).distinct().limit(100).all()
+        house_ids = sorted({h for (h,) in present if h is not None}) or [1]
         latest = {}
         for hid in house_ids:
             row = (s.query(EnvSample)
@@ -475,7 +516,11 @@ def env_summary(current: User = Depends(authmod.get_current_user)):
 
 @app.get("/api/env/export")
 def env_export(scope: str = "day", house: int = 1, current: User = Depends(authmod.get_current_user)):
-    """Excel export: hourly / daily / monthly / custom range (from & to query)."""
+    """Excel export for one house present in telemetry (404 otherwise).
+
+    Climate rows are shared operational data (see env_summary), so any
+    authenticated user may export houses that exist — never other tenants'
+    per-bird data, which stays behind _require_owner_cycle."""
     from fastapi.responses import StreamingResponse
     import io
     try:
@@ -543,18 +588,44 @@ def uktech_status(serial: str | None = None,
     """Sync cursor for a device serial (cursor only — the token is never exposed)."""
     import uktech
     return uktech.sync_status(serial)
+def _ws_auth_or_close(ws: WebSocket):
+    """Browsers cannot set headers on a WS handshake, so the JWT travels as
+    ?token=. Returns the authenticated User or None (caller must close)."""
+    return authmod.authenticate_token(ws.query_params.get("token", ""))
+
+
 @app.websocket("/ws/device")
 async def ws_device(ws: WebSocket):
+    user = _ws_auth_or_close(ws)
+    if not user:
+        await ws.close(code=4401)
+        return
     await ws.accept()
+    hub.set_owner(ws, user.id, user.is_admin)
     hub.subscribe_all(ws)
     try:
         while True:
             await ws.receive_text()
     except WebSocketDisconnect:
         hub.unsubscribe_all(ws)
+
+
 @app.websocket("/ws/cycle/{cycle_id}")
 async def ws_cycle(ws: WebSocket, cycle_id: int):
+    user = _ws_auth_or_close(ws)
+    if not user:
+        await ws.close(code=4401)
+        return
+    with SessionLocal() as s:
+        c = s.get(Cycle, cycle_id)
+        if not c:
+            await ws.close(code=4404)
+            return
+        if c.user_id != user.id and not user.is_admin:
+            await ws.close(code=4403)  # fail-closed, same as the REST routes
+            return
     await ws.accept()
+    hub.set_owner(ws, user.id, user.is_admin)
     hub.subscribe_cycle(cycle_id, ws)
     try:
         while True:

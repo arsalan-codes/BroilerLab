@@ -6,3 +6,6 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 pydantic==2.9.2
 alembic
+paho-mqtt>=1.6  # dormant MQTT consumer (future replacement for HTTP ingest)
+openpyxl>=3.1  # /api/env/export xlsx generation
+requests>=2.31  # seed.py REST seeding
