@@ -13,6 +13,7 @@ interpreter, no import interference with the postgres-bound test modules)
 and skips cleanly when the backend deps are unavailable.
 """
 import importlib.util
+import os
 import re
 import subprocess
 import sys
@@ -124,10 +125,13 @@ def test_device_table_e2e_sqlite(tmp_path):
     if not _has_deps():
         pytest.skip("backend deps (sqlalchemy/fastapi/jose) unavailable")
     db = tmp_path / "devtable.db"
-    script = E2E.replace("@BACKEND@", str(BACKEND))
-    env = {"BROILER_DATABASE_URL": f"sqlite:///{db}",
+    # as_posix: a Windows path with backslashes would break the -c string
+    # (\U... unicode escapes) — forward slashes are valid everywhere.
+    script = E2E.replace("@BACKEND@", BACKEND.as_posix())
+    env = {"BROILER_DATABASE_URL": f"sqlite:///{db.as_posix()}",
            "BROILER_JWT_SECRET": "test-secret-" + "0" * 24,
-           "PATH": "/usr/bin:/bin"}
+           "PATH": os.environ.get("PATH", ""),
+           "SYSTEMROOT": os.environ.get("SYSTEMROOT", "")}
     r = subprocess.run([sys.executable, "-c", script], capture_output=True,
                        text=True, timeout=180, env=env)
     assert r.returncode == 0, f"E2E failed:\n{r.stdout}\n{r.stderr[-2000:]}"

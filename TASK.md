@@ -112,3 +112,4 @@ Last Updated: 2026-08-30 — v1.5.20 (ققنوس)
 - 2026-08-23: وب‌اپلیکیشن RossSim — موتور JS وفادار به simulator.py + طراحی مدرن RTL + سناریوها.
 - 2026-08-23: نسخه ۲ — طراح آزمایش (پن/تعداد/تیمار)، نقشه فارم پویا، خروجی Excel+CSV.
 - 2026-08-23: نسخه ۳ BroilerLab — کاتالوگ ۴ سویه از منابع رسمی، آمار زیستی کامل، دوزبانه FA/EN، مالکیت Arsalan Rezazadeh، بازطراحی آکادمیک.
+- 2026-09-17: online ingest دستگاه توزین uktech — دکمه «دریافت داده دستگاه» در v-dev: pull از api_weight_data.php (سریال ESP800، کرسر افزایشی sync_state، idempotency با external_id یکتا، ساعت تهران→UTC، گردکردن اعشار) به چرخه انتخابی کاربر؛ اندپوینت‌های POST /api/uktech/sync + GET /api/uktech/status (توکن فقط env سمت سرور) + auto-poll اختیاری لوکال + migration 004 + تست test_uktech (۷ سبز). تست زنده: 200 رکورد → 19 بازدید/۲ پرنده، sync مجدد ۰ رکورد. برای پروداکشن: UKTECH_API_TOKEN در env ورسل + UKTECH_VERIFY_SSL=false اگر زنجیره TLS رد شد.

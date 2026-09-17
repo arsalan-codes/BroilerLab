@@ -72,6 +72,7 @@
           loadCycles();
           loadStats(c.id);
           loadRegistrations(c.id);
+          loadUkStatus();
         });
         box.appendChild(el);
       });
@@ -309,10 +310,49 @@
     setTimeout(function () { t.classList.remove("show"); }, 2600);
   }
 
+  // ---------- Online device sync (uktech weight API via backend) ----------
+  function setUkStatus(msg) {
+    var st = $("uk-sync-status");
+    if (st) st.textContent = msg;
+  }
+  function fmtDT(iso) {
+    if (!iso) return "";
+    try {
+      if (typeof window.formatDateTime === "function") return window.formatDateTime(iso, { withTime: true });
+    } catch (e) {}
+    return String(iso).replace("T", " ").slice(0, 19);
+  }
+  function loadUkStatus() {
+    api("/api/uktech/status").then(function (s) {
+      if (s && s.updated_at) {
+        setUkStatus(tr("dev.syncLast", "آخرین همگام‌سازی: {t}").replace("{t}", fmtDT(s.updated_at)).replace("{n}", s.last_id));
+      } else {
+        setUkStatus(tr("dev.syncNever", "هنوز همگام‌سازی انجام نشده است."));
+      }
+    }).catch(function () {});
+  }
+  function syncUktech() {
+    if (!selectedCycle) { toast(tr("dev.syncNeedCycle", "اول یک دوره را انتخاب کنید.")); return; }
+    var btn = $("uk-sync");
+    if (btn) btn.disabled = true;
+    setUkStatus(tr("dev.syncing", "در حال دریافت..."));
+    api("/api/uktech/sync", { method: "POST", body: JSON.stringify({ cycle_id: selectedCycle }) }).then(function (r) {
+      var n = (r && r.inserted) || 0;
+      if (n > 0) toast(tr("dev.syncDone", "همگام‌سازی انجام شد: {n} رکورد جدید").replace("{n}", lnum(n)));
+      else toast(tr("dev.syncNone", "رکورد جدیدی نبود."));
+      loadStats(selectedCycle); loadRegistrations(selectedCycle); loadUkStatus();
+    }).catch(function (e) {
+      toast(tr("dev.syncFail", "خطا در دریافت داده: ") + e.message);
+      loadUkStatus();
+    }).then(function () { if (btn) btn.disabled = false; });
+  }
+
   // ---------- init ----------
   function init() {
     var form = $("cy-form");
     if (form) form.addEventListener("submit", function (e) { e.preventDefault(); createCycle(); });
+    var syncBtn = $("uk-sync");
+    if (syncBtn) syncBtn.addEventListener("click", syncUktech);
     initCyStrain();
     var authed2=false; try{ var tk2=localStorage.getItem("arian_token"); authed2 = window.isTokenValid && window.isTokenValid(tk2); }catch(e){}
     var curP=document.querySelector("section.view.on"); var onPub=curP && (curP.id==="v-landing" || curP.id==="v-about");

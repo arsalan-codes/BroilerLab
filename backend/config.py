@@ -70,6 +70,23 @@ BIN_REFILL_THRESHOLD_KG = 3.0  # auto-refill trigger
 BIN_CAPACITY_KG = 25.0
 VISIT_QUEUE_TIMEOUT_S = 90.0  # co-feeding give-up threshold
 
+# ---- Online device ingest (uktech weight API) ----
+# The browser never sees these: the token stays server-side and the backend
+# pulls https://<host>/Login/api_weight_data.php?serial=..&ttoken=.. itself.
+UKTECH_API_BASE = os.getenv("UKTECH_API_BASE", "https://uktech.ir/Login/api_weight_data.php")
+UKTECH_SERIAL = os.getenv("UKTECH_SERIAL", "ESP800")
+UKTECH_TOKEN = os.getenv("UKTECH_API_TOKEN") or os.getenv("BROILER_UKTECH_TOKEN") or ""
+UKTECH_TIMEOUT_S = int(os.getenv("UKTECH_TIMEOUT_S", "15"))
+UKTECH_PAGE_SIZE = int(os.getenv("UKTECH_PAGE_SIZE", "200"))
+UKTECH_MAX_PAGES = int(os.getenv("UKTECH_MAX_PAGES", "20"))
+# TLS verification for the uktech host. Keep TRUE everywhere except hosts
+# whose chain Python cannot verify (then set false explicitly + firewall).
+UKTECH_VERIFY_SSL = (os.getenv("UKTECH_VERIFY_SSL", "true").lower() == "true")
+# Local-dev auto poll (lifespan background task). Keep OFF on Vercel/serverless.
+UKTECH_AUTO_POLL = (os.getenv("UKTECH_AUTO_POLL", "false").lower() == "true")
+UKTECH_POLL_SECONDS = int(os.getenv("UKTECH_POLL_SECONDS", "120"))
+UKTECH_CYCLE_ID = int(os.getenv("UKTECH_CYCLE_ID", "0") or 0)
+
 # ---- Auth / JWT ----
 # No usable default in the repo: empty forces env var; dev-only fallback random per-boot.
 JWT_SECRET = (os.getenv("ARIAN_JWT_SECRET") or os.getenv("BROILER_JWT_SECRET") or ("dev-" + secrets.token_hex(16)))

@@ -45,6 +45,7 @@ async def lifespan(app: FastAPI):
             _log = get_logger(__name__)
             _log.warning("Missing env %s (%s) — using dev-only fallback", _k, _h)
     hub.register_loop(asyncio.get_event_loop())
+    _uk_task = _maybe_start_uktech_poll()
     try:
         init_db()
         authmod.ensure_admin_seed()
@@ -54,8 +55,42 @@ async def lifespan(app: FastAPI):
         _db_state["ok"] = False
         _db_state["error"] = f"{type(e).__name__}: {e}"
     yield
+    if _uk_task is not None:
+        _uk_task.cancel()
 app = FastAPI(title="BroilerLab Device Backend", version="1.5.8", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=400)
+
+
+def _maybe_start_uktech_poll():
+    """Local-dev auto poll of the online weight API (opt-in).
+
+    Gated by UKTECH_AUTO_POLL=true + token + UKTECH_CYCLE_ID. Always off on
+    Vercel/serverless (env simply not set there): Online sync there happens
+    via POST /api/uktech/sync (UI button or cron).
+    """
+    from config import (UKTECH_AUTO_POLL, UKTECH_CYCLE_ID, UKTECH_POLL_SECONDS,
+                        UKTECH_SERIAL, UKTECH_TOKEN)
+    if not (UKTECH_AUTO_POLL and UKTECH_TOKEN and UKTECH_CYCLE_ID):
+        return None
+
+    async def _loop():
+        import uktech as _uk
+        log = get_logger(__name__)
+        log.info("uktech auto-poll on: serial=%s cycle=%s every=%ss",
+                 UKTECH_SERIAL, UKTECH_CYCLE_ID, UKTECH_POLL_SECONDS)
+        while True:
+            await asyncio.sleep(UKTECH_POLL_SECONDS)
+            try:
+                res = await asyncio.to_thread(
+                    _uk.sync_serial_to_cycle, UKTECH_CYCLE_ID, UKTECH_SERIAL)
+                log.info("uktech auto-poll: +%s rows (last_id=%s)",
+                         res.get("inserted"), res.get("last_id"))
+            except asyncio.CancelledError:
+                break
+            except Exception as e:  # never kill the server on a sync failure
+                log.warning("uktech auto-poll failed: %s: %s", type(e).__name__, e)
+
+    return asyncio.create_task(_loop())
 
 
 # Simple in-memory rate limiter for auth endpoints (no external deps, works for single-process)
@@ -153,6 +188,17 @@ class LoginIn(BaseModel):
 class ChangePasswordIn(BaseModel):
     old_password: str = ""
     new_password: str = ""
+
+
+class UktechSyncIn(BaseModel):
+    """Pull online device rows into one owned cycle.
+
+    serial/limit override the UKTECH_SERIAL / UKTECH_PAGE_SIZE env defaults.
+    The API token always comes from server env — never from the client.
+    """
+    cycle_id: int = 0
+    serial: str | None = None
+    limit: int | None = None
 
 class IngestIn(BaseModel):
     """Device ingest payload — permissive on purpose: firmware may add fields.
@@ -464,6 +510,39 @@ def ingest_event(cycle_id: int, payload: IngestIn, current: User = Depends(authm
     log_d = proc.ingest(data)
     hub.publish(log_d)
     return log_d
+
+
+@app.post("/api/uktech/sync")
+def uktech_sync(payload: UktechSyncIn, current: User = Depends(authmod.get_current_user)):
+    """Pull new rows from the online weight API into one owned cycle.
+
+    Fail-closed like every other cycle route: auth required, non-owners get
+    404 via _require_owner_cycle. 400 = misconfigured/missing target,
+    502 = upstream device API unreachable.
+    """
+    if not payload.cycle_id:
+        raise HTTPException(400, "cycle_id is required")
+    with SessionLocal() as s:
+        _require_owner_cycle(s, payload.cycle_id, current)
+    import uktech
+    try:
+        return uktech.sync_serial_to_cycle(payload.cycle_id,
+                                           serial=payload.serial,
+                                           limit=payload.limit)
+    except uktech.UktechError as e:
+        msg = str(e)
+        low = msg.lower()
+        if "token" in low or "cycle" in low:
+            raise HTTPException(400, msg)
+        raise HTTPException(502, msg)
+
+
+@app.get("/api/uktech/status")
+def uktech_status(serial: str | None = None,
+                  current: User = Depends(authmod.get_current_user)):
+    """Sync cursor for a device serial (cursor only — the token is never exposed)."""
+    import uktech
+    return uktech.sync_status(serial)
 @app.websocket("/ws/device")
 async def ws_device(ws: WebSocket):
     await ws.accept()

@@ -750,5 +750,13 @@ window.I18N_EN={
 "footer.copyright": "© 2026 Arsalan Rezazadeh",
 "sci.effectTitle": "Treatment effects",
 "theme.dark": "Dark theme",
-"theme.light": "Light theme"
+"theme.light": "Light theme",
+"dev.syncNow": "Fetch device data",
+"dev.syncing": "Fetching...",
+"dev.syncNeedCycle": "Select a cycle first.",
+"dev.syncDone": "Sync done: {n} new records",
+"dev.syncNone": "No new records.",
+"dev.syncFail": "Sync failed: ",
+"dev.syncLast": "Last sync: {t} — record {n}",
+"dev.syncNever": "Not synced yet.",
 };

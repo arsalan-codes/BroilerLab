@@ -41,6 +41,9 @@ postgresql://USER:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/neondb?sslm
 | `BROILER_DATABASE_URL` | همان connection string مرحله ۱ |
 | `BROILER_JWT_SECRET` | یک رشته تصادفی ۳۲+ کاراکتری (مثلا خروجی `openssl rand -hex 32`) |
 | `BROILER_CORS_ORIGINS` | `https://arsalan-codes.github.io` |
+| `UKTECH_API_TOKEN` | توکن `ttoken` دستگاه توزین آنلاین (مثلا `ARIYAN_WEIGHT_API_XYZ123`) — بدون آن دکمه «دریافت داده دستگاه» خطای 400 می‌دهد |
+| `UKTECH_SERIAL` | سریال دستگاه (پیش‌فرض `ESP800`) — اختیاری |
+| `UKTECH_VERIFY_SSL` | اگر پایتون زنجیره TLS هاست را رد کرد `false` بگذارید (پیش‌فرض `true`) |
 
 4. **Deploy** را بزنید. Vercel با `vercel.json`، درخواست‌های `/api/*` را به
    `api/index.py` (FastAPI) می‌فرستد و جدول‌ها اولین بار خودکار ساخته می‌شوند

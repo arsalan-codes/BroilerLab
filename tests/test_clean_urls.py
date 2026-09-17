@@ -198,8 +198,8 @@ def test_account_sheet_i18n_keys():
     keys = ("sheet.profile", "sheet.accountSettings", "sheet.langTheme",
             "sheet.help", "sheet.about", "sheet.viewProfile", "sheet.logout",
             "sheet.darkMode", "sheet.version", "sheet.account", "sheet.close")
-    fa = read(DEPLOY_WEBAPP / "locales" / "fa.js")
-    en = read(DEPLOY_WEBAPP / "locales" / "en.js")
+    fa = webapp_src("locales/fa.js")
+    en = webapp_src("locales/en.js")
     for k in keys:
         assert '"%s"' % k in fa, f"missing fa key {k}"
         assert '"%s"' % k in en, f"missing en key {k}"

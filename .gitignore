@@ -6,5 +6,10 @@ node_modules/
 __pycache__/
 .DS_Store
 
+# local dev database + server logs — never commit
+*.db
+*.db-journal
+backend-8755.log
+
 # local runtime overrides (URLs/keys) — never commit
 config.local.js

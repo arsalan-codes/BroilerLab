@@ -57,8 +57,8 @@ def test_workspace_cycles_i18n_keys():
     keys = ("ws.btn.pass", "ws.cy.manage", "ws.cy.empty", "ws.cy.resetData",
             "ws.cy.delete", "ws.cy.resetTitle", "ws.cy.resetMsg",
             "ws.cy.resetDone", "ws.cy.deleted", "ws.cy.visits", "ws.cy.rows")
-    fa = read(DEV / "locales" / "fa.js")
-    en = read(DEV / "locales" / "en.js")
+    fa = src("locales/fa.js")
+    en = src("locales/en.js")
     for k in keys:
         assert '"%s"' % k in fa, f"missing fa key {k}"
         assert '"%s"' % k in en, f"missing en key {k}"

@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import os
 from sqlalchemy import (
     create_engine, Column, Integer, String, Float, Boolean, DateTime,
-    ForeignKey, Index, text,
+    ForeignKey, Index, inspect, text,
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
@@ -114,10 +114,15 @@ class DeviceLog(Base):
     visit_id = Column(Integer, ForeignKey("visits.id", ondelete="SET NULL"), nullable=True)
     is_visit_start = Column(Boolean, default=False)
     is_visit_end = Column(Boolean, default=False)
+    # Online-ingest idempotency: "<serial>:<remote id>" (e.g. "ESP800:1039").
+    # NULL for manually ingested rows; unique per cycle so a re-sync never
+    # duplicates rows.
+    external_id = Column(String(64), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow)
     cycle = relationship("Cycle", back_populates="logs")
     __table_args__ = (
         Index("ix_log_cycle_ts", "cycle_id", "timestamp"),
+        Index("uq_log_cycle_external", "cycle_id", "external_id", unique=True),
     )
 
 
@@ -147,6 +152,19 @@ class EnvSample(Base):
     __table_args__ = (
         Index("ix_env_house_ts", "house_id", "ts"),
     )
+
+
+class SyncState(Base):
+    """Incremental-sync cursor per upstream source (e.g. "uktech:ESP800").
+
+    last_id tracks the highest remote record id already ingested, so each
+    sync only fetches newer rows. No FK: cursors outlive any single cycle.
+    """
+    __tablename__ = "sync_state"
+    key = Column(String(120), primary_key=True)
+    last_id = Column(Integer, nullable=False, default=0)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow)
+    note = Column(String(200), nullable=True)
 
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
@@ -201,6 +219,24 @@ def init_db():
             # (admin creation is done lazily in auth module, not here)
     except Exception as e:
         print(f"[migrate] cycles.user_id check failed: {e}")
+    # --- uktech online-ingest columns (004_uktech_sync, alembic path on prod) ---
+    # create_all above makes fresh tables, but long-lived dev DBs predate the
+    # new columns: patch them idempotently on every boot (ALTER is safe to
+    # re-check; guards make it a no-op when already applied).
+    try:
+        with engine.begin() as conn:
+            names = inspect(conn).get_table_names()
+            if "sync_state" not in names:
+                SyncState.__table__.create(conn)
+                print("[migrate] created sync_state")
+            if "device_logs" in names:
+                cols = [c["name"] for c in inspect(conn).get_columns("device_logs")]
+                if "external_id" not in cols:
+                    conn.execute(text("ALTER TABLE device_logs ADD COLUMN external_id VARCHAR(64)"))
+                    conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_log_cycle_external ON device_logs (cycle_id, external_id)"))
+                    print("[migrate] added device_logs.external_id")
+    except Exception as e:
+        print(f"[migrate] uktech columns check failed: {e}")
 
 
 def drop_all():

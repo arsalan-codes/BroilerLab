@@ -750,5 +750,13 @@ window.I18N_FA={
 "bw.higher": "بالاتر از پایه ",
 "footer.brand": "آرین v"+(window.SITE_VERSION||"")+"",
 "footer.copyright": "© 2026 Arsalan Rezazadeh",
-"sci.effectTitle": "اثر تیمارها"
+"sci.effectTitle": "اثر تیمارها",
+"dev.syncNow": "دریافت داده دستگاه",
+"dev.syncing": "در حال دریافت...",
+"dev.syncNeedCycle": "اول یک دوره را انتخاب کنید.",
+"dev.syncDone": "همگام‌سازی انجام شد: {n} رکورد جدید",
+"dev.syncNone": "رکورد جدیدی نبود.",
+"dev.syncFail": "خطا در دریافت داده: ",
+"dev.syncLast": "آخرین همگام‌سازی: {t} — رکورد {n}",
+"dev.syncNever": "هنوز همگام‌سازی انجام نشده است.",
 };
