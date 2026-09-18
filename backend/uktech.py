@@ -28,6 +28,7 @@ or BROILER_UKTECH_TOKEN) and never logged or sent to browsers.
 """
 import json
 import logging
+import os
 import ssl
 import urllib.error
 import urllib.parse
@@ -248,16 +249,18 @@ def sync_status(serial: str = None, cycle_id: int | None = None) -> dict:
 
 
 def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
-                         max_pages: int = None) -> dict:
+                         max_pages: int = None, batch: int | None = None) -> dict:
     """Pull new uktech rows into a cycle. Oldest-first so visit aggregation
     sees events in chronological order. Returns a summary dict.
 
-    Standard: fetches **all** new records (no client-side limit). ``limit`` is
-    kept only for backward compat but ignored — page size is fixed at
-    UKTECH_PAGE_SIZE and pages are walked until ``has_more`` is false.
-    ``max_pages`` is a safety cap (default 200 ≈ 40k rows) to avoid a runaway
-    loop if upstream misbehaves; normal syncs stop after 1-2 pages via the
-    ``min_id <= last_id`` early break.
+    Chunked for serverless time limits: at most ``batch`` rows are written
+    per call (default UKTECH_SYNC_BATCH=60); the cursor advances to the last
+    written row and ``complete`` is False while rows remain, so the caller
+    simply repeats the call until complete. ``limit`` is kept only for
+    backward compat but ignored — page size is fixed at UKTECH_PAGE_SIZE and
+    pages are walked until ``has_more`` is false. ``max_pages`` is a safety
+    cap (default 200) to avoid a runaway loop if upstream misbehaves; normal
+    syncs stop after 1-2 pages via the ``min_id <= last_id`` early break.
     """
     from processor import get_processor  # local import: avoids import cycles
     import hub
@@ -266,6 +269,11 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
     # Ignore caller limit — always fetch all new records standardly
     page_size = UKTECH_PAGE_SIZE
     max_pages = int(max_pages or 200)
+    try:
+        batch = max(1, int(os.getenv("UKTECH_SYNC_BATCH", "60")
+                           if batch is None else batch))
+    except (TypeError, ValueError):
+        batch = 60
     global _TLS_FALLBACK_USED
     _TLS_FALLBACK_USED = False
 
@@ -306,15 +314,22 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
         complete = False  # page cap hit while upstream still has more
     fresh.sort(key=lambda t: t[0])  # oldest first for the visit state machine
 
+    # Chunk: write only the first `batch` rows this call so a serverless
+    # invocation finishes well inside its time limit; the cursor below lands
+    # on the last WRITTEN row, so the next call continues where we stopped.
+    todo = fresh[:batch]
+    remaining = len(fresh) - len(todo)
+    if not complete:
+        remaining += 1  # upstream still has more pages beyond this fetch
     proc = get_processor(cycle_id)
     inserted, skipped, max_seen = 0, 0, last_id
-    if fresh:
-        ext_ids = [external_id(serial, rid) for rid, _ in fresh]
+    if todo:
+        ext_ids = [external_id(serial, rid) for rid, _ in todo]
         with SessionLocal() as s:
             have = {r[0] for r in s.query(DeviceLog.external_id).filter(
                 DeviceLog.cycle_id == cycle_id,
                 DeviceLog.external_id.in_(ext_ids)).all()}
-        for rid, rec in fresh:
+        for rid, rec in todo:
             max_seen = max(max_seen, rid)
             ext = external_id(serial, rid)
             if ext in have:
@@ -361,6 +376,8 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             row.note = f"cycle {cycle_id}: +{inserted}"
         s.commit()
 
-    return {"cycle_id": cycle_id, "serial": serial, "fetched": len(fresh),
+    chunk_complete = complete and remaining <= 0
+    return {"cycle_id": cycle_id, "serial": serial, "fetched": len(todo),
             "inserted": inserted, "skipped": skipped, "last_id": max_seen,
-            "complete": complete, "tls_insecure": _TLS_FALLBACK_USED}
+            "complete": chunk_complete, "remaining": max(0, remaining),
+            "tls_insecure": _TLS_FALLBACK_USED}

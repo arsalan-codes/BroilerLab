@@ -214,12 +214,15 @@ class ChangePasswordIn(BaseModel):
 class UktechSyncIn(BaseModel):
     """Pull online device rows into one owned cycle.
 
-    serial/limit override the UKTECH_SERIAL / UKTECH_PAGE_SIZE env defaults.
-    The API token always comes from server env — never from the client.
+    serial overrides the UKTECH_SERIAL env default. Sync is chunked: each
+    call writes at most `batch` rows (default UKTECH_SYNC_BATCH=60) and the
+    client repeats until `complete` is true. The API token always comes from
+    server env — never from the client.
     """
     cycle_id: int = 0
     serial: str | None = None
     limit: int | None = None
+    batch: int | None = None
 
 class IngestIn(BaseModel):
     """Device ingest payload — permissive on purpose: firmware may add fields.
@@ -571,9 +574,11 @@ def uktech_sync(payload: UktechSyncIn, current: User = Depends(authmod.get_curre
         _require_owner_cycle(s, payload.cycle_id, current)
     import uktech
     try:
-        # Standard: always fetch all new records; limit is ignored
+        # Standard: fetch all new records, chunked per call (batch) so each
+        # serverless invocation finishes inside its time limit.
         return uktech.sync_serial_to_cycle(payload.cycle_id,
-                                           serial=payload.serial)
+                                           serial=payload.serial,
+                                           batch=payload.batch)
     except uktech.UktechError as e:
         msg = str(e)
         low = msg.lower()

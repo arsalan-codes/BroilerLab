@@ -442,22 +442,40 @@
     if (!selectedCycle) { toast(tr("dev.syncNeedCycle", "اول یک دوره را انتخاب کنید.")); return; }
     var btn = $("uk-sync");
     if (btn) btn.disabled = true;
-    setUkStatus(tr("dev.syncing", "در حال دریافت..."));
-    // manual sync fetches more (full page) and always shows toast
+    // Chunked sync loop: each call writes one batch (server default 60) and
+    // returns complete=false while rows remain — repeat until done so big
+    // backlogs never hit the serverless time limit (was HTTP 504).
+    var total = 0, guard = 0, insecure = false;
     ukSyncing = true;
-    api("/api/uktech/sync", { method: "POST", body: JSON.stringify({ cycle_id: selectedCycle }) }).then(function (r) {
-      var n = (r && r.inserted) || 0;
-      if (n > 0) toast(tr("dev.syncDone", "همگام‌سازی انجام شد: {n} رکورد جدید").replace("{n}", lnum(n)));
-      else toast(tr("dev.syncNone", "رکورد جدیدی نبود."));
+    setUkStatus(tr("dev.syncing", "در حال دریافت..."));
+    function oneChunk() {
+      if (++guard > 200 || !selectedCycle) { finish(null); return; }
+      api("/api/uktech/sync", { method: "POST", body: JSON.stringify({ cycle_id: selectedCycle }) }).then(function (r) {
+        total += (r && r.inserted) || 0;
+        if (r && r.tls_insecure) insecure = true;
+        var rem = (r && r.remaining) || 0;
+        if (total > 0 || rem > 0) setUkStatus(tr("dev.syncing", "در حال دریافت...") + " (" + lnum(total) + (rem > 0 ? " · +" + lnum(rem) : "") + ")");
+        if (r && r.complete === false && ((r.inserted || 0) > 0 || rem > 0)) { oneChunk(); return; }
+        finish(r);
+      }).catch(function (e) { finish(null, e); });
+    }
+    function finish(r, e) {
+      if (e) {
+        var m = String((e && e.message) || e || "");
+        if (/token is not configured/i.test(m)) m = tr("dev.syncNoToken", "توکن API دستگاه روی سرور تنظیم نشده است.");
+        else if (/CERTIFICATE_VERIFY|certificate verify|SSL/i.test(m)) m = tr("dev.syncTLS", "خطای گواهی TLS هاست دستگاه.");
+        else if (/504|timeout|timed out/i.test(m)) m = tr("dev.syncTimeout", "سرور دیر جواب داد — دوباره تلاش کنید (ادامه خودکار از همان‌جا).");
+        toast(tr("dev.syncFail", "خطا در دریافت داده: ") + m);
+      } else if (total > 0) {
+        toast(tr("dev.syncDone", "همگام‌سازی انجام شد: {n} رکورد جدید").replace("{n}", lnum(total)));
+      } else {
+        toast(tr("dev.syncNone", "رکورد جدیدی نبود."));
+      }
       loadStats(selectedCycle); loadRegistrations(selectedCycle); loadUkStatus();
-      if (r && r.tls_insecure) setUkStatus(($("uk-sync-status") ? $("uk-sync-status").textContent + " " : "") + tr("dev.syncInsecure", "⚠ اتصال بدون تأیید گواهی (self-signed)"));
-    }).catch(function (e) {
-      var m = String((e && e.message) || e || "");
-      if (/token is not configured/i.test(m)) m = tr("dev.syncNoToken", "توکن API دستگاه روی سرور تنظیم نشده است.");
-      else if (/CERTIFICATE_VERIFY|certificate verify|SSL/i.test(m)) m = tr("dev.syncTLS", "خطای گواهی TLS هاست دستگاه.");
-      toast(tr("dev.syncFail", "خطا در دریافت داده: ") + m);
-      loadUkStatus();
-    }).then(function () { ukSyncing = false; if (btn) btn.disabled = false; });
+      if (insecure) setUkStatus(($("uk-sync-status") ? $("uk-sync-status").textContent + " " : "") + tr("dev.syncInsecure", "⚠ اتصال بدون تأیید گواهی (self-signed)"));
+      ukSyncing = false; if (btn) btn.disabled = false;
+    }
+    oneChunk();
   }
 
   // ---------- init ----------
