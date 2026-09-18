@@ -49,6 +49,19 @@ def _now():
     return datetime.now(timezone.utc)
 
 
+def _aware_utc(dt):
+    """Normalize DB datetimes to aware UTC.
+
+    PostgreSQL timestamptz round-trips aware; SQLite drops the tzinfo label
+    (values are still UTC instants — every writer stores aware UTC). Without
+    this, mixing a SQLite-loaded timestamp with an aware one raises
+    "can't subtract offset-naive and offset-aware datetimes".
+    """
+    if dt is None:
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
 def _ema(prev, cur, alpha=EMA_ALPHA):
     if prev is None:
         return cur
@@ -76,15 +89,16 @@ class CycleProcessor:
                             Visit.visit_end.is_(None))
                     .all())
             for v in rows:
+                start = _aware_utc(v.visit_start)
                 self.open[v.bird_id] = {
                     "visit_id": v.id,
                     "bird_id": v.bird_id,
-                    "start": v.visit_start,
+                    "start": start,
                     "init_w": v.initial_weight_g,
                     "sensor": v.sensor_id,
                     "rssi": v.rssi,
                     "read_ok": v.read_ok,
-                    "last_ts": v.visit_start,
+                    "last_ts": start,
                     "intake": 0.0,
                     "bin_prev": None,
                     "last_raw": None,
