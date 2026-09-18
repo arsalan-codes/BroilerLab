@@ -96,6 +96,16 @@ UKTECH_AUTO_POLL = (os.getenv("UKTECH_AUTO_POLL", "false").lower() == "true")
 UKTECH_POLL_SECONDS = int(os.getenv("UKTECH_POLL_SECONDS", "120"))
 UKTECH_CYCLE_ID = int(os.getenv("UKTECH_CYCLE_ID", "0") or 0)
 
+# ---- Direct ESP32 device ingestion ----
+# Per-device API keys (BLD_...) bound to one cycle each. No global device
+# key exists by design: every ESP32 carries only its own credential.
+DEVICE_INGEST_RATE_LIMIT = int(os.getenv("DEVICE_INGEST_RATE_LIMIT", "120"))
+DEVICE_INGEST_RATE_WINDOW = int(os.getenv("DEVICE_INGEST_RATE_WINDOW", "60"))
+DEVICE_ONLINE_SECONDS = int(os.getenv("DEVICE_ONLINE_SECONDS", "300"))
+DEVICE_MAX_CLOCK_SKEW_S = int(os.getenv("DEVICE_MAX_CLOCK_SKEW_S", "300"))
+DEVICE_MAX_BATCH = int(os.getenv("DEVICE_MAX_BATCH", "50"))
+DEVICE_KEY_PREFIX = "BLD_"
+
 # ---- Auth / JWT ----
 # Explicit secret (production must set BROILER_JWT_SECRET — lifespan refuses to
 # boot with an ephemeral key when BROILER_REQUIRE_JWT_SECRET=1 or on Vercel).

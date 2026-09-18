@@ -742,6 +742,82 @@
     oneChunk();
   }
 
+  // ---------- ESP32 direct-ingest devices ----------
+  // Human-JWT management UI for per-device keys: list health (online /
+  // last_seen), register on the selected cycle (key shown ONCE), enable /
+  // disable, rotate. The key itself is never fetched back from the server.
+  function espShowKey(k) {
+    var box = $("esp-keybox"), el = $("esp-key");
+    if (!box || !el) return;
+    el.textContent = k;
+    box.style.display = "flex";
+    var cp = $("esp-keycopy");
+    if (cp) cp.onclick = function () {
+      try {
+        if (navigator.clipboard) navigator.clipboard.writeText(k);
+        else { var t = document.createElement("textarea"); t.value = k; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); }
+      } catch (e) {}
+    };
+  }
+  function espHideKey() { var box = $("esp-keybox"); if (box) box.style.display = "none"; }
+  function espRender(list) {
+    var body = $("esp-list");
+    if (!body) return;
+    body.innerHTML = "";
+    (list || []).forEach(function (d) {
+      var row = document.createElement("div");
+      row.className = "cy-item";
+      var dot = d.online ? '<span class="uk-online on">●</span>' : '<span class="uk-online off">●</span>';
+      var seen = d.last_seen_at ? esc(d.last_seen_at.replace("T", " ").slice(0, 19)) : "—";
+      row.innerHTML = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + dot +
+        '<b dir="ltr">' + esc(d.device_id || "") + '</b>' +
+        '<span class="cy-meta">' + esc(d.name || "") + '</span>' +
+        '<span class="cy-meta">cycle ' + esc(String(d.cycle_id)) + '</span>' +
+        '<span class="cy-meta">' + esc(seen) + '</span>' +
+        (d.active ? "" : '<span class="cy-meta">(' + esc(tr("dev.espOff", "غیرفعال")) + ')</span>') +
+        '<span style="flex:1"></span>' +
+        '<button type="button" class="btn" data-act="toggle">' + esc(d.active ? tr("dev.espDisable", "غیرفعال") : tr("dev.espEnable", "فعال")) + '</button>' +
+        '<button type="button" class="btn" data-act="rotate">' + esc(tr("dev.espRotate", "کلید جدید")) + '</button>' +
+        '</div>';
+      row.querySelector('[data-act="toggle"]').onclick = function () {
+        api("/api/devices/" + encodeURIComponent(d.device_id) + "/status",
+            { method: "PATCH", body: JSON.stringify({ active: !d.active }) })
+          .then(function () { espLoad(); }).catch(function (e) { toast(String((e && e.message) || e)); });
+      };
+      row.querySelector('[data-act="rotate"]').onclick = function () {
+        if (!confirm(tr("dev.espRotateMsg", "کلید قبلی بلافاصله باطل می‌شود. ادامه؟"))) return;
+        api("/api/devices/" + encodeURIComponent(d.device_id) + "/rotate-key", { method: "POST" })
+          .then(function (r) { if (r && r.api_key) espShowKey(r.api_key); espLoad(); })
+          .catch(function (e) { toast(String((e && e.message) || e)); });
+      };
+      body.appendChild(row);
+    });
+  }
+  function espLoad() {
+    if (!$("esp-list")) return;
+    api("/api/devices").then(espRender).catch(function () {});
+  }
+  function espInit() {
+    var form = $("esp-form");
+    if (!form) return;
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!selectedCycle) { toast(tr("dev.syncNeedCycle", "اول یک دوره را انتخاب کنید.")); return; }
+      var idEl = $("esp-id"), nmEl = $("esp-name");
+      var did = idEl ? idEl.value.trim() : "";
+      if (!did) return;
+      api("/api/devices", { method: "POST", body: JSON.stringify({ device_id: did, name: nmEl ? nmEl.value.trim() : "", cycle_id: selectedCycle }) })
+        .then(function (r) {
+          if (r && r.api_key) espShowKey(r.api_key);
+          if (idEl) idEl.value = "";
+          if (nmEl) nmEl.value = "";
+          espLoad();
+        })
+        .catch(function (er) { toast(String((er && er.message) || er)); });
+    });
+    espLoad();
+  }
+
   // ---------- init ----------
   function init() {
     var form = $("cy-form");
@@ -752,6 +828,7 @@
     var authed2=false; try{ var tk2=localStorage.getItem("arian_token"); authed2 = window.isTokenValid && window.isTokenValid(tk2); }catch(e){}
     var curP=document.querySelector("section.view.on"); var onPub=curP && (curP.id==="v-landing" || curP.id==="v-about");
     if(authed2 || !onPub) loadCycles();
+    espInit();
     connectWS();
     // pause live when tab hidden, resume on visible
     document.addEventListener("visibilitychange", function () {
@@ -761,7 +838,7 @@
     window.addEventListener("rossim:view", function (e) {
       var v = e && e.detail;
       if (v && v !== "v-dev") stopUkLive();
-      else if (v === "v-dev" && selectedCycle) startUkLive();
+      else if (v === "v-dev" && selectedCycle) { startUkLive(); espLoad(); }
     });
   }
 

@@ -53,6 +53,16 @@ postgresql://USER:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/neondb?sslm
 | `UKTECH_SESSION_TIMEOUT_S` | ریست سشن گیرکرده پس از این ثانیه (پیش‌فرض `14400` = ۴ ساعت) |
 | `UKTECH_BIRD_CHANNEL` | فیلد وزن پرنده (پیش‌فرض `weight_2`، fallback به `total_weight`) |
 | `UKTECH_BIN_CHANNEL` | فیلد وزن مخزن (پیش‌فرض `weight_1`، گرم → کیلوگرم) |
+| `DEVICE_INGEST_RATE_LIMIT` | سقف رویداد هر دستگاه در پنجره (پیش‌فرض `120`) — لیمیتر per-process و best-effort است، نه تضمین سراسری |
+| `DEVICE_INGEST_RATE_WINDOW` | پنجره ریت‌لیمیت به ثانیه (پیش‌فرض `60`) |
+| `DEVICE_ONLINE_SECONDS` | آستانه «آنلاین» از روی `last_seen_at` (پیش‌فرض `300`) |
+| `DEVICE_MAX_CLOCK_SKEW_S` | تلرانس ساعت آینده دستگاه (پیش‌فرض `300`)؛ بیشتر از این → خطای 400 |
+| `DEVICE_MAX_BATCH` | سقف رویداد هر بچ (پیش‌فرض `50`) |
+
+> جدول `devices` (کلیدهای ESP32) با مایگریشن `012_devices` می‌آید؛ روی
+> دیتابیس‌های موجود هم `init_db` در بوت آن را خودش می‌سازد (self-heal)، و
+> اگر `BROILER_DB_MIGRATE=alembic` دارید همان مسیر رسمی آلمبیک اعمال می‌شود.
+> کلید سراسری دستگاه وجود ندارد — هر ESP32 فقط کلید خودش (`BLD_...`) را دارد.
 
 4. **Deploy** را بزنید. Vercel با `vercel.json`، درخواست‌های `/api/*` را به
    `api/index.py` (FastAPI) می‌فرستد و جدول‌ها اولین بار خودکار ساخته می‌شوند

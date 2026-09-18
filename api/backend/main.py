@@ -7,19 +7,26 @@ Cycles are tenant-scoped: every read/write filters by current_user.id
 import asyncio
 import os
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Body, Depends
+from datetime import datetime, timedelta, timezone
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Body, Depends, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from config import API_HOST, API_PORT, JWT_SECRET_EXPLICIT
-from models import init_db, SessionLocal, Cycle, Visit, DeviceLog, User, EnvSample
+from config import (
+    API_HOST, API_PORT, JWT_SECRET_EXPLICIT,
+    DEVICE_INGEST_RATE_LIMIT, DEVICE_INGEST_RATE_WINDOW,
+    DEVICE_ONLINE_SECONDS, DEVICE_MAX_CLOCK_SKEW_S, DEVICE_MAX_BATCH,
+    DEVICE_KEY_PREFIX,
+)
+from models import init_db, SessionLocal, Cycle, Visit, DeviceLog, User, EnvSample, Device
 from processor import get_processor
 import hub
 import auth as authmod
+import device_auth as devauth
 from logging_config import setup_logging, get_logger, redact, new_request_id
 _ROOTS = [os.path.dirname(os.path.dirname(os.path.abspath(__file__))),  # repo/dev root
           os.path.dirname(os.path.abspath(__file__))]                    # vendored api/ layout
@@ -685,6 +692,396 @@ def uktech_sessions(cycle_id: int,
                         "state": r.state, "registered": r.registered,
                         "updated_at": _iso(r.updated_at)})
         return _no_store(out)
+
+
+@app.exception_handler(RequestValidationError)
+async def _device_validation_400(request: Request, exc: RequestValidationError):
+    # Embedded clients get a stable contract: the device API always answers
+    # 400 {"success": false, ...} on malformed bodies — never HTML, never
+    # 422. Browser paths keep stock FastAPI behavior.
+    if request.url.path.startswith("/api/device/"):
+        return JSONResponse(status_code=400,
+                            content={"success": False, "error": "invalid_payload"})
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
+
+# ---------- ESP32 direct ingestion: device credentials (no human JWT) ----
+# Design (see device_auth.py): per-device BLD_ keys, SHA256-stored, bound to
+# one cycle each. The device authenticates with X-Device-Key; the server
+# resolves Device -> Cycle -> User and NEVER trusts a client cycle_id.
+_DEVICE_RATE = {}  # device_id -> (count, window_start); per-process only
+
+# Payload keys that would let firmware pick/escape its tenant: rejected
+# outright (fail-closed) instead of silently ignored.
+_DEVICE_FORBIDDEN_KEYS = ("cycle_id", "user_id", "owner")
+
+
+def _device_rate_ok(device_id: str) -> bool:
+    """Per-device ingest brake. NOTE: per-process only — every serverless
+    instance keeps its own table, so this limits accidental flooding, it
+    does not globally cap a determined sender (documented, not claimed)."""
+    import time as _t
+    now, window = _t.monotonic(), DEVICE_INGEST_RATE_WINDOW
+    for _k, (_c, _s) in list(_DEVICE_RATE.items()):
+        if now - _s > window:
+            del _DEVICE_RATE[_k]
+    if len(_DEVICE_RATE) > 10000:
+        for _k, (_c, _s) in sorted(_DEVICE_RATE.items(),
+                                   key=lambda kv: kv[1][1])[:1000]:
+            del _DEVICE_RATE[_k]
+    entry = _DEVICE_RATE.get(device_id)
+    if entry is None or now - entry[1] > window:
+        _DEVICE_RATE[device_id] = (1, now)
+        return entry is None or DEVICE_INGEST_RATE_LIMIT >= 1
+    count, start = entry
+    if count >= DEVICE_INGEST_RATE_LIMIT:
+        return False
+    _DEVICE_RATE[device_id] = (count + 1, start)
+    return True
+
+
+def _dev_err(code: str, status: int):
+    """Compact embedded-device error shape (never leaks key material)."""
+    return JSONResponse(status_code=status,
+                        content={"success": False, "error": code})
+
+
+def _aware_dt(dt):
+    if dt is None:
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+def _client_ip(request: Request) -> str | None:
+    xff = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+    if xff:
+        return xff[:64]
+    try:
+        return (request.client.host if request.client else None)[:64]
+    except Exception:
+        return None
+
+
+def _require_device(request: Request):
+    """Authenticate one ESP32 call. Returns (Device detached, None) or
+    (None, error_response). Same fail-closed shape for missing/unknown
+    keys (no oracle); disabled devices get a distinct 403."""
+    raw = devauth.extract_device_key(request.headers)
+    if not raw or not raw.startswith(DEVICE_KEY_PREFIX):
+        return None, _dev_err("invalid_device_credentials", 401)
+    with SessionLocal() as s:
+        cands = s.query(Device).filter(
+            Device.key_prefix == devauth.key_prefix_of(raw)).all()
+        dev = next((d for d in cands
+                    if devauth.verify_api_key(raw, d.api_key_hash)), None)
+        if dev is None:
+            return None, _dev_err("invalid_device_credentials", 401)
+        s.expunge(dev)
+        if not dev.active:
+            return None, _dev_err("device_disabled", 403)
+        return dev, None
+
+
+def _device_cycle_or_err(dev: Device):
+    """Resolve the device's assigned cycle (fail-closed if it vanished)."""
+    with SessionLocal() as s:
+        cyc = s.get(Cycle, dev.cycle_id)
+        if cyc is None:
+            return None, _dev_err("device_cycle_missing", 403)
+        code = cyc.cycle_code
+        return {"id": cyc.id, "code": code}, None
+
+
+def _device_ts(value, now):
+    """Strict ESP32 timestamp: missing -> server receipt time (documented);
+    present -> ISO-8601 with EXPLICIT tz (naive rejected, never guessed),
+    sane range (since 2020, not beyond now+skew). Returns (dt, source, err).
+    """
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return now, "server", None
+    s = str(value).strip()
+    if s.endswith(("Z", "z")):
+        s = s[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(s)
+    except ValueError:
+        return None, None, "invalid_timestamp"
+    if dt.tzinfo is None:
+        return None, None, "invalid_timestamp"
+    dt = dt.astimezone(timezone.utc)
+    if dt < datetime(2020, 1, 1, tzinfo=timezone.utc):
+        return None, None, "invalid_timestamp"
+    if dt > now + timedelta(seconds=DEVICE_MAX_CLOCK_SKEW_S):
+        return None, None, "invalid_timestamp"
+    return dt, "device", None
+
+
+def _touch_device(dev_id: int, request: Request, payload: dict,
+                  now: datetime):
+    """last_seen_at / last_ip (+ firmware) on every authenticated call —
+    duplicates included (the device is alive even when it retries)."""
+    fw = payload.get("firmware") if isinstance(payload, dict) else None
+    fw = (str(fw).strip()[:64] or None) if fw is not None else None
+    try:
+        with SessionLocal() as s:
+            d = s.get(Device, dev_id)
+            if d is None:
+                return
+            d.last_seen_at = now
+            d.last_ip = _client_ip(request)
+            if fw:
+                d.firmware = fw
+            s.commit()
+    except Exception:
+        pass  # telemetry must never break ingestion
+
+
+def _ingest_one(dev: Device, cyc_code: str, proc, ev: dict, now: datetime):
+    """Validate + ingest ONE device event. Returns (kind, body) where kind
+    is accepted/duplicate/error and body is the per-event result dict."""
+    if not isinstance(ev, dict):
+        return "error", {"event_id": None, "accepted": False,
+                         "error": "invalid_payload"}
+    for f in _DEVICE_FORBIDDEN_KEYS:
+        if f in ev:
+            return "error", {"event_id": ev.get("event_id"),
+                             "accepted": False,
+                             "error": "device_cycle_forbidden"}
+    eid = ev.get("event_id")
+    if eid is None or (isinstance(eid, str) and not eid.strip()):
+        return "error", {"event_id": None, "accepted": False,
+                         "error": "missing_event_id"}
+    if not devauth.valid_event_id(eid):
+        return "error", {"event_id": str(eid)[:128], "accepted": False,
+                         "error": "invalid_event_id"}
+    eid = eid.strip()
+    ts, _src, terr = _device_ts(ev.get("timestamp"), now)
+    if terr:
+        return "error", {"event_id": eid, "accepted": False, "error": terr}
+    if not _device_rate_ok(dev.device_id):
+        return "error", {"event_id": eid, "accepted": False,
+                         "error": "rate_limited"}
+    ext = devauth.external_id_for(dev.device_id, eid)
+    with SessionLocal() as s:
+        hit = s.query(DeviceLog.id).filter(
+            DeviceLog.cycle_id == dev.cycle_id,
+            DeviceLog.external_id == ext).first()
+        if hit:
+            return "duplicate", {"event_id": eid, "accepted": False,
+                                 "duplicate": True}
+    data = dict(ev)
+    data.pop("event_id", None)
+    data.pop("firmware", None)
+    data["timestamp"] = ts.isoformat()
+    data["external_id"] = ext
+    _sen = data.get("sensor_id")
+    if not (str(_sen).strip() if _sen is not None else ""):
+        data["sensor_id"] = dev.device_id
+    data["cycle"] = cyc_code
+    try:
+        log_d = proc.ingest(data)
+    except IntegrityError:
+        # Lost a write race with an identical retry: the row exists now.
+        return "duplicate", {"event_id": eid, "accepted": False,
+                             "duplicate": True}
+    except Exception:
+        get_logger(__name__).exception("device ingest failed device=%s cycle=%s",
+                                       dev.device_id, dev.cycle_id)
+        return "error", {"event_id": eid, "accepted": False,
+                         "error": "ingest_failed"}
+    log_d["unit"] = 1  # single-unit direct devices live on lane 1
+    try:
+        hub.publish(log_d)
+    except Exception:
+        pass
+    return "accepted", {"event_id": eid, "accepted": True}
+
+
+@app.post("/api/device/ingest")
+def device_ingest(payload: dict = Body(...), request: Request = None):
+    """Single ESP32 event (X-Device-Key, no human JWT). See module contract
+    in device_auth.py. Compact JSON for embedded clients."""
+    dev, err = _require_device(request)
+    if err:
+        return err
+    cyc, cerr = _device_cycle_or_err(dev)
+    if cerr:
+        return cerr
+    now = datetime.now(timezone.utc)
+    _touch_device(dev.id, request, payload if isinstance(payload, dict) else {},
+                  now)
+    kind, res = _ingest_one(dev, cyc["code"], get_processor(dev.cycle_id),
+                            payload, now)
+    if kind == "accepted":
+        return {"success": True, "accepted": True,
+                "event_id": res["event_id"], "device_id": dev.device_id,
+                "cycle_id": dev.cycle_id}
+    if kind == "duplicate":
+        return {"success": True, "accepted": False, "duplicate": True,
+                "event_id": res["event_id"]}
+    code = res.get("error", "invalid_payload")
+    return _dev_err(code, 429 if code == "rate_limited" else 400)
+
+
+class DeviceBatchIn(BaseModel):
+    model_config = {"extra": "allow"}
+    events: list = []
+
+
+@app.post("/api/device/ingest/batch")
+def device_ingest_batch(payload: DeviceBatchIn, request: Request):
+    """Batch ESP32 events: one auth + one cycle resolution, sequential
+    processing in the given order (send chronological), per-event results.
+    One event's failure never aborts the batch."""
+    dev, err = _require_device(request)
+    if err:
+        return err
+    cyc, cerr = _device_cycle_or_err(dev)
+    if cerr:
+        return cerr
+    events = payload.events
+    if not isinstance(events, list) or not events:
+        return _dev_err("invalid_payload", 400)
+    if len(events) > DEVICE_MAX_BATCH:
+        return _dev_err("batch_too_large", 400)
+    now = datetime.now(timezone.utc)
+    _touch_device(dev.id, request, {}, now)
+    proc = get_processor(dev.cycle_id)
+    results, acc, dup, failed = [], 0, 0, 0
+    for ev in events:
+        kind, res = _ingest_one(dev, cyc["code"], proc, ev, now)
+        results.append(res)
+        if kind == "accepted":
+            acc += 1
+        elif kind == "duplicate":
+            dup += 1
+        else:
+            failed += 1
+    return {"success": True, "device_id": dev.device_id,
+            "cycle_id": dev.cycle_id, "accepted_count": acc,
+            "duplicate_count": dup, "failed_count": failed,
+            "results": results}
+
+
+def _owner_device(s: Session, device_id: str, user: User) -> Device:
+    """Fail-closed device lookup: unknown ids and cross-tenant ids both 404
+    (no probing another tenant's device inventory)."""
+    d = s.query(Device).filter(Device.device_id == device_id).first()
+    if not d:
+        raise HTTPException(404, "device not found")
+    cyc = s.get(Cycle, d.cycle_id)
+    if not cyc:
+        raise HTTPException(404, "device not found")
+    if cyc.user_id is None:
+        if not user.is_admin:
+            raise HTTPException(404, "device not found")
+    elif cyc.user_id != user.id and not user.is_admin:
+        raise HTTPException(404, "device not found")
+    return d
+
+
+def _device_to_dict(d: Device):
+    """Public device shape — NEVER the key hash or raw key."""
+    now = datetime.now(timezone.utc)
+    online = False
+    try:
+        if d.last_seen_at:
+            online = (now - _aware_dt(d.last_seen_at)).total_seconds() <= DEVICE_ONLINE_SECONDS
+    except Exception:
+        online = False
+    return {"id": d.id, "device_id": d.device_id, "name": d.name,
+            "cycle_id": d.cycle_id, "active": bool(d.active),
+            "firmware": d.firmware, "last_seen_at": _iso(d.last_seen_at),
+            "last_ip": d.last_ip, "online": online,
+            "created_at": _iso(d.created_at)}
+
+
+class DeviceCreateIn(BaseModel):
+    device_id: str = ""
+    name: str | None = None
+    cycle_id: int = 0
+
+
+@app.post("/api/devices")
+def create_device(payload: DeviceCreateIn, current: User = Depends(authmod.get_current_user)):
+    """Register one ESP32 on an owned cycle. The raw API key is returned
+    ONCE here — afterwards it is unrecoverable (SHA256-stored)."""
+    device_id = (payload.device_id or "").strip()
+    if not devauth.valid_device_id(device_id):
+        raise HTTPException(400, "invalid device_id (1-64 chars: A-Z a-z 0-9 _ -)")
+    if not payload.cycle_id:
+        raise HTTPException(400, "cycle_id is required")
+    with SessionLocal() as s:
+        _require_owner_cycle(s, payload.cycle_id, current)
+        if s.query(Device).filter(Device.device_id == device_id).first():
+            raise HTTPException(409, "device_id already registered")
+        raw = devauth.generate_api_key(DEVICE_KEY_PREFIX)
+        d = Device(device_id=device_id,
+                   name=(payload.name or "").strip() or None,
+                   key_prefix=devauth.key_prefix_of(raw),
+                   api_key_hash=devauth.hash_api_key(raw),
+                   cycle_id=payload.cycle_id, active=True)
+        s.add(d)
+        try:
+            s.commit()
+        except IntegrityError:
+            s.rollback()
+            raise HTTPException(409, "device_id already registered")
+        s.refresh(d)
+        out = _device_to_dict(d)
+        out["api_key"] = raw
+        return out
+
+
+@app.get("/api/devices")
+def list_devices(current: User = Depends(authmod.get_current_user)):
+    """Own devices (admins: all), with online/last-seen health. Key hashes
+    are never serialized."""
+    with SessionLocal() as s:
+        q = s.query(Device)
+        if not current.is_admin:
+            q = q.join(Cycle, Cycle.id == Device.cycle_id).filter(
+                Cycle.user_id == current.id)
+        rows = q.order_by(Device.id.desc()).all()
+        return [_device_to_dict(d) for d in rows]
+
+
+@app.get("/api/devices/{device_id}")
+def get_device(device_id: str, current: User = Depends(authmod.get_current_user)):
+    with SessionLocal() as s:
+        return _device_to_dict(_owner_device(s, device_id, current))
+
+
+class DeviceStatusIn(BaseModel):
+    active: bool = True
+
+
+@app.patch("/api/devices/{device_id}/status")
+def set_device_status(device_id: str, payload: DeviceStatusIn,
+                      current: User = Depends(authmod.get_current_user)):
+    """Enable/disable a device (disabled -> 403 on ingest, immediately)."""
+    with SessionLocal() as s:
+        d = _owner_device(s, device_id, current)
+        d.active = bool(payload.active)
+        s.commit()
+        return _device_to_dict(d)
+
+
+@app.post("/api/devices/{device_id}/rotate-key")
+def rotate_device_key(device_id: str,
+                      current: User = Depends(authmod.get_current_user)):
+    """Issue a fresh API key; the old one stops working immediately."""
+    with SessionLocal() as s:
+        d = _owner_device(s, device_id, current)
+        raw = devauth.generate_api_key(DEVICE_KEY_PREFIX)
+        d.key_prefix = devauth.key_prefix_of(raw)
+        d.api_key_hash = devauth.hash_api_key(raw)
+        try:
+            s.commit()
+        except IntegrityError:
+            s.rollback()
+            raise HTTPException(500, "key rotation failed, try again")
+        return {"id": d.id, "device_id": d.device_id, "api_key": raw}
 
 
 def _no_store(payload):

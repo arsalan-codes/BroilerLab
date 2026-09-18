@@ -78,6 +78,7 @@ class Cycle(Base):
     owner = relationship("User", back_populates="cycles")
     visits = relationship("Visit", back_populates="cycle", cascade="all, delete-orphan")
     logs = relationship("DeviceLog", back_populates="cycle", cascade="all, delete-orphan")
+    devices = relationship("Device", back_populates="cycle", cascade="all, delete-orphan")
 
 
 class Visit(Base):
@@ -143,6 +144,34 @@ class DeviceLog(Base):
         Index("ix_log_cycle_ts", "cycle_id", "timestamp"),
         Index("uq_log_cycle_external", "cycle_id", "external_id", unique=True),
     )
+
+
+class Device(Base):
+    """ESP32 device credential, bound to exactly one Cycle.
+
+    Auth model (see device_auth.py): the raw API key (`BLD_...`) is shown
+    ONCE at creation/rotation and stored only as a SHA256 hash. `key_prefix`
+    (first 12 chars, non-secret) is an indexed lookup shard; the cycle is
+    resolved server-side from this row — the device can never select a
+    cycle, so tenant isolation holds without trusting the firmware.
+    Deleting the cycle deletes its devices (no orphaned active writers).
+    """
+    __tablename__ = "devices"
+    id = Column(Integer, primary_key=True)
+    device_id = Column(String(64), unique=True, nullable=False, index=True)
+    name = Column(String(120), nullable=True)
+    key_prefix = Column(String(16), nullable=False, index=True)
+    api_key_hash = Column(String(64), nullable=False, unique=True)
+    cycle_id = Column(Integer, ForeignKey("cycles.id", ondelete="CASCADE"),
+                      nullable=False, index=True)
+    active = Column(Boolean, nullable=False, default=True)
+    firmware = Column(String(64), nullable=True)
+    meta_json = Column(String(500), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow)
+    last_seen_at = Column(DateTime(timezone=True), nullable=True)
+    last_ip = Column(String(64), nullable=True)
+
+    cycle = relationship("Cycle", back_populates="devices")
 
 
 class EnvSample(Base):
@@ -330,6 +359,9 @@ def init_db():
                     conn.execute(text("ALTER TABLE device_logs ADD COLUMN external_id VARCHAR(64)"))
                     conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_log_cycle_external ON device_logs (cycle_id, external_id)"))
                     print("[migrate] added device_logs.external_id")
+            if "devices" not in names:
+                Device.__table__.create(conn)
+                print("[migrate] created devices")
     except Exception as e:
         print(f"[migrate] uktech columns check failed: {e}")
 

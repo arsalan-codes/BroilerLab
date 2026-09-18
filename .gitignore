@@ -19,3 +19,4 @@ venv/
 backend/.dev_jwt_secret
 api/backend/.dev_jwt_secret
 webapp_server.corrupt-backup.html
+esp32/config.h
