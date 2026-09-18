@@ -208,6 +208,9 @@ class WeighingSession(Base):
     registered = Column(Float, nullable=True)
     visit_id = Column(Integer, nullable=True)
     first_ts = Column(DateTime(timezone=True), nullable=True)
+    # Last attributed row timestamp (any validity): seeds per-visit clocks so
+    # presence-time accumulation stays exact across chunk boundaries.
+    last_seen_ts = Column(DateTime(timezone=True), nullable=True)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow)
 
 
@@ -313,6 +316,14 @@ def init_db():
             if "sync_state" not in names:
                 SyncState.__table__.create(conn)
                 print("[migrate] created sync_state")
+            if "weighing_sessions" not in names:
+                WeighingSession.__table__.create(conn)
+                print("[migrate] created weighing_sessions")
+            else:
+                wcols = [c["name"] for c in inspect(conn).get_columns("weighing_sessions")]
+                if "last_seen_ts" not in wcols:
+                    conn.execute(text("ALTER TABLE weighing_sessions ADD COLUMN last_seen_ts TIMESTAMP"))
+                    print("[migrate] added weighing_sessions.last_seen_ts")
             if "device_logs" in names:
                 cols = [c["name"] for c in inspect(conn).get_columns("device_logs")]
                 if "external_id" not in cols:

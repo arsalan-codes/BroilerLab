@@ -464,11 +464,20 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
         now = datetime.now(timezone.utc)
         out = []
         for v in rows:
-            end = v.visit_end or now
-            try:
-                elapsed = max(0.0, (end - v.visit_start).total_seconds()) if v.visit_start else 0.0
-            except Exception:
-                elapsed = 0.0
+            # Displayed elapsed = validated-accumulated presence when known
+            # (uktech sync writes it); wall-clock duration otherwise (legacy
+            # rows and HTTP-ingest visits without presence tracking).
+            if v.presence_s is not None:
+                try:
+                    elapsed = max(0.0, float(v.presence_s))
+                except (TypeError, ValueError):
+                    elapsed = 0.0
+            else:
+                end = v.visit_end or now
+                try:
+                    elapsed = max(0.0, (end - v.visit_start).total_seconds()) if v.visit_start else 0.0
+                except Exception:
+                    elapsed = 0.0
             binkg = binmap.get(v.id)
             out.append({"bird_id": v.bird_id, "initial_weight_g": v.initial_weight_g,
                         "final_weight_g": v.final_weight_g,

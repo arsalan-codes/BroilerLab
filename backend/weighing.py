@@ -80,7 +80,9 @@ def load_config() -> dict:
         # Below this (g) the scale counts as empty.
         "ZERO_THRESHOLD": _f("UKTECH_ZERO_THRESHOLD", 5.0),
         # Consecutive sub-zero readings required to re-arm to EMPTY.
-        "ZERO_CONFIRMATIONS": _i("UKTECH_ZERO_CONFIRMATIONS", 1),
+        # Default 2: a lone zero (sensor dropout while the bird stands
+        # there) must not fragment one physical presence into two visits.
+        "ZERO_CONFIRMATIONS": _i("UKTECH_ZERO_CONFIRMATIONS", 2),
         # Non-EMPTY sessions older than this (s) reset to EMPTY (stuck-load
         # guard: a drifted load must not suppress new weighings forever).
         "SESSION_TIMEOUT_S": _f("UKTECH_SESSION_TIMEOUT_S", 4 * 3600.0),
@@ -101,6 +103,19 @@ def normalize_weight(v):
         return round(float(v), 2)
     except (TypeError, ValueError):
         return None
+
+
+def is_status_valid(flag) -> bool:
+    """Upstream per-unit validation flag for TIME accounting only.
+
+    Missing/empty (legacy rows) counts as valid; only an explicit non-VALID
+    marker is invalid. Session transitions never consult the flag — the
+    weight pattern alone drives the machine.
+    """
+    if flag is None:
+        return True
+    s = str(flag).strip()
+    return (not s) or s.upper() == "VALID"
 
 
 def session_key(serial: str, cycle_id, device_id, rfid) -> str:
@@ -190,10 +205,16 @@ def classify(st: dict, weight, ts, now_ts: float, cfg: dict):
 
     if s == DETECTING:
         if w < ZERO:
-            st.update(fresh_state())
-            st["zero_count"] = 1
-            log.debug("[WEIGHT] DETECTING -> EMPTY (vanished before confirm)")
+            # Dropout tolerance like every other state: a single sub-zero
+            # reading does not abandon an unconfirmed candidate; only
+            # ZERO_CONFIRMATIONS consecutive ones do.
+            st["zero_count"] = st.get("zero_count", 0) + 1
+            if st["zero_count"] >= ZCONF:
+                st.update(fresh_state())
+                st["zero_count"] = 0
+                log.debug("[WEIGHT] DETECTING -> EMPTY (vanished before confirm)")
             return st, actions
+        st["zero_count"] = 0
         if w < MIN:
             st.update(state=WAITING_FOR_EMPTY, zero_count=0)
             log.debug("[WEIGHT] DETECTING -> WAITING_FOR_EMPTY (unconfirmed load left)")

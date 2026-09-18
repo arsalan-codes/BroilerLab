@@ -48,7 +48,7 @@ postgresql://USER:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/neondb?sslm
 | `UKTECH_STABLE_TOL` | تلرانس پایداری به گرم (پیش‌فرض `2`): خوانش‌های داخل این باند «همان بار» حساب می‌شوند |
 | `UKTECH_STABLE_READINGS` | تعداد خوانش پیاپی داخل باند برای تأیید توزین (پیش‌فرض `2`)؛ `1` یعنی لبه‌ای (هر لمس ثبت می‌شود) |
 | `UKTECH_ZERO_THRESHOLD` | زیر این وزن (گرم، پیش‌فرض `5`) ترازو خالی حساب می‌شود |
-| `UKTECH_ZERO_CONFIRMATIONS` | تعداد خوانش زیر صفر پیاپی برای پایان سشن (پیش‌فرض `1`) |
+| `UKTECH_ZERO_CONFIRMATIONS` | تعداد خوانش زیر صفر پیاپی برای پایان سشن (پیش‌فرض `2` — صفر تکیِ dropout ویزیت را تکه‌تکه نمی‌کند) |
 | `UKTECH_SESSION_TIMEOUT_S` | ریست سشن گیرکرده پس از این ثانیه (پیش‌فرض `14400` = ۴ ساعت) |
 | `UKTECH_BIRD_CHANNEL` | فیلد وزن پرنده (پیش‌فرض `weight_2`، fallback به `total_weight`) |
 | `UKTECH_BIN_CHANNEL` | فیلد وزن مخزن (پیش‌فرض `weight_1`، گرم → کیلوگرم) |

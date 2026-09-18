@@ -269,6 +269,8 @@ def test_two_units_independent_lanes(tmp_path, monkeypatch):
         rec(1, "B1", 200.0, "B2", 300.0, "2026-09-18 12:00:00", tsec=10),
         rec(2, "B1", 201.0, "B2", 301.0, "2026-09-18 12:01:00", tsec=70),
         rec(3, "B1", 0.0, "B2", 0.0, "2026-09-18 12:02:00", tsec=130),
+        # zeros arrive in runs on the real stream; the second one closes
+        rec(4, "B1", 0.0, "B2", 0.0, "2026-09-18 12:03:00", tsec=190),
     ]
     monkeypatch.setattr(uktech, "fetch_records", lambda *a, **k: (list(page), False))
     with SessionLocal() as s:
@@ -279,7 +281,7 @@ def test_two_units_independent_lanes(tmp_path, monkeypatch):
         cid = c.id
     try:
         r = uktech.sync_serial_to_cycle(cid, serial="ESP800")
-        assert r["inserted"] == 6 and r["events"] == 2, r  # 3 recs x 2 units
+        assert r["inserted"] == 8 and r["events"] == 2, r  # 4 recs x 2 units
         with SessionLocal() as s:
             visits = (s.query(Visit).filter(Visit.cycle_id == cid)
                       .order_by(Visit.id).all())
@@ -289,17 +291,18 @@ def test_two_units_independent_lanes(tmp_path, monkeypatch):
             assert by_bird["B1"].initial_weight_g == 201.0
             assert by_bird["B2"].initial_weight_g == 301.0
             assert by_bird["B1"].unit == 1 and by_bird["B2"].unit == 2
-            # both closed by the zero row, presence stored from device
+            # both closed by the second zero row; presence = validated span:
+            # register 12:01 -> zero 12:03 = 120s (device tsec ignored)
             assert all(v.visit_end is not None for v in visits)
-            assert all(v.presence_s == 130 for v in visits)
+            assert all(v.presence_s == 120.0 for v in visits)
             # each lane's hopper level stored on its own rows (g, not mixed)
             bins = {(l.bird_id, l.sensor_id): l.feed_bin_kg for l in
                     s.query(DeviceLog).filter(DeviceLog.cycle_id == cid).all()
                     if l.external_id and l.external_id.endswith(":u1")}
             assert set(bins.values()) == {5.0}
-            # raw tier keeps all six unit rows
+            # raw tier keeps all eight unit rows
             assert s.query(DeviceLog).filter(
-                DeviceLog.cycle_id == cid).count() == 6
+                DeviceLog.cycle_id == cid).count() == 8
     finally:
         processor._processors.pop(cid, None)
 

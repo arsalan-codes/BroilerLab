@@ -58,7 +58,14 @@ def test_acceptance_gradual_load_one_event():
     events, closes, st = run(seq)
     assert len(events) == 1, events
     assert abs(events[0] - 219.3) <= 2.0, events
+    # one trailing zero only arms the counter (dropout tolerance); the
+    # stream continues in production, so feed the next zero explicitly...
+    assert st["state"] == weighing.WAITING_FOR_EMPTY
+    st["updated_at"] = T0 + len(seq) * 60.0
+    st, actions = weighing.classify(st, 0, T0 + len(seq) * 60.0,
+                                    T0 + len(seq) * 60.0, CFG)
     assert st["state"] == weighing.EMPTY
+    assert any(a[0] == "close" for a in actions)
 
 
 def test_duplicate_stable_readings_single_event():
@@ -76,9 +83,15 @@ def test_duplicate_stable_readings_single_event():
 
 
 def test_single_touch_then_empty_registers_nothing():
-    # stability gating: one touch that vanishes is noise, not a weighing
+    # stability gating: one touch that vanishes is noise, not a weighing.
+    # With dropout tolerance (ZERO_CONFIRMATIONS=2) the lone zero only arms
+    # the counter — the lane stays DETECTING, awaiting confirmation.
     events, _, st = run([0, 219.3, 0])
     assert events == []
+    assert st["state"] == weighing.DETECTING
+    # ...and a second consecutive zero abandons it for good.
+    st["updated_at"] = T0 + 3 * 60.0
+    st, _ = weighing.classify(st, 0, T0 + 3 * 60.0, T0 + 3 * 60.0, CFG)
     assert st["state"] == weighing.EMPTY
 
 
@@ -149,7 +162,7 @@ def test_config_defaults_sane():
     assert CFG["STABLE_TOLERANCE"] == 2.0
     assert CFG["REQUIRED_STABLE_READINGS"] == 2
     assert CFG["ZERO_THRESHOLD"] == 5.0
-    assert CFG["ZERO_CONFIRMATIONS"] == 1
+    assert CFG["ZERO_CONFIRMATIONS"] == 2
     assert CFG["BIRD_CHANNEL"] == "weight_2"
     assert CFG["BIN_CHANNEL"] == "weight_1"
 

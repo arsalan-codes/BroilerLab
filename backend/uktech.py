@@ -538,7 +538,9 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 "first_ts": (_aware_utc(r.first_ts).timestamp()
                              if r.first_ts else None),
                 "updated_at": (_aware_utc(r.updated_at).timestamp()
-                               if r.updated_at else None)}
+                               if r.updated_at else None),
+                "last_seen": (_aware_utc(r.last_seen_ts).timestamp()
+                              if r.last_seen_ts else None)}
         # open-visit context (authoritative DB state): bin baseline, elapsed
         # start, accumulated feed base. Session.visit_id is only a hint and
         # is revalidated against this set before any close/ratchet.
@@ -547,59 +549,66 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
         with SessionLocal() as s:
             orows = (s.query(Visit.id, Visit.bird_id, Visit.visit_start,
                              Visit.initial_weight_g, Visit.feed_intake_g,
-                             Visit.unit)
+                             Visit.unit, Visit.presence_s, Visit.sensor_id)
                      .filter(Visit.cycle_id == cycle_id,
                              Visit.bird_id.in_(birds),
                              Visit.visit_end.is_(None)).all()) if birds else []
         # open visits keyed by (bird, unit): the two hopper lanes never share
-        # bin baselines or elapsed clocks, even for the same RFID.
+        # bin baselines or elapsed clocks, even for the same RFID. The time
+        # clock seeds from the lane session (last validated row seen), so
+        # presence stays exact across chunk boundaries.
         openv = {}
-        for _vid, _bird, _start, _initw, _feed, _unit in orows:
+        for _vid, _bird, _start, _initw, _feed, _unit, _pres, _sens in orows:
+            _lane = _weighing.session_key(
+                serial, cycle_id,
+                f"{(_sens or '').strip() or '-'}#u{_unit or 1}", _bird)
+            _lsess = sess.get(_lane, {})
             openv[(_bird, _unit or 1)] = {
                 "vid": _vid, "db": True,
                 "start": _aware_utc(_start),
                 "base": _feed, "acc": 0.0, "bin_prev": None,
                 "registered": _initw, "touched": False,
-                "presence": None, "db_unit": _unit,
+                "pbase": _pres, "tacc": 0.0,
+                "last_valid": _lsess.get("last_seen"),
+                "db_unit": _unit,
                 "is_new": False, "new_idx": None}
         new_visits = []
         visit_updates = []  # bulk mappings for closes/ratchets/touches
         dirty_sess = set()
         log_specs = []  # (event, ts, ext, is_start, is_end, visit_ref, elapsed, feed)
 
-        def _close_ov(ov, end_dt, binkg, presence, lane_unit=None):
+        def _close_ov(ov, end_dt, binkg, lane_unit=None):
             """Close one open-visit entry (new or adopted). Returns
             (visit_ref, feed) for the closing row's live payload.
 
-            presence_s (device-accumulated seconds until exit) lands on the
-            visit here — the only moment its final value is known. Unit is
-            backfilled on adopted rows that predate the lane column.
+            presence_s lands here as validated-accumulated seconds
+            ((base or 0) + tacc) — the only moment its final value is known.
+            Unit is backfilled on adopted rows that predate the lane column.
             """
             end_inc = _intake_increment({"bin_prev": ov["bin_prev"]},
                                         binkg, None)
             ov["acc"] += end_inc
             if binkg is not None:
                 ov["bin_prev"] = binkg
-            if presence is not None:
-                ov["presence"] = presence
             feed = (ov["base"] or 0) + ov["acc"]
+            pres = (ov["pbase"] or 0) + ov["tacc"]
             if ov.get("is_new"):
                 nv_old = new_visits[ov["new_idx"]]
                 nv_old.visit_end = end_dt
                 nv_old.feed_intake_g = feed
                 nv_old.final_weight_g = ov["registered"]
-                nv_old.presence_s = ov.get("presence")
-                return ("new", ov["new_idx"]), feed
+                nv_old.presence_s = pres
+                return ("new", ov["new_idx"]), feed, pres
             close_map = {
                 "id": ov["vid"], "visit_end": end_dt,
                 "feed_intake_g": feed,
                 "final_weight_g": ov["registered"],
-                "presence_s": ov.get("presence"),
+                "presence_s": pres,
                 "temp_c": None, "humidity": None}
             if ov.get("db_unit") is None and lane_unit is not None:
                 close_map["unit"] = lane_unit
             visit_updates.append(close_map)
-            return ("old", ov["vid"]), feed
+            return ("old", ov["vid"]), feed, pres
         for rid, unit, ext, event, ts, presence in planned:
             bird = event["bird_id"]
             w = event["weight_g"]
@@ -631,9 +640,10 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                         # orphan open visit leaks with ever-growing elapsed.
                         prev = openv.get(lane)
                         if prev is not None:
-                            _close_ov(prev, ts, binkg, presence,
-                                      lane_unit=unit)
+                            _close_ov(prev, ts, binkg, lane_unit=unit)
                             del openv[lane]
+                            # elapsed for a pre-close is covered by the new
+                            # visit below; nothing to display here.
                     if bird:
                         first_dt = datetime.fromtimestamp(
                             first_ep, tz=timezone.utc)
@@ -648,7 +658,8 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                                        "start": first_dt, "base": None,
                                        "acc": 0.0, "bin_prev": binkg,
                                        "registered": rw, "touched": False,
-                                       "presence": presence,
+                                       "pbase": None, "tacc": 0.0,
+                                       "last_valid": ts_ep,
                                        "is_new": True,
                                        "new_idx": len(new_visits) - 1}
                         new_st["visit_id"] = ("new", len(new_visits) - 1)
@@ -672,13 +683,27 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                               if kind == "timeout_close" else ts)
                     ov = openv.get((bird, unit)) if bird else None
                     if ov is not None:
-                        visit_ref, feed_now = _close_ov(ov, end_dt, binkg,
-                                                       presence,
-                                                       lane_unit=unit)
+                        # the closing row itself is a validated observation
+                        # (unless INVALID-flagged): accrue its span first.
+                        if kind == "close" and _weighing.is_status_valid(
+                                event.get("status")):
+                            if ov.get("last_valid") is not None:
+                                try:
+                                    ov["tacc"] += max(
+                                        0.0, ts_ep - ov["last_valid"])
+                                except Exception:
+                                    pass
+                            ov["last_valid"] = ts_ep
+                        visit_ref, feed_now, close_pres = _close_ov(
+                            ov, end_dt, binkg, lane_unit=unit)
+                        elapsed = round(close_pres, 1)
                         del openv[(bird, unit)]
                         is_end = True
                     new_st["visit_id"] = None
                     closed_this_row = True
+            # track the lane clock on every row (any validity) so the next
+            # VALID row accrues exactly the span since this one.
+            new_st["last_seen"] = ts_ep
             if not registered_this_row and not closed_this_row:
                 ov = openv.get((bird, unit)) if bird else None
                 if ov is not None:
@@ -687,18 +712,27 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                                                 binkg, None)
                         ov["acc"] += inc
                         ov["bin_prev"] = binkg
-                    if presence is not None:
-                        ov["presence"] = presence
+                    # presence accrues ONLY over VALID spans: the span ending
+                    # here counts iff this row is valid AND we know the
+                    # previous row time (adopted visits seed it from the
+                    # lane session, new visits from their register row).
+                    if _weighing.is_status_valid(event.get("status")):
+                        if ov.get("last_valid") is not None:
+                            try:
+                                ov["tacc"] += max(
+                                    0.0, ts_ep - ov["last_valid"])
+                            except Exception:
+                                pass
+                        ov["last_valid"] = ts_ep
                     ov["touched"] = True
-            # elapsed + live feed context (mirrors ingest: visit start, else 0).
-            # Close rows already set feed_now above (credited intake).
+            # elapsed + live feed context: validated-accumulated presence so
+            # far ((pbase or 0) + tacc). Close rows set elapsed above to the
+            # final presence.
             if not closed_this_row:
                 ov_now = openv.get((bird, unit)) if bird else None
                 if ov_now and ov_now.get("start"):
-                    try:
-                        elapsed = max(0.0, (ts - ov_now["start"]).total_seconds())
-                    except Exception:
-                        elapsed = 0.0
+                    elapsed = round((ov_now.get("pbase") or 0)
+                                    + ov_now.get("tacc", 0.0), 1)
                     feed_now = (ov_now["base"] or 0) + ov_now["acc"]
             log_specs.append((event, ts, ext, is_start, is_end, visit_ref,
                               round(elapsed, 1), round(feed_now, 1)))
@@ -706,12 +740,14 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
         # ---- pass 3: persist (one txn: visits + logs + sessions) ----
         with SessionLocal() as s:
             # finalize still-OPEN new visits: touched -> feed/final values
-            # (mirrors per-step writes), untouched -> NULLs.
+            # (mirrors per-step writes), untouched -> NULLs. presence is the
+            # validated-accumulated clock ((pbase or 0) + tacc).
             for ov in openv.values():
                 if ov.get("is_new") and ov.get("touched"):
                     nv = new_visits[ov["new_idx"]]
                     nv.feed_intake_g = ov["acc"]
                     nv.final_weight_g = ov["registered"]
+                    nv.presence_s = ov["tacc"]
             # touches on adopted open visits (mirror per-step writes). Unit
             # is backfilled when missing (pre-migration rows); never clobbered
             # otherwise — a visit belongs to exactly one lane.
@@ -721,6 +757,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                         "id": ov["vid"],
                         "feed_intake_g": (ov["base"] or 0) + ov["acc"],
                         "final_weight_g": ov["registered"],
+                        "presence_s": (ov["pbase"] or 0) + ov["tacc"],
                         "temp_c": None, "humidity": None}
                     if ov.get("db_unit") is None:
                         upd["unit"] = _lane_unit
@@ -779,6 +816,9 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                     "visit_id": st.get("visit_id"),
                     "first_ts": (datetime.fromtimestamp(
                         fts, tz=timezone.utc) if fts else None),
+                    "last_seen_ts": (datetime.fromtimestamp(
+                        st.get("last_seen"), tz=timezone.utc)
+                        if st.get("last_seen") else None),
                     "updated_at": now_dt})
             if sess_rows:
                 have_keys = {r.key for r in srows}
