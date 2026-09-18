@@ -10,12 +10,14 @@ Mapping onto the 12-col device schema (processor.ingest):
   timestamp     <- created_at, Asia/Tehran wall clock -> UTC
   bird_id       <- rfid1 or rfid2 (None when both empty: weight-only row)
   sensor_id     <- device_id
-  raw_weight_g  <- total_weight (rounded; float artefacts like 216.74..01)
+  raw_weight_g  <- weight_2, the bird platform cell (rounded; float artefacts
+                   like 216.74..01; falls back to total_weight when absent)
   weight_g      <- same rounded raw (table display + visit init weight)
+  feed_bin_kg   <- weight_1, the hopper cell, grams -> kg (per-bin intake is
+                   then derived by the standard bin-drop rule)
   flock_id      <- "UKTECH-<serial>" (traceability)
   age_day       <- days since the target cycle's start_date
-  feed/temp/humidity/rssi <- absent upstream -> None (visits carry weights,
-                             intake stays 0: this station weighs birds)
+  feed/temp/humidity/rssi <- absent upstream -> None
 
 Idempotency: every row is tagged DeviceLog.external_id = "<serial>:<id>"
 (unique per cycle) and the highest ingested id is kept in SyncState
@@ -72,6 +74,9 @@ _TLS_FALLBACK_USED = False
 # Remembered per process: once the host proves self-signed, later calls skip
 # the doomed strict attempt (halves fetch latency on every chunk).
 _TLS_KNOWN_SELF_SIGNED = False
+# Meta of the most recent fetched page (total_records etc.). Reset per sync;
+# used for upstream-reset detection. Stays None when fetch is stubbed.
+_LAST_META = None
 
 
 def state_key(serial: str, cycle_id: int | None = None) -> str:
@@ -125,9 +130,15 @@ def record_to_event(rec: dict, age_day, serial: str):
     """Map one uktech row -> (12-col event dict, external_id, utc datetime)."""
     ts = parse_tehran_utc(rec.get("created_at"))
     bird = (rec.get("rfid1") or "").strip() or (rec.get("rfid2") or "").strip() or None
-    raw = _to_float(rec.get("total_weight"))
+    # weight_2 = bird platform cell; total_weight kept as legacy fallback.
+    raw = _to_float(rec.get("weight_2"))
+    if raw is None:
+        raw = _to_float(rec.get("total_weight"))
     if raw is not None:
         raw = round(raw, 1)
+    # weight_1 = hopper cell in grams -> kg for the standard bin-drop rule.
+    bin_g = _to_float(rec.get("weight_1"))
+    bin_kg = round(bin_g / 1000.0, 3) if bin_g is not None else None
     sensor = (rec.get("device_id") or "").strip() or None
     event = {
         "timestamp": ts.isoformat(),
@@ -139,7 +150,7 @@ def record_to_event(rec: dict, age_day, serial: str):
         # weight_g mirrors raw: the table + visit aggregates need a display
         # weight (processor still smooths per-visit EMA on top of it).
         "weight_g": raw,
-        "feed_bin_kg": None,    # weighing station: no feed bin
+        "feed_bin_kg": bin_kg,
         "feed_delta_g": None,
         "temp_c": None,
         "humidity": None,
@@ -150,6 +161,7 @@ def record_to_event(rec: dict, age_day, serial: str):
 
 def _fetch_once(url: str, timeout: int, verify: bool):
     """Single GET attempt. Raises UktechError on any transport/payload fault."""
+    global _LAST_META
     ctx = None
     if not verify:
         ctx = ssl._create_unverified_context()
@@ -169,6 +181,7 @@ def _fetch_once(url: str, timeout: int, verify: bool):
     if str(payload.get("status", "")).lower() != "success":
         raise UktechError(f"uktech API error: {payload.get('message', payload.get('code', '?'))}")
     meta = payload.get("meta") or {}
+    _LAST_META = meta
     return payload.get("data") or [], bool(meta.get("has_more"))
 
 
@@ -296,9 +309,13 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             start_day = None
 
     last_id = get_cursor(serial, cycle_id)
+    global _LAST_META
+    _LAST_META = None
     fresh = []  # (remote_id, record) with id > last_id
+    seen_ids = set()  # every upstream id observed (for reset detection)
     offset = 0
     complete = True
+    exhausted = True  # False if we stopped early (cursor hit or page cap)
     for _ in range(max_pages):
         records, has_more = fetch_records(serial, UKTECH_TOKEN, page_size, offset)
         if not records:
@@ -308,6 +325,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 rid = int(rec.get("id"))
             except (TypeError, ValueError):
                 continue
+            seen_ids.add(rid)
             if rid > last_id:
                 fresh.append((rid, rec))
         offset += len(records)
@@ -316,12 +334,75 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
         # pages arrive newest-first: stop once a page reaches already-synced rows
         try:
             if min(int(r.get("id")) for r in records) <= last_id:
+                exhausted = False
                 break
         except (TypeError, ValueError):
+            exhausted = False
             break
     else:
         complete = False  # page cap hit while upstream still has more
+        exhausted = False
     fresh.sort(key=lambda t: t[0])  # oldest first for the visit state machine
+
+    # ---- upstream-reset detection ----
+    # If the device DB was wiped (ids restart), our cursor points past all
+    # upstream data and every previously synced id would collide with NEW
+    # rows under the same external_id. Mirror the source of truth: drop this
+    # cycle's stale rows for the serial and start over. Conservative rule —
+    # only when we provably saw ALL upstream rows (exhausted fetch with a
+    # consistent total_records) and every one of them is older than cursor.
+    did_reset = False
+    try:
+        total_up = (_LAST_META or {}).get("total_records")
+        total_up = int(total_up) if total_up is not None else None
+    except (TypeError, ValueError):
+        total_up = None
+    if (last_id > 0 and exhausted and total_up is not None
+            and total_up == len(seen_ids) and seen_ids
+            and max(seen_ids) < last_id):
+        did_reset = True
+        last_id = 0
+        with SessionLocal() as s:
+            prefix = f"{serial}:"
+            s.query(DeviceLog).filter(
+                DeviceLog.cycle_id == cycle_id,
+                DeviceLog.external_id.like(prefix + "%")).delete(
+                    synchronize_session=False)
+            # drop visits left with zero logs in this cycle (they only
+            # aggregated the wiped generation); visits still holding other
+            # rows (e.g. manual ingest) are kept.
+            alive = {r[0] for r in
+                     s.query(DeviceLog.visit_id)
+                     .filter(DeviceLog.cycle_id == cycle_id,
+                             DeviceLog.visit_id.isnot(None)).all()}
+            orphans = s.query(Visit).filter(Visit.cycle_id == cycle_id)
+            if alive:
+                orphans = orphans.filter(~Visit.id.in_(alive))
+            orphans.delete(synchronize_session=False)
+            s.commit()
+        # re-collect: everything upstream is new now. The page bodies were
+        # already downloaded above but filtered by the old cursor; re-fetch
+        # (1 page in the reset case — total is small by construction).
+        fresh = []
+        offset = 0
+        complete = True
+        for _ in range(max_pages):
+            records, has_more = fetch_records(serial, UKTECH_TOKEN,
+                                              page_size, offset)
+            if not records:
+                break
+            for rec in records:
+                try:
+                    rid = int(rec.get("id"))
+                except (TypeError, ValueError):
+                    continue
+                fresh.append((rid, rec))
+            offset += len(records)
+            if not has_more:
+                break
+        else:
+            complete = False
+        fresh.sort(key=lambda t: t[0])
 
     # Chunk: write only the first `batch` rows this call so a serverless
     # invocation finishes well inside its time limit; the cursor below lands
@@ -580,10 +661,13 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             row.last_id = max_seen
             row.updated_at = utcnow()
             row.note = f"cycle {cycle_id}: +{inserted}"
+            if did_reset:
+                row.note += " (upstream reset)"
         s.commit()
 
     chunk_complete = complete and remaining <= 0
     return {"cycle_id": cycle_id, "serial": serial, "fetched": len(fresh),
             "inserted": inserted, "skipped": skipped, "last_id": max_seen,
             "complete": chunk_complete, "remaining": max(0, remaining),
+            "reset": did_reset,
             "tls_insecure": _TLS_FALLBACK_USED}

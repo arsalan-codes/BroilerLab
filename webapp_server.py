@@ -61,7 +61,7 @@ def cache_for(path):
 
 
 class Handler(SimpleHTTPRequestHandler):
-    server_version = "ArianStatic/1.8.66"
+    server_version = "ArianStatic/1.8.67"
 
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=ROOT, **kw)

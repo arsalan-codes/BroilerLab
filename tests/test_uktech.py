@@ -22,8 +22,8 @@ os.environ.setdefault("BROILER_JWT_SECRET", "test-secret-" + "0" * 24)
 import uktech  # noqa: E402
 
 REC = {"id": 1039, "device_id": "ESP32-S3-001", "rfid1": "4800F4CF9EED",
-       "rfid2": "", "weight_1": 219.81, "weight_2": 0, "weight_3": 0,
-       "weight_4": 0, "total_weight": 219.81, "status1": "VALID",
+       "rfid2": "", "weight_1": 5200.0, "weight_2": 219.81, "weight_3": 0,
+       "weight_4": 0, "total_weight": 5419.81, "status1": "VALID",
        "status2": "INVALID", "device_status": "online", "total_seconds": 0,
        "created_at": "2026-09-17 19:53:29", "updated_at": "2026-09-17 19:53:29"}
 
@@ -38,20 +38,27 @@ def test_record_mapping():
     ev, ext, ts = uktech.record_to_event(dict(REC), 5, "ESP800")
     assert ev["bird_id"] == "4800F4CF9EED"
     assert ev["sensor_id"] == "ESP32-S3-001"
-    assert ev["raw_weight_g"] == 219.8  # round(219.81, 1)
+    assert ev["raw_weight_g"] == 219.8  # round(weight_2, 1), bird cell
     assert ev["weight_g"] == 219.8  # table display + visit init weight
+    assert ev["feed_bin_kg"] == 5.2  # weight_1 hopper grams -> kg
     assert ev["age_day"] == 5
     assert ev["flock_id"] == "UKTECH-ESP800"
-    assert ev["feed_bin_kg"] is None and ev["feed_delta_g"] is None
+    assert ev["feed_delta_g"] is None
     assert ext == "ESP800:1039"
     assert ev["timestamp"] == ts.isoformat()
 
 
 def test_float_artefact_rounding_and_rfid_fallback():
-    rec = dict(REC, total_weight=216.74000000000001, rfid1="", rfid2="  7F2B  ")
+    rec = dict(REC, weight_2=216.74000000000001, rfid1="", rfid2="  7F2B  ")
     ev, _ext, _ts = uktech.record_to_event(rec, 0, "ESP800")
     assert ev["raw_weight_g"] == 216.7
     assert ev["bird_id"] == "7F2B"
+
+
+def test_total_weight_legacy_fallback():
+    rec = dict(REC, weight_2=None)
+    ev, _ext, _ts = uktech.record_to_event(rec, 0, "ESP800")
+    assert ev["raw_weight_g"] == 5419.8  # falls back to total_weight
 
 
 def test_empty_tags_give_weight_only_row():
@@ -147,7 +154,7 @@ def test_sync_is_idempotent_sqlite(tmp_path, monkeypatch):
     models.Base.metadata.create_all(models.engine)
     from models import Cycle, DeviceLog, SessionLocal, SyncState
 
-    page = [dict(REC, id=1001), dict(REC, id=1002, total_weight=221.5)]
+    page = [dict(REC, id=1001), dict(REC, id=1002, weight_2=221.5)]
     monkeypatch.setattr(uktech, "fetch_records", lambda *a, **k: (list(page), False))
     with SessionLocal() as s:
         c = Cycle(cycle_code="UKT", label="uktech test", strain="ross308", bird_count=1)
@@ -177,3 +184,57 @@ def test_sync_is_idempotent_sqlite(tmp_path, monkeypatch):
     with SessionLocal() as s:
         assert s.query(DeviceLog).filter(DeviceLog.cycle_id == cid).count() == 2
         assert uktech.get_cursor("ESP800", cid) == 1002
+
+
+def test_upstream_reset_restarts_cleanly(tmp_path, monkeypatch):
+    """Device DB wiped upstream (ids restart): stale rows for the serial are
+    dropped, cursor restarts, fresh rows ingest with reset=True."""
+    db = tmp_path / "ukreset.db"
+    monkeypatch.setenv("BROILER_DATABASE_URL", f"sqlite:///{db.as_posix()}")
+    import config
+    import models
+    import processor
+    import importlib
+    importlib.reload(config)
+    importlib.reload(models)
+    importlib.reload(uktech)
+    importlib.reload(processor)
+    models.Base.metadata.create_all(models.engine)
+    from models import Cycle, DeviceLog, SessionLocal, Visit
+
+    old = [dict(REC, id=100 + i,
+                created_at=f"2026-09-10 10:0{i}:00") for i in range(3)]
+    monkeypatch.setattr(uktech, "fetch_records", lambda *a, **k: (list(old), False))
+    with SessionLocal() as s:
+        c = Cycle(cycle_code="UKR", label="reset test", strain="ross308",
+                  bird_count=1)
+        s.add(c)
+        s.commit()
+        cid = c.id
+    try:
+        r1 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r1["inserted"] == 3 and r1["reset"] is False
+        assert uktech.get_cursor("ESP800", cid) == 102
+        # upstream wiped: only 2 fresh rows, ids restarted at 1.
+        # Stub meta the way _fetch_once would set it on a real page.
+        new = [dict(REC, id=1, created_at="2026-09-18 12:00:00"),
+               dict(REC, id=2, created_at="2026-09-18 12:01:00")]
+
+        def fetch_with_meta(*a, **k):
+            uktech._LAST_META = {"total_records": 2}
+            return list(new), False
+        monkeypatch.setattr(uktech, "fetch_records", fetch_with_meta)
+        r2 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r2["reset"] is True, r2
+        assert r2["inserted"] == 2 and r2["last_id"] == 2
+        with SessionLocal() as s:
+            rows = s.query(DeviceLog).filter(
+                DeviceLog.cycle_id == cid).all()
+            assert len(rows) == 2
+            assert sorted(r.external_id for r in rows) == [
+                "ESP800:1", "ESP800:2"]
+            # stale visits (only aggregated wiped rows) are gone
+            assert s.query(Visit).filter(Visit.cycle_id == cid).count() >= 1
+            assert uktech.get_cursor("ESP800", cid) == 2
+    finally:
+        processor._processors.pop(cid, None)

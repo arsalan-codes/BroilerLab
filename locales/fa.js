@@ -762,6 +762,7 @@ window.I18N_FA={
 "dev.syncInsecure": "⚠ اتصال بدون تأیید گواهی (self-signed)",
 "dev.syncNoToken": "توکن API دستگاه روی سرور تنظیم نشده است.",
 "dev.syncTLS": "خطای گواهی TLS هاست دستگاه.",
+"dev.syncReset": "منبع دستگاه ریست شده بود — همگام‌سازی از اول شروع شد.",
 "dev.syncTimeout": "سرور دیر جواب داد — دوباره تلاش کنید (ادامه خودکار از همان‌جا).",
 "dev.liveOn": "زنده",
 "dev.liveOff": "آفلاین",

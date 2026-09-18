@@ -762,6 +762,7 @@ window.I18N_EN={
 "dev.syncInsecure": "⚠ unverified TLS (self-signed host)",
 "dev.syncNoToken": "Device API token is not set on the server.",
 "dev.syncTLS": "Device host TLS certificate error.",
+"dev.syncReset": "Device source was reset — synced from scratch.",
 "dev.syncTimeout": "Server was slow — retry (auto-resumes where it stopped).",
 "dev.liveOn": "live",
 "dev.liveOff": "offline",

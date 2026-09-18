@@ -119,8 +119,8 @@
       $("st-visits").textContent = lnum(s.visits);
       $("st-birds").textContent = lnum(s.unique_birds);
       $("st-rows").textContent = lnum(s.device_rows);
-      $("st-intake").textContent = lnum(s.total_intake_g || 0);
-      $("st-avgw").textContent = lnum(s.avg_initial_weight_g || 0);
+      $("st-intake").textContent = lnum(s.total_intake_g || 0, 2);
+      $("st-avgw").textContent = lnum(s.avg_initial_weight_g || 0, 2);
       $("st-miss").textContent = lnum(s.missed_rfid);
     }).catch(function () {});
   }
@@ -189,8 +189,8 @@
     row.innerHTML =
       '<span class="t">' + esc(shamsi) + '</span>  ' +
       '<span class="b">bird:' + esc(d.bird_id || "?") + '</span>  ' +
-      'w=<span class="w">' + esc(d.weight_g != null ? d.weight_g : "—") + 'g</span>  ' +
-      'f=<span class="f">' + esc(d.feed_delta_g != null ? (d.feed_delta_g + "g") : "—") + '</span>';
+      'w=<span class="w">' + lnum(d.weight_g, 2) + 'g</span>  ' +
+      'f=<span class="f">' + (d.feed_delta_g != null ? lnum(d.feed_delta_g, 2) + "g" : "—") + '</span>';
     feed.insertBefore(row, feed.firstChild);
     while (feed.childNodes.length > 60) feed.removeChild(feed.lastChild);
   }
@@ -230,9 +230,9 @@
     var row = document.createElement("div");
     row.className = "reg-row new";
     row.innerHTML =
-      '<span class="reg-cell reg-cell--feed">' + (feed != null ? lnum(feed) : "—") + '<span class="reg-unit">g</span></span>' +
-      '<span class="reg-cell reg-cell--w">' + (w != null ? lnum(w) : "—") + '<span class="reg-unit">g</span></span>' +
-      '<span class="reg-cell reg-cell--elapsed">' + (elap != null ? lnum(elap) : "—") + '<span class="reg-unit">' + tr("dev.reg.sec", "s") + '</span></span>' +
+      '<span class="reg-cell reg-cell--feed">' + (feed != null ? lnum(feed, 2) : "—") + '<span class="reg-unit">g</span></span>' +
+      '<span class="reg-cell reg-cell--w">' + (w != null ? lnum(w, 2) : "—") + '<span class="reg-unit">g</span></span>' +
+      '<span class="reg-cell reg-cell--elapsed">' + (elap != null ? lnum(elap, 2) : "—") + '<span class="reg-unit">' + tr("dev.reg.sec", "s") + '</span></span>' +
       '<span class="reg-cell reg-cell--dt">' + esc(dtJoin) + '</span>' +
       '<span class="reg-cell reg-cell--tag">' + esc(d.bird_id || "—") + '</span>' +
       '<span class="reg-cell reg-cell--sensor">' + esc(d.sensor_id || "—") + '</span>';
@@ -269,9 +269,9 @@
         var dtJoin = (datePart && timePart) ? datePart + " " + timePart : (datePart || timePart || "—");
         var w = r.initial_weight_g != null ? r.initial_weight_g : r.final_weight_g;
         row.innerHTML =
-          '<span class="reg-cell reg-cell--feed">' + (r.feed_intake_g != null ? lnum(r.feed_intake_g) : "—") + '<span class="reg-unit">g</span></span>' +
-          '<span class="reg-cell reg-cell--w">' + (w != null ? lnum(w) : "—") + '<span class="reg-unit">g</span></span>' +
-          '<span class="reg-cell reg-cell--elapsed">' + (r.elapsed_s != null ? lnum(r.elapsed_s) : "—") + '<span class="reg-unit">' + tr("dev.reg.sec", "s") + '</span></span>' +
+          '<span class="reg-cell reg-cell--feed">' + (r.feed_intake_g != null ? lnum(r.feed_intake_g, 2) : "—") + '<span class="reg-unit">g</span></span>' +
+          '<span class="reg-cell reg-cell--w">' + (w != null ? lnum(w, 2) : "—") + '<span class="reg-unit">g</span></span>' +
+          '<span class="reg-cell reg-cell--elapsed">' + (r.elapsed_s != null ? lnum(r.elapsed_s, 2) : "—") + '<span class="reg-unit">' + tr("dev.reg.sec", "s") + '</span></span>' +
           '<span class="reg-cell reg-cell--dt">' + esc(dtJoin) + '</span>' +
           '<span class="reg-cell reg-cell--tag">' + esc(r.bird_id || "—") + '</span>' +
           '<span class="reg-cell reg-cell--sensor">' + esc(r.sensor_id || "—") + '</span>';
@@ -445,7 +445,7 @@
     // Chunked sync loop: each call writes one batch (server default 60) and
     // returns complete=false while rows remain — repeat until done so big
     // backlogs never hit the serverless time limit (was HTTP 504).
-    var total = 0, guard = 0, insecure = false;
+    var total = 0, guard = 0, insecure = false, sawReset = false;
     ukSyncing = true;
     setUkStatus(tr("dev.syncing", "در حال دریافت..."));
     function oneChunk() {
@@ -453,6 +453,7 @@
       api("/api/uktech/sync", { method: "POST", body: JSON.stringify({ cycle_id: selectedCycle }) }).then(function (r) {
         total += (r && r.inserted) || 0;
         if (r && r.tls_insecure) insecure = true;
+        if (r && r.reset) sawReset = true;
         var rem = (r && r.remaining) || 0;
         if (total > 0 || rem > 0) setUkStatus(tr("dev.syncing", "در حال دریافت...") + " (" + lnum(total) + (rem > 0 ? " · +" + lnum(rem) : "") + ")");
         if (r && r.complete === false && ((r.inserted || 0) > 0 || rem > 0)) { oneChunk(); return; }
@@ -468,6 +469,7 @@
         toast(tr("dev.syncFail", "خطا در دریافت داده: ") + m);
       } else if (total > 0) {
         toast(tr("dev.syncDone", "همگام‌سازی انجام شد: {n} رکورد جدید").replace("{n}", lnum(total)));
+        if (sawReset) toast(tr("dev.syncReset", "منبع دستگاه ریست شده بود — همگام‌سازی از اول شروع شد."));
       } else {
         toast(tr("dev.syncNone", "رکورد جدیدی نبود."));
       }
