@@ -775,5 +775,9 @@ window.I18N_EN={
 "dev.syncTimeout": "Server was slow — retry (auto-resumes where it stopped).",
 "dev.liveOn": "live",
 "dev.liveOff": "offline",
+"dev.online": "online",
+"dev.stale": "stale",
+"dev.offline": "offline",
+"dev.lastFetch": "Last fetch: {t}",
 "dev.syncRateLimit": "Too many requests — please wait.",
 };

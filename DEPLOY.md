@@ -41,7 +41,8 @@ postgresql://USER:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/neondb?sslm
 | `BROILER_DATABASE_URL` | همان connection string مرحله ۱ |
 | `BROILER_JWT_SECRET` | یک رشته تصادفی ۳۲+ کاراکتری (مثلا خروجی `openssl rand -hex 32`) |
 | `BROILER_CORS_ORIGINS` | `https://arsalan-codes.github.io` |
-| `UKTECH_API_TOKEN` | توکن `ttoken` دستگاه توزین آنلاین (مثلا `ARIYAN_WEIGHT_API_XYZ123`) — بدون آن دکمه «دریافت داده دستگاه» خطای 400 می‌دهد |
+| `WEIGHT_API_TOKEN` | توکن `ttoken` دستگاه توزین آنلاین — فقط سمت سرور، هرگز به مرورگر نمی‌رسد. بدون آن دکمه «دریافت داده دستگاه» خطای 400 می‌دهد (نام قدیمی `UKTECH_API_TOKEN` هم کار می‌کند) |
+| `WEIGHT_API_URL` | آدرس پایه API دستگاه (پیش‌فرض `https://uktech.ir/Login/api_weight_data.php`) — نام قدیمی `UKTECH_API_BASE` هم کار می‌کند |
 | `UKTECH_SERIAL` | سریال دستگاه (پیش‌فرض `ESP800`) — اختیاری |
 | `UKTECH_VERIFY_SSL` | پیش‌فرض `auto`: اول strict بعد با هشدار fallback بدون تأیید (هاست uktech گواهی self-signed دارد). `true` = همیشه strict، `false` = همیشه بدون تأیید |
 | `UKTECH_MIN_WEIGHT` | حداقل وزن شروع سشن توزین به گرم (پیش‌فرض `20`) — کمتر از این در حالت خالی نادیده گرفته می‌شود |
@@ -115,3 +116,55 @@ git push origin main
 - **MQTT** (`mqtt_consumer.py`) روی Vercel لود نمی‌شود — مخصوص سرور شخصی است.
 - دیتابیس لوکال (docker `broilerlab-pg:5434`) فقط برای توسعه است؛ با
   Neon اشتباه گرفته نشود.
+
+## پیوست: معماری زنده دستگاه (device live pipeline)
+
+```
+Browser (device-panel.js, polling 3s + backoff)
+  ↓  POST /api/uktech/sync {cycle_id}  (JWT, per-cycle ownership)
+FastAPI (backend/main.py) — توکن هرگز به مرورگر نمی‌رسد
+  ↓  uktech.sync_serial_to_cycle
+Remote Weight API (WEIGHT_API_URL + WEIGHT_API_TOKEN از env سرور)
+  ↓  record_to_unit_events → validate (_to_float strict) → dedupe
+Neon (DeviceLog raw + Visit validated + SyncState cursor + WeighingSession)
+  ↓  GET registrations/status/sessions (جدیدترین اول، no-store)
+Frontend tables (یونیت ۱/۲ جدا، ۲ رقم اعشار، بج ONLINE/STALE/OFFLINE)
+```
+
+### نگاشت واقعی API (مشاهده‌شده، نه حدسی)
+| داخلی | منبع | توضیح |
+|---|---|---|
+| id | `id` | کلید dedupe (`serial:id:uN`) |
+| deviceId | `device_id` | مثل `ESP32-S3-001` |
+| serial | query param | مثل `ESP800` |
+| chickenId | `rfid1`/`rfid2` (per-unit) | strip فقط، بدون تبدیل |
+| chickenWeight | `weight_2`/`weight_4` (fallback: `total_weight` برای ردیف تک‌یونیتی قدیمی) | گرد کردن فقط نمایشی |
+| tankWeight | `weight_1`/`weight_3` (گرم→کیلو) | ستون مخزن |
+| feedConsumed | مستقیم از API نمی‌آید (حالت B): افت مخزن بین ردیف‌های پیاپی ×۱۰۰۰ | مخزن ثابت → ۰ واقعی؛ مخزن ناموجود → null/— |
+| elapsedSeconds | مجموع spanهای VALID (حالت C روی زمان) | NULL قدیمی → wall-clock fallback |
+| timestamp | `created_at` (Asia/Tehran wall) → UTC ذخیره، شمسی نمایشی | بدون parse دستی (fromisoformat/zoneinfo) |
+| receivedAt | زمان ingest سرور | |
+| raw | کل DeviceLog (status flag هم ذخیره می‌شود) | |
+
+### چرا feed گاهی ۰٫۰۰ است؟
+علت باگ نیست: وقتی سطح مخزن ثابت است مصرف واقعی صفر است (۰ اندازه‌گیری‌شده، نه جعلی). وقتی مخزن اصلاً دیتا ندارد (NULL) API حالا `null` می‌دهد و UI `—` نشان می‌دهد (قبلاً `or 0` جعل می‌کرد — حذف شد).
+
+### چرا elapsed قبلاً عجیب بود؟
+قبلاً همیشه wall-clock بود (ویزیت‌های بازِ قدیمی تا ساعت‌ها رشد می‌کردند). حالا `presence_s` انباشته‌شده روی spanهای VALID است؛ legacyها fallback wall-clock.
+
+### چرا duplicate دیده می‌شد؟
+دو مسیر (WS زنده + REST تاریخچه) در یک پنجره poll هم‌پوشانی داشتند. حالا هر دو `data-visit-id` دارند و WS قبل از prepend چک می‌کند؛ بک‌اند هم `external_id` یکتا + سشن دارد. ترتیب همیشه جدیدترین‌اول (بک‌اند desc + مرتب‌سازی دفاعی کلاینت).
+
+### online/offline
+از آخرین fetch موفق: زیر ۱۰ ثانیه ONLINE، ۱۰ تا ۳۰ STALE، بیشتر OFFLINE (نه از باز بودن صفحه). خطای کانفیگ (توکن) polling را متوقف می‌کند؛ بقیه خطاها backoff ‏۳/۵/۱۰/۲۰/۳۰ ثانیه با سقف ۳۰ و دیتای قبلی حفظ می‌شود.
+
+### لاگ توسعه
+فقط روی localhost (`console.debug`): شروع poll، تعداد رکورد/نرمال‌شده/duplicate، خطاها، آخرین موفقیت. هیچ توکن/URL حساسی لاگ نمی‌شود (توکن فقط در env سرور: `WEIGHT_API_TOKEN`).
+
+### اسکیمای persistence (معادل weight_records درخواستی)
+| درخواستی | واقعی |
+|---|---|
+| device_id/serial/chicken_id/chicken_weight/feed_consumed | DeviceLog.sensor_id + flock `UKTECH-<serial>` / bird_id / weight_g / feed via Visit.feed_intake_g |
+| tank_weight/elapsed_seconds | DeviceLog.feed_bin_kg / Visit.presence_s |
+| event_timestamp/received_at/raw_payload/created_at | DeviceLog.timestamp/created_at + full row |
+| unique constraint | `uq_log_cycle_external (cycle_id, external_id)` |

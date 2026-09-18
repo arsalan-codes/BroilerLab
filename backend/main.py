@@ -479,9 +479,13 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
                 except Exception:
                     elapsed = 0.0
             binkg = binmap.get(v.id)
-            out.append({"bird_id": v.bird_id, "initial_weight_g": v.initial_weight_g,
+            out.append({"id": v.id, "bird_id": v.bird_id, "initial_weight_g": v.initial_weight_g,
                         "final_weight_g": v.final_weight_g,
-                        "feed_intake_g": round(v.feed_intake_g or 0, 1),
+                        # NULL stays NULL (frontend renders "—"): a missing
+                        # measurement must never be fabricated as 0.0.
+                        "feed_intake_g": (round(v.feed_intake_g, 1)
+                                          if v.feed_intake_g is not None
+                                          else None),
                         "elapsed_s": round(elapsed, 1),
                         "presence_s": v.presence_s,
                         "unit": v.unit if v.unit in (1, 2) else unitmap.get(v.id, 1),
@@ -614,9 +618,9 @@ def uktech_sync(payload: UktechSyncIn, current: User = Depends(authmod.get_curre
     try:
         # Standard: fetch all new records, chunked per call (batch) so each
         # serverless invocation finishes inside its time limit.
-        return uktech.sync_serial_to_cycle(payload.cycle_id,
-                                           serial=payload.serial,
-                                           batch=payload.batch)
+        return _no_store(uktech.sync_serial_to_cycle(payload.cycle_id,
+                                                     serial=payload.serial,
+                                                     batch=payload.batch))
     except uktech.UktechError as e:
         msg = str(e)
         low = msg.lower()
@@ -639,7 +643,7 @@ def uktech_status(serial: str | None = None,
     if cycle_id is not None:
         with SessionLocal() as s:
             _require_owner_cycle(s, cycle_id, current)
-    return uktech.sync_status(serial, cycle_id)
+    return _no_store(uktech.sync_status(serial, cycle_id))
 
 
 @app.get("/api/uktech/sessions")
@@ -675,7 +679,19 @@ def uktech_sessions(cycle_id: int,
             out.append({"device": r.device_id, "unit": unit, "rfid": r.rfid,
                         "state": r.state, "registered": r.registered,
                         "updated_at": _iso(r.updated_at)})
-        return out
+        return _no_store(out)
+
+
+def _no_store(payload):
+    """Live device endpoints must never serve stale caches: browsers, CDNs
+    and proxies may otherwise replay an old sync/status snapshot."""
+    from fastapi.responses import JSONResponse
+    return JSONResponse(content=payload, headers={
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "Pragma": "no-cache",
+    })
+
+
 def _ws_auth_or_close(ws: WebSocket):
     """Browsers cannot set headers on a WS handshake, so the JWT travels as
     ?token=. Returns the authenticated User or None (caller must close)."""

@@ -775,5 +775,9 @@ window.I18N_FA={
 "dev.syncTimeout": "سرور دیر جواب داد — دوباره تلاش کنید (ادامه خودکار از همان‌جا).",
 "dev.liveOn": "زنده",
 "dev.liveOff": "آفلاین",
+"dev.online": "آنلاین",
+"dev.stale": "با تأخیر",
+"dev.offline": "آفلاین",
+"dev.lastFetch": "آخرین دریافت: {t}",
 "dev.syncRateLimit": "درخواست‌ها زیاد است — کمی صبر کنید.",
 };

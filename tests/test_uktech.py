@@ -107,6 +107,39 @@ def test_empty_tags_give_weight_only_row():
     assert units[1][1]["bird_id"] is None
 
 
+def test_strict_float_parsing_rejects_junk():
+    # NaN / Infinity / "N/A" / "" must become None — never a fake 0 that
+    # would poison session comparisons or get stored as a measurement.
+    import math
+    for bad in ("N/A", "n/a", "nan", "None", "null", "-", "", "  ",
+                float("nan"), float("inf"), float("-inf"), None):
+        assert uktech._to_float(bad) is None, repr(bad)
+    assert uktech._to_float(0) == 0 and uktech._to_float("0") == 0
+    assert uktech._to_float("219.35") == 219.35
+    assert uktech._to_float(219.34999999999999) == 219.34999999999999
+    assert math.isfinite(uktech._to_float("1e3"))
+    import processor
+    for bad in ("N/A", "nan", float("nan"), None, ""):
+        assert processor._to_float(bad) is None, repr(bad)
+
+
+def test_env_aliases_for_token_and_url(monkeypatch):
+    # Canonical WEIGHT_API_TOKEN/URL work; legacy UKTECH_* names are fallback.
+    import importlib
+    import config
+    monkeypatch.setenv("WEIGHT_API_TOKEN", "tok-new")
+    monkeypatch.setenv("WEIGHT_API_URL", "https://example.invalid/w.php")
+    monkeypatch.delenv("UKTECH_API_TOKEN", raising=False)
+    monkeypatch.delenv("BROILER_UKTECH_TOKEN", raising=False)
+    monkeypatch.delenv("UKTECH_API_BASE", raising=False)
+    importlib.reload(config)
+    try:
+        assert config.UKTECH_TOKEN == "tok-new"
+        assert config.UKTECH_API_BASE == "https://example.invalid/w.php"
+    finally:
+        importlib.reload(config)
+
+
 def test_external_id_format():
     assert uktech.external_id("ESP800", 1039) == "ESP800:1039"
     assert uktech.state_key("ESP800") == "uktech:ESP800"

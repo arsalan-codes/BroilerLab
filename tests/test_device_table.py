@@ -64,6 +64,10 @@ E2E = textwrap.dedent('''
         assert mine["sensor_id"] == "S1" and mine["initial_weight_g"] == 642
         assert mine["unit"] == 1, mine  # single-unit HTTP devices are lane 1
         assert mine["bin_weight_g"] == 16700.0, mine  # hopper level (g) at visit start
+        # live device endpoints must never serve stale caches
+        for _p in ("/api/uktech/status", "/api/uktech/sessions?cycle_id=" + str(cid)):
+            _rh = c.get(_p, headers=h).headers.get("cache-control", "")
+            assert "no-store" in _rh, _p
         # ownership isolation still holds on the new shape
         assert c.get(f"/api/cycles/{cid}/registrations").status_code == 401
     print("DEVICE-TABLE E2E OK")
@@ -85,6 +89,9 @@ def test_registrations_returns_six_params():
                   "registered_at", "sensor_id", "bird_id", "initial_weight_g",
                   "presence_s", "unit", "bin_weight_g"):
         assert field in body, f"registrations response missing {field}"
+    # no fabricated zeros: NULL measurements must serialize as null so the
+    # UI renders "—" instead of a fake 0.00.
+    assert "feed_intake_g or 0" not in body, "fake-0 feed serialization"
 
 
 def test_intake_single_rule_with_unit_fix():
@@ -118,7 +125,8 @@ def test_locales_have_device_headers():
                                         ("en.js", "Feed consumed", "Elapsed", "Date & time", "Hopper weight")):
         src = (ROOT / "webapp" / "locales" / loc).read_text(encoding="utf-8")
         for key in ("dev.reg.feed", "dev.reg.elapsed", "dev.reg.datetime", "dev.reg.sec",
-                    "dev.reg.bin", "dev.unit1", "dev.unit2"):
+                    "dev.reg.bin", "dev.unit1", "dev.unit2",
+                    "dev.online", "dev.stale", "dev.offline", "dev.lastFetch"):
             assert key in src, f"{loc} missing {key}"
         assert feed in src and elapsed in src and dt in src and hop in src, f"{loc} header text wrong"
 

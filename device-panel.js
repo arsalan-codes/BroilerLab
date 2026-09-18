@@ -24,6 +24,28 @@
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
   function tr(k, fb) { return (window.tr && window.tr(k)) || fb || k; }
+  // pure, tested helpers (services/device-utils.js) with local fallbacks
+  var DU = window.DeviceUtils || {};
+  function formatWeight(v) {
+    if (DU.formatWeight) return DU.formatWeight(v, (window.LANG || "fa"));
+    var f = (v == null || isNaN(+v)) ? null : +v;
+    if (f === null) return "—";
+    var s = f.toFixed(2);
+    if ((window.LANG || "fa") === "fa") {
+      var FA = ["۰","۱","۲","۳","۴","۵","۶","۷","۸","۹"];
+      s = s.replace(/[0-9]/g, function (c) { return FA[+c]; });
+    }
+    return s;
+  }
+  function devLog() {
+    // development-only diagnostics (never tokens/URLs with secrets)
+    try {
+      var h = window.location ? window.location.hostname : "";
+      if (h === "localhost" || h === "127.0.0.1" || h === "") {
+        if (window.console && console.debug) console.debug.apply(console, arguments);
+      }
+    } catch (e) {}
+  }
 
   // ---------- REST helpers ----------
   function api(path, opts) {
@@ -31,9 +53,10 @@
     var authH = (window.Auth && window.Auth.authHeaders) ? window.Auth.authHeaders() : (window.ARIAN_TOKEN ? { "Authorization": "Bearer " + window.ARIAN_TOKEN } : {});
     // also try localStorage directly
     if (!authH.Authorization) { try { var tk = localStorage.getItem("arian_token"); if (tk) authH.Authorization = "Bearer " + tk; } catch(e){} }
-    return fetch(((window.ARIAN_API||"").replace(/\/+$/,"")||API) + path, Object.assign({
+    var fetchOpts = Object.assign({
       headers: Object.assign({ "Content-Type": "application/json" }, authH)
-    }, opts)).then(function (r) {
+    }, opts);
+    return fetch(((window.ARIAN_API||"").replace(/\/+$/,"")||API) + path, fetchOpts).then(function (r) {
       if (r.status === 401) {
         var cur=document.querySelector("section.view.on"); var isPublic=cur && (cur.id==="v-landing" || cur.id==="v-about");
         if(!isPublic && window.showAuthModal) window.showAuthModal("login");
@@ -210,14 +233,18 @@
     return u === 2 ? 2 : 1;
   }
   function regRowHtml(o) {
-    // o: {feed, w, bin, elap, dtJoin, bird, sensor}
-    return '<span class="reg-cell reg-cell--feed">' + (o.feed != null ? lnum(o.feed, 2) : "—") + '<span class="reg-unit">g</span></span>' +
-      '<span class="reg-cell reg-cell--w">' + (o.w != null ? lnum(o.w, 2) : "—") + '<span class="reg-unit">g</span></span>' +
-      '<span class="reg-cell reg-cell--bin">' + (o.bin != null ? lnum(o.bin, 2) : "—") + '<span class="reg-unit">g</span></span>' +
+    // o: {feed, w, bin, elap, dtJoin, bird, sensor} — weights via the
+    // shared 2-decimal formatter (display only, stored values untouched).
+    return '<span class="reg-cell reg-cell--feed">' + formatWeight(o.feed) + '<span class="reg-unit">g</span></span>' +
+      '<span class="reg-cell reg-cell--w">' + formatWeight(o.w) + '<span class="reg-unit">g</span></span>' +
+      '<span class="reg-cell reg-cell--bin">' + formatWeight(o.bin) + '<span class="reg-unit">g</span></span>' +
       '<span class="reg-cell reg-cell--elapsed">' + (o.elap != null ? lnum(o.elap, 2) : "—") + '<span class="reg-unit">' + tr("dev.reg.sec", "s") + '</span></span>' +
       '<span class="reg-cell reg-cell--dt">' + esc(o.dtJoin) + '</span>' +
       '<span class="reg-cell reg-cell--tag">' + esc(o.bird || "—") + '</span>' +
       '<span class="reg-cell reg-cell--sensor">' + esc(o.sensor || "—") + '</span>';
+  }
+  function regSkeletonHtml() {
+    return '<div class="reg-skel"></div><div class="reg-skel"></div><div class="reg-skel"></div>';
   }
   function regDateJoin(dt) {
     var datePart = "", timePart = "";
@@ -248,11 +275,18 @@
     // would reintroduce unloading residuals like 6.77 as table rows.
     var isEntry = d.is_visit_start === true && d.visit_id != null;
     if (!isEntry) return;
-
+    // client-side dedupe: the same visit may arrive via REST history and
+    // the live socket within one poll window — render it once.
+    try {
+      if (body.querySelector('[data-visit-id="' + d.visit_id + '"]')) return;
+    } catch (e) {}
     var w = d.initial_weight_g != null ? d.initial_weight_g : d.weight_g;
     var feed = d.visit_feed_g != null ? d.visit_feed_g : d.feed_intake_g;
     var row = document.createElement("div");
     row.className = "reg-row new";
+    if (d.visit_id != null) {
+      try { row.setAttribute("data-visit-id", d.visit_id); } catch (e) {}
+    }
     row.innerHTML = regRowHtml({
       feed: feed, w: w, bin: d.bin_weight_g, elap: d.elapsed_s,
       dtJoin: regDateJoin(d.timestamp || d.registered_at || ""),
@@ -267,21 +301,36 @@
   function loadRegistrations(id) {
     var b1 = $("reg-body-u1"), b2 = $("reg-body-u2");
     if (!b1 && !b2) return;
+    // initial load -> skeleton rows; refresh keeps old rows until replaced
+    [[1, b1], [2, b2]].forEach(function (pair) {
+      var body = pair[1];
+      if (body && body.querySelector(".reg-empty") && !body.dataset.loaded) {
+        body.innerHTML = regSkeletonHtml();
+      }
+    });
     api("/api/cycles/" + id + "/registrations?limit=100").then(function (list) {
+      var arr = (list || []).slice();
+      // defensive newest-first sort (never trust API order for display)
+      if (DU.sortNewestFirst) {
+        try { arr = DU.sortNewestFirst(arr, function (r) { return r.registered_at; }); } catch (e) {}
+      }
       var groups = { 1: [], 2: [] };
-      (list || []).forEach(function (r) {
-        var u = regUnitOf(r);
-        groups[u].push(r);
+      arr.forEach(function (r) {
+        groups[regUnitOf(r)].push(r);
       });
       [[1, b1], [2, b2]].forEach(function (pair) {
         var body = pair[1];
         if (!body) return;
         body.innerHTML = "";
+        body.dataset.loaded = "1";
         var rows = groups[pair[0]].slice(0, regMax);
         if (!rows.length) { body.innerHTML = regEmptyHtml(); return; }
         rows.forEach(function (r) {
           var row = document.createElement("div");
           row.className = "reg-row";
+          if (r.id != null) {
+            try { row.setAttribute("data-visit-id", r.id); } catch (e) {}
+          }
           var w = r.initial_weight_g != null ? r.initial_weight_g : r.final_weight_g;
           row.innerHTML = regRowHtml({
             feed: r.feed_intake_g, w: w, bin: r.bin_weight_g,
@@ -291,6 +340,7 @@
           body.appendChild(row);
         });
       });
+      devLog("[device] registrations rendered", "n=" + arr.length);
     }).catch(function () {});
   }
 
@@ -361,7 +411,8 @@
   }
 
   // ---------- Online device sync (uktech weight API via backend) ----------
-  var ukLiveTimer = null, ukSyncing = false;
+  var ukLiveTimer = null, ukSyncing = false, ukWantLive = false,
+      ukFails = 0, ukLastOk = 0, ukAbort = null, ukTick = null;
   function setUkStatus(msg) {
     var st = $("uk-sync-status");
     if (st) st.textContent = msg;
@@ -416,30 +467,98 @@
     b.style.color = on ? "#19c39a" : "";
     b.style.animation = on ? "ukPulse 1.2s infinite" : "";
   }
+  // Live polling: chained 3s ticks (never overlapping), progressive backoff
+  // 3/5/10/20/30s on consecutive failures, aborted cleanly on stop/unmount.
+  var UK_POLL_MS = 3000;
+  function ukBackoffMs() {
+    if (DU.nextBackoffMs) return DU.nextBackoffMs(ukFails);
+    var steps = [3000, 5000, 10000, 20000, 30000];
+    return steps[Math.min(Math.max(ukFails - 1, 0), steps.length - 1)];
+  }
+  function ukOnlineState() {
+    if (DU.onlineStatus) return DU.onlineStatus(ukLastOk, Date.now());
+    if (!ukLastOk) return "offline";
+    var dt = Date.now() - ukLastOk;
+    return dt < 10000 ? "online" : (dt < 30000 ? "stale" : "offline");
+  }
+  function renderUkOnline() {
+    var el = $("uk-online");
+    if (el) {
+      var st = ukOnlineState();
+      var map = { online: "dev.online", stale: "dev.stale", offline: "dev.offline" };
+      var fb = { online: "آنلاین", stale: "با تأخیر", offline: "آفلاین" };
+      el.textContent = "● " + tr(map[st], fb[st]);
+      el.setAttribute("class", "uk-online " + (st === "online" ? "on" : st));
+    }
+    var lf = $("uk-lastfetch");
+    if (lf) {
+      if (ukLastOk) {
+        var d = new Date(ukLastOk);
+        var p = function (n) { return (n < 10 ? "0" : "") + n; };
+        lf.textContent = tr("dev.lastFetch", "آخرین دریافت: {t}")
+          .replace("{t}", p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds()));
+      } else lf.textContent = "";
+    }
+  }
+  function showUkRefresh(on) {
+    var el = $("uk-refresh");
+    if (el) el.style.display = on ? "" : "none";
+  }
+  function ukSchedule(ms) {
+    ukClearTimer();
+    ukLiveTimer = setTimeout(function () {
+      ukLiveTimer = null;
+      if (!ukWantLive || !selectedCycle) return;
+      if (document.hidden) { ukSchedule(UK_POLL_MS); return; } // pause tick, keep chain
+      autoSyncUktech(true);
+    }, ms);
+  }
+  function ukClearTimer() {
+    if (ukLiveTimer) { clearTimeout(ukLiveTimer); ukLiveTimer = null; }
+  }
+  function ukTickStart() {
+    ukTickStop();
+    ukTick = setInterval(renderUkOnline, 1000);
+  }
+  function ukTickStop() {
+    if (ukTick) { clearInterval(ukTick); ukTick = null; }
+  }
   function startUkLive() {
     stopUkLive();
     if (!selectedCycle) return;
+    ukWantLive = true;
     setUkLiveDot(true);
-    // immediate sync (silent), then every 8s
-    autoSyncUktech(true);
-    ukLiveTimer = setInterval(function () {
-      if (document.hidden) return; // pause when tab hidden
-      if (selectedCycle) autoSyncUktech(true);
-    }, 8000);
+    renderUkOnline();
+    ukTickStart();
+    autoSyncUktech(true); // immediate silent sync; chain continues after it
     loadUkStatus();
   }
   function stopUkLive() {
-    if (ukLiveTimer) { clearInterval(ukLiveTimer); ukLiveTimer = null; }
+    ukWantLive = false;
+    ukClearTimer();
+    ukTickStop();
+    if (ukAbort) { try { ukAbort.abort(); } catch (e) {} ukAbort = null; }
     setUkLiveDot(false);
+    showUkRefresh(false);
+    renderUkOnline();
     loadUkStatus();
   }
   function autoSyncUktech(silent) {
-    if (!selectedCycle || ukSyncing) return;
+    if (!selectedCycle) return;
+    if (ukSyncing) { if (ukWantLive) ukSchedule(UK_POLL_MS); return; }
     ukSyncing = true;
-    // default limit (200) lets the first poll catch up fully (1061 rows in ~6 pages);
-    // subsequent polls stop after 1 page when min_id <= last_id — cheap live polling.
-    api("/api/uktech/sync", { method: "POST", body: JSON.stringify({ cycle_id: selectedCycle }) }).then(function (r) {
+    showUkRefresh(true);
+    if (ukAbort) { try { ukAbort.abort(); } catch (e) {} }
+    ukAbort = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    var signal = ukAbort ? ukAbort.signal : undefined;
+    devLog("[device] poll start", selectedCycle);
+    // default limit lets the first poll catch up fully; subsequent polls stop
+    // after 1 page when min_id <= last_id — cheap live polling.
+    api("/api/uktech/sync", { method: "POST", body: JSON.stringify({ cycle_id: selectedCycle }), signal: signal }).then(function (r) {
       var n = (r && r.inserted) || 0;
+      ukFails = 0;
+      ukLastOk = Date.now();
+      devLog("[device] poll ok", "inserted=" + n, "events=" + ((r && r.events) || 0));
       if (n > 0) {
         if (!silent) toast(tr("dev.syncDone", "همگام‌سازی انجام شد: {n} رکورد جدید").replace("{n}", lnum(n)));
         loadStats(selectedCycle); loadRegistrations(selectedCycle);
@@ -455,14 +574,31 @@
         }
       }
     }).catch(function (e) {
-      if (silent) { ukSyncing = false; return; }
+      if (e && e.name === "AbortError") { ukSyncing = false; showUkRefresh(false); return; }
+      ukFails++;
+      devLog("[device] poll error", String((e && e.message) || e));
       var m = String((e && e.message) || e || "");
-      if (/token is not configured/i.test(m)) m = tr("dev.syncNoToken", "توکن API دستگاه روی سرور تنظیم نشده است.");
-      else if (/CERTIFICATE_VERIFY|certificate verify|SSL/i.test(m)) m = tr("dev.syncTLS", "خطای گواهی TLS هاست دستگاه.");
+      if (/token is not configured/i.test(m)) {
+        // configuration error: stop polling instead of hammering the server
+        stopUkLive();
+        setUkStatus(tr("dev.syncNoToken", "توکن API دستگاه روی سرور تنظیم نشده است."));
+        toast(tr("dev.syncFail", "خطا در دریافت داده: ") + tr("dev.syncNoToken", "توکن API دستگاه روی سرور تنظیم نشده است."));
+        ukSyncing = false; showUkRefresh(false); renderUkOnline();
+        return;
+      }
+      if (/CERTIFICATE_VERIFY|certificate verify|SSL/i.test(m)) m = tr("dev.syncTLS", "خطای گواهی TLS هاست دستگاه.");
       else if (/429/.test(m)) m = tr("dev.syncRateLimit", "درخواست‌ها زیاد است — کمی صبر کنید.");
-      toast(tr("dev.syncFail", "خطا در دریافت داده: ") + m);
-      loadUkStatus();
-    }).then(function () { ukSyncing = false; });
+      // silent mode: keep old rows, show a short controlled error line
+      setUkStatus(tr("dev.syncFail", "خطا در دریافت داده: ") + m);
+      if (!silent) toast(tr("dev.syncFail", "خطا در دریافت داده: ") + m);
+    }).then(function () {
+      ukSyncing = false;
+      showUkRefresh(false);
+      renderUkOnline();
+      if (ukWantLive && selectedCycle && ukLiveTimer === null) {
+        ukSchedule(ukFails > 0 ? ukBackoff() : UK_POLL_MS);
+      }
+    });
   }
   function syncUktech() {
     if (!selectedCycle) { toast(tr("dev.syncNeedCycle", "اول یک دوره را انتخاب کنید.")); return; }

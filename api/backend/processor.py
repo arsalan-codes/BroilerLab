@@ -336,12 +336,20 @@ def get_processor(cycle_id):
 
 
 def _to_float(v):
+    """Strict numeric coercion (mirrors uktech._to_float): None/""/"N/A"/
+    NaN/inf all become None — never a fake 0 or a NaN downstream."""
+    import math
     try:
-        if v is None or v == "":
+        if v is None:
             return None
-        return float(v)
+        if isinstance(v, str):
+            if not v.strip() or v.strip().lower() in ("n/a", "na", "nan",
+                                                      "none", "null", "-"):
+                return None
+        f = float(v)
     except (TypeError, ValueError):
         return None
+    return f if math.isfinite(f) else None
 
 
 def _to_int(v):

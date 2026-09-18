@@ -73,9 +73,15 @@ VISIT_QUEUE_TIMEOUT_S = 90.0  # co-feeding give-up threshold
 # ---- Online device ingest (uktech weight API) ----
 # The browser never sees these: the token stays server-side and the backend
 # pulls https://<host>/Login/api_weight_data.php?serial=..&ttoken=.. itself.
-UKTECH_API_BASE = os.getenv("UKTECH_API_BASE", "https://uktech.ir/Login/api_weight_data.php")
+# Canonical env names are WEIGHT_API_TOKEN / WEIGHT_API_URL; the older
+# UKTECH_* names keep working as fallbacks.
+UKTECH_API_BASE = (os.getenv("WEIGHT_API_URL")
+                   or os.getenv("UKTECH_API_BASE")
+                   or "https://uktech.ir/Login/api_weight_data.php")
 UKTECH_SERIAL = os.getenv("UKTECH_SERIAL", "ESP800")
-UKTECH_TOKEN = os.getenv("UKTECH_API_TOKEN") or os.getenv("BROILER_UKTECH_TOKEN") or ""
+UKTECH_TOKEN = (os.getenv("WEIGHT_API_TOKEN")
+                or os.getenv("UKTECH_API_TOKEN")
+                or os.getenv("BROILER_UKTECH_TOKEN") or "")
 UKTECH_TIMEOUT_S = int(os.getenv("UKTECH_TIMEOUT_S", "15"))
 UKTECH_PAGE_SIZE = int(os.getenv("UKTECH_PAGE_SIZE", "500"))
 UKTECH_MAX_PAGES = int(os.getenv("UKTECH_MAX_PAGES", "20"))
