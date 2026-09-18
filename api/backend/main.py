@@ -602,6 +602,31 @@ def uktech_status(serial: str | None = None,
         with SessionLocal() as s:
             _require_owner_cycle(s, cycle_id, current)
     return uktech.sync_status(serial, cycle_id)
+
+
+@app.get("/api/uktech/sessions")
+def uktech_sessions(cycle_id: int,
+                    serial: str | None = None,
+                    current: User = Depends(authmod.get_current_user)):
+    """Weighing-session states for a cycle ( powers the UI state badge).
+
+    One entry per (device, rfid) lane: current machine state, registered
+    weight, last update. Owner-scoped like every other cycle route.
+    """
+    from models import WeighingSession
+    with SessionLocal() as s:
+        _require_owner_cycle(s, cycle_id, current)
+        import uktech
+        ser = ((serial or uktech.UKTECH_SERIAL).strip()
+               or uktech.UKTECH_SERIAL)
+        rows = (s.query(WeighingSession)
+                .filter(WeighingSession.cycle_id == cycle_id,
+                        WeighingSession.serial == ser)
+                .order_by(WeighingSession.updated_at.desc())
+                .limit(200).all())
+        return [{"device": r.device_id, "rfid": r.rfid, "state": r.state,
+                 "registered": r.registered,
+                 "updated_at": _iso(r.updated_at)} for r in rows]
 def _ws_auth_or_close(ws: WebSocket):
     """Browsers cannot set headers on a WS handshake, so the JWT travels as
     ?token=. Returns the authenticated User or None (caller must close)."""

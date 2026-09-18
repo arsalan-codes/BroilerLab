@@ -203,8 +203,11 @@
     // clear empty placeholder on first entry
     var empty = body.querySelector(".reg-empty");
     if (empty) empty.remove();
-    // a registration is a bird-entry event (is_visit_start) carrying a tag + weight
-    var isEntry = d.is_visit_start || (d.bird_id && d.weight_g != null && d.feed_delta_g == null);
+    // Only validated weighing events open table rows: the uktech sync path
+    // sets is_visit_start exclusively on REGISTERED session events (with a
+    // visit attached). The old fallback heuristic (any bird+weight row)
+    // would reintroduce unloading residuals like 6.77 as table rows.
+    var isEntry = d.is_visit_start === true && d.visit_id != null;
     if (!isEntry) return;
 
     var dt = d.timestamp || d.registered_at || "";
@@ -383,6 +386,18 @@
       var badge = document.querySelector(".dev-regs__live");
       if (badge) badge.style.opacity = (ukLiveTimer && selectedCycle) ? "1" : "0.45";
     }).catch(function () {});
+    // session state badge (most recently active lane for this cycle)
+    if (selectedCycle) {
+      api("/api/uktech/sessions?cycle_id=" + encodeURIComponent(selectedCycle)).then(function (list) {
+        var el = $("uk-sess-state");
+        if (!el) return;
+        if (!list || !list.length) { el.textContent = ""; el.style.display = "none"; return; }
+        var st = list[0].state || "EMPTY";
+        el.style.display = "";
+        el.textContent = "● " + tr("dev.sess." + st, st);
+        el.setAttribute("data-state", st);
+      }).catch(function () {});
+    }
   }
   function setUkLiveDot(on) {
     var b = document.querySelector(".dev-regs__live i");
@@ -445,13 +460,14 @@
     // Chunked sync loop: each call writes one batch (server default 60) and
     // returns complete=false while rows remain — repeat until done so big
     // backlogs never hit the serverless time limit (was HTTP 504).
-    var total = 0, guard = 0, insecure = false, sawReset = false;
+    var total = 0, guard = 0, insecure = false, sawReset = false, events = 0;
     ukSyncing = true;
     setUkStatus(tr("dev.syncing", "در حال دریافت..."));
     function oneChunk() {
       if (++guard > 200 || !selectedCycle) { finish(null); return; }
       api("/api/uktech/sync", { method: "POST", body: JSON.stringify({ cycle_id: selectedCycle }) }).then(function (r) {
         total += (r && r.inserted) || 0;
+        events += (r && r.events) || 0;
         if (r && r.tls_insecure) insecure = true;
         if (r && r.reset) sawReset = true;
         var rem = (r && r.remaining) || 0;
@@ -468,7 +484,9 @@
         else if (/504|timeout|timed out/i.test(m)) m = tr("dev.syncTimeout", "سرور دیر جواب داد — دوباره تلاش کنید (ادامه خودکار از همان‌جا).");
         toast(tr("dev.syncFail", "خطا در دریافت داده: ") + m);
       } else if (total > 0) {
-        toast(tr("dev.syncDone", "همگام‌سازی انجام شد: {n} رکورد جدید").replace("{n}", lnum(total)));
+        var doneMsg = tr("dev.syncDone", "همگام‌سازی انجام شد: {n} رکورد جدید").replace("{n}", lnum(total));
+        if (events > 0) doneMsg += " · " + tr("dev.syncEvents", "{n} رویداد توزین").replace("{n}", lnum(events));
+        toast(doneMsg);
         if (sawReset) toast(tr("dev.syncReset", "منبع دستگاه ریست شده بود — همگام‌سازی از اول شروع شد."));
       } else {
         toast(tr("dev.syncNone", "رکورد جدیدی نبود."));

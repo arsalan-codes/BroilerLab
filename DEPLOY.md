@@ -44,6 +44,14 @@ postgresql://USER:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/neondb?sslm
 | `UKTECH_API_TOKEN` | توکن `ttoken` دستگاه توزین آنلاین (مثلا `ARIYAN_WEIGHT_API_XYZ123`) — بدون آن دکمه «دریافت داده دستگاه» خطای 400 می‌دهد |
 | `UKTECH_SERIAL` | سریال دستگاه (پیش‌فرض `ESP800`) — اختیاری |
 | `UKTECH_VERIFY_SSL` | پیش‌فرض `auto`: اول strict بعد با هشدار fallback بدون تأیید (هاست uktech گواهی self-signed دارد). `true` = همیشه strict، `false` = همیشه بدون تأیید |
+| `UKTECH_MIN_WEIGHT` | حداقل وزن شروع سشن توزین به گرم (پیش‌فرض `20`) — کمتر از این در حالت خالی نادیده گرفته می‌شود |
+| `UKTECH_STABLE_TOL` | تلرانس پایداری به گرم (پیش‌فرض `2`): خوانش‌های داخل این باند «همان بار» حساب می‌شوند |
+| `UKTECH_STABLE_READINGS` | تعداد خوانش پیاپی داخل باند برای تأیید توزین (پیش‌فرض `2`)؛ `1` یعنی لبه‌ای (هر لمس ثبت می‌شود) |
+| `UKTECH_ZERO_THRESHOLD` | زیر این وزن (گرم، پیش‌فرض `5`) ترازو خالی حساب می‌شود |
+| `UKTECH_ZERO_CONFIRMATIONS` | تعداد خوانش زیر صفر پیاپی برای پایان سشن (پیش‌فرض `1`) |
+| `UKTECH_SESSION_TIMEOUT_S` | ریست سشن گیرکرده پس از این ثانیه (پیش‌فرض `14400` = ۴ ساعت) |
+| `UKTECH_BIRD_CHANNEL` | فیلد وزن پرنده (پیش‌فرض `weight_2`، fallback به `total_weight`) |
+| `UKTECH_BIN_CHANNEL` | فیلد وزن مخزن (پیش‌فرض `weight_1`، گرم → کیلوگرم) |
 
 4. **Deploy** را بزنید. Vercel با `vercel.json`، درخواست‌های `/api/*` را به
    `api/index.py` (FastAPI) می‌فرستد و جدول‌ها اولین بار خودکار ساخته می‌شوند

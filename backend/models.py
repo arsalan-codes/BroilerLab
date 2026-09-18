@@ -176,6 +176,31 @@ class SyncState(Base):
     note = Column(String(200), nullable=True)
 
 
+class WeighingSession(Base):
+    """Weighing-session state per (serial, cycle, device, rfid) lane.
+
+    Persists the weighing.py state machine across sync calls (serverless
+    processes are stateless between invocations). Key format
+    "<serial>|<cycle_id>|<device>|<rfid>" (see weighing.session_key).
+    visit_id points at the visit created for the registered event (if any).
+    """
+    __tablename__ = "weighing_sessions"
+    key = Column(String(160), primary_key=True)
+    serial = Column(String(32), nullable=False, index=True)
+    cycle_id = Column(Integer, ForeignKey("cycles.id", ondelete="CASCADE"),
+                      nullable=False, index=True)
+    device_id = Column(String(32), nullable=True)
+    rfid = Column(String(32), nullable=True)
+    state = Column(String(20), nullable=False, default="EMPTY")
+    candidate = Column(Float, nullable=True)
+    stable_count = Column(Integer, nullable=False, default=0)
+    zero_count = Column(Integer, nullable=False, default=0)
+    registered = Column(Float, nullable=True)
+    visit_id = Column(Integer, nullable=True)
+    first_ts = Column(DateTime(timezone=True), nullable=True)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow)
+
+
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 

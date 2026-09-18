@@ -41,7 +41,9 @@ from config import (
     UKTECH_API_BASE, UKTECH_SERIAL, UKTECH_TOKEN,
     UKTECH_TIMEOUT_S, UKTECH_PAGE_SIZE, UKTECH_MAX_PAGES, UKTECH_VERIFY_SSL,
 )
-from models import Cycle, DeviceLog, SessionLocal, SyncState, Visit, utcnow
+from models import (Cycle, DeviceLog, SessionLocal, SyncState, Visit,
+                    WeighingSession, utcnow)
+import weighing as _weighing
 
 try:
     from zoneinfo import ZoneInfo
@@ -379,6 +381,12 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             if alive:
                 orphans = orphans.filter(~Visit.id.in_(alive))
             orphans.delete(synchronize_session=False)
+            # sessions reference the wiped generation: drop them too, or the
+            # old WAITING states would suppress the fresh rows below.
+            s.query(WeighingSession).filter(
+                WeighingSession.serial == serial,
+                WeighingSession.cycle_id == cycle_id).delete(
+                    synchronize_session=False)
             s.commit()
         # re-collect: everything upstream is new now. The page bodies were
         # already downloaded above but filtered by the old cursor; re-fetch
@@ -412,11 +420,11 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
     if not complete:
         remaining += 1  # upstream still has more pages beyond this fetch
     from processor import (  # local import: avoids import cycles
-        _aware_utc, _ema, _intake_increment, _log_to_dict)
-    from config import VISIT_QUEUE_TIMEOUT_S
+        _aware_utc, _intake_increment, _log_to_dict)
 
     inserted, skipped, max_seen = 0, 0, last_id
     published = []
+    events_count = 0
     if todo:
         ext_ids = [external_id(serial, rid) for rid, _ in todo]
         with SessionLocal() as s:
@@ -444,150 +452,209 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                     age_day = None
             event, _ext, _ts = record_to_event(rec, age_day, serial)
             planned.append((rid, ext, event, _ts))
-        # ---- pass 2: fold the chunk in memory (same rules as ingest) ----
-        # Bulk design: uktech rows carry weight only (no bin/delta/exit), so
-        # per row there is at most one close + one open. Everything is
-        # materialized below in ~6 statements per CHUNK instead of ~5 per ROW.
-        # Semantics mirror processor.ingest exactly (close/reopen/EMA/flags).
+        # ---- pass 2: session classification + visit planning ----
+        # Every planned row runs through the weighing session machine
+        # (weighing.classify). Only REGISTERED events open visits; residuals,
+        # duplicates and unloading rows are stored as visitless raw logs, so
+        # the dashboard table shows one row per physical weighing instead of
+        # one row per API record. Visit/bin semantics mirror processor.ingest
+        # (feed attribution, close writes, elapsed) — only the open/close
+        # DECISIONS now come from sessions instead of time gaps.
+        cfg = _weighing.load_config()
+        now_dt = max((_ts for _, _, _, _ts in planned), default=utcnow())
+        now_ts = now_dt.timestamp()
+        lane_of = {}
+        for _, _, event, _ in planned:
+            k = _weighing.session_key(serial, cycle_id, event["sensor_id"],
+                                      event["bird_id"])
+            lane_of.setdefault(k, (event["sensor_id"], event["bird_id"]))
+        with SessionLocal() as s:
+            srows = (s.query(WeighingSession)
+                     .filter(WeighingSession.key.in_(lane_of)).all()
+                     if lane_of else [])
+        sess = {}
+        for r in srows:
+            sess[r.key] = {
+                "state": r.state or _weighing.EMPTY,
+                "candidate": r.candidate, "count": r.stable_count or 0,
+                "zero_count": r.zero_count or 0, "registered": r.registered,
+                "visit_id": r.visit_id,
+                "first_ts": (_aware_utc(r.first_ts).timestamp()
+                             if r.first_ts else None),
+                "updated_at": (_aware_utc(r.updated_at).timestamp()
+                               if r.updated_at else None)}
+        # open-visit context (authoritative DB state): bin baseline, elapsed
+        # start, accumulated feed base. Session.visit_id is only a hint and
+        # is revalidated against this set before any close/ratchet.
         birds = sorted({e["bird_id"] for _, _, e, _ in planned if e["bird_id"]})
         with SessionLocal() as s:
-            cols = (s.query(Visit.id, Visit.bird_id, Visit.visit_start,
-                            Visit.initial_weight_g, Visit.feed_intake_g,
-                            Visit.sensor_id, Visit.rssi, Visit.read_ok,
-                            Visit.age_day)
-                    .filter(Visit.cycle_id == cycle_id,
-                            Visit.bird_id.in_(birds),
-                            Visit.visit_end.is_(None)).all()) if birds else []
-        mem = {}
-        for (_vid, _bird, _start, _initw, _feed,
-             _sensor, _rssi, _rok, _age) in cols:
-            _start = _aware_utc(_start)  # sqlite drops tzinfo; values are UTC
-            mem[_bird] = {"visit_id": _vid, "bird_id": _bird, "start": _start,
-                          "init_w": _initw, "sensor": _sensor, "rssi": _rssi,
-                          "read_ok": _rok, "last_ts": _start, "intake": 0.0,
-                          "bin_prev": None, "last_raw": None,
-                          "ema_w": _initw, "age_day": _age,
-                          "is_new": False, "new_idx": None,
-                          "stepped": False, "db_feed": _feed,
-                          "closed": False}
-        new_visits, closed_adopted = [], []
+            orows = (s.query(Visit.id, Visit.bird_id, Visit.visit_start,
+                             Visit.initial_weight_g, Visit.feed_intake_g)
+                     .filter(Visit.cycle_id == cycle_id,
+                             Visit.bird_id.in_(birds),
+                             Visit.visit_end.is_(None)).all()) if birds else []
+        openv = {}
+        for _vid, _bird, _start, _initw, _feed in orows:
+            openv[_bird] = {"vid": _vid, "db": True,
+                            "start": _aware_utc(_start),
+                            "base": _feed, "acc": 0.0, "bin_prev": None,
+                            "registered": _initw, "touched": False,
+                            "is_new": False, "new_idx": None}
+        new_visits = []
+        visit_updates = []  # bulk mappings for closes/ratchets/touches
+        dirty_sess = set()
         log_specs = []  # (event, ts, ext, is_start, is_end, visit_ref, elapsed, feed)
+
+        def _close_ov(ov, end_dt, binkg):
+            """Close one open-visit entry (new or adopted). Returns
+            (visit_ref, feed) for the closing row's live payload."""
+            end_inc = _intake_increment({"bin_prev": ov["bin_prev"]},
+                                        binkg, None)
+            ov["acc"] += end_inc
+            if binkg is not None:
+                ov["bin_prev"] = binkg
+            feed = (ov["base"] or 0) + ov["acc"]
+            if ov.get("is_new"):
+                nv_old = new_visits[ov["new_idx"]]
+                nv_old.visit_end = end_dt
+                nv_old.feed_intake_g = feed
+                nv_old.final_weight_g = ov["registered"]
+                return ("new", ov["new_idx"]), feed
+            visit_updates.append({
+                "id": ov["vid"], "visit_end": end_dt,
+                "feed_intake_g": feed,
+                "final_weight_g": ov["registered"],
+                "temp_c": None, "humidity": None})
+            return ("old", ov["vid"]), feed
         for rid, ext, event, ts in planned:
             bird = event["bird_id"]
             w = event["weight_g"]
-            raw = event["raw_weight_g"]
-            mc = mem.get(bird) if bird else None
+            binkg = event["feed_bin_kg"]
+            key = _weighing.session_key(serial, cycle_id, event["sensor_id"],
+                                        bird)
+            st = sess.get(key)
+            if st is None:
+                st = _weighing.fresh_state()
+                sess[key] = st
+            ts_ep = ts.timestamp()
+            new_st, actions = _weighing.classify(st, w, ts_ep, now_ts, cfg)
+            sess[key] = new_st
+            dirty_sess.add(key)
             is_start = is_end = False
             visit_ref = None
-            if bird and mc is None:
-                nv = Visit(cycle_id=cycle_id, bird_id=bird, visit_start=ts,
-                           sensor_id=event["sensor_id"],
-                           initial_weight_g=w, age_day=event["age_day"],
-                           rssi=event["rssi"], read_ok=True)
-                new_visits.append(nv)
-                mc = {"visit_id": None, "bird_id": bird, "start": ts,
-                      "init_w": w, "sensor": event["sensor_id"],
-                      "rssi": event["rssi"], "read_ok": True, "last_ts": ts,
-                      "intake": 0.0, "bin_prev": None, "last_raw": w,
-                      "ema_w": w, "age_day": event["age_day"],
-                      "is_new": True, "new_idx": len(new_visits) - 1,
-                      "stepped": False, "db_feed": None, "closed": False}
-                mem[bird] = mc
-                is_start = True
-                visit_ref = ("new", mc["new_idx"])
-            elif mc is not None:
-                gap = ((ts - mc["last_ts"]).total_seconds()
-                       if mc["last_ts"] else 0)
-                # NOTE: explicit exit events never occur on this path
-                # (record_to_event builds a fixed dict without "event"),
-                # mirroring ingest where event.get("event") is always None.
-                closing_row = (w is None and raw is None
-                               and event.get("feed_delta_g") is not None)
-                if gap > VISIT_QUEUE_TIMEOUT_S or closing_row:
-                    end_inc = _intake_increment(mc, None, None)
-                    mc["intake"] += end_inc
-                    close_final = (mc["ema_w"] if w is None else w)
-                    # feed as the close-write would leave it: stepped/closed
-                    # rows end at a value, untouched new rows stay NULL.
-                    close_feed = ((mc["db_feed"] if not mc["is_new"] else
-                                   (0.0 if mc["stepped"] else None)) or 0) \
-                        + (end_inc or 0)
-                    if mc["is_new"]:
-                        # apply eagerly: this ctx leaves mem on reopen/pop
-                        nv_old = new_visits[mc["new_idx"]]
-                        nv_old.visit_end = ts
-                        nv_old.feed_intake_g = close_feed
-                        nv_old.final_weight_g = close_final
-                    else:
-                        closed_adopted.append({
-                            "id": mc["visit_id"], "visit_end": ts,
-                            "feed_intake_g": close_feed,
-                            "final_weight_g": close_final,
-                            "temp_c": None, "humidity": None})
-                    closed_ref = (("new", mc["new_idx"]) if mc["is_new"]
-                                  else ("old", mc["visit_id"]))
-                    is_end = True
-                    if w is not None or raw is not None:
+            elapsed, feed_now = 0.0, 0.0
+            closed_this_row = registered_this_row = False
+            for act in actions:
+                kind = act[0]
+                if kind == "register":
+                    _, rw, first_ep = act
+                    events_count += 1
+                    if bird:
+                        # quick-swap: a previous visit may still be open
+                        # (no zero seen between loads) — close it first so no
+                        # orphan open visit leaks with ever-growing elapsed.
+                        prev = openv.get(bird)
+                        if prev is not None:
+                            _close_ov(prev, ts, binkg)
+                            del openv[bird]
+                    if bird:
+                        first_dt = datetime.fromtimestamp(
+                            first_ep, tz=timezone.utc)
                         nv = Visit(
-                            cycle_id=cycle_id, bird_id=bird, visit_start=ts,
+                            cycle_id=cycle_id, bird_id=bird,
+                            visit_start=first_dt,
                             sensor_id=event["sensor_id"],
-                            initial_weight_g=w, age_day=event["age_day"],
+                            initial_weight_g=rw, age_day=event["age_day"],
                             rssi=event["rssi"], read_ok=True)
                         new_visits.append(nv)
-                        mc = {"visit_id": None, "bird_id": bird, "start": ts,
-                              "init_w": w, "sensor": event["sensor_id"],
-                              "rssi": event["rssi"], "read_ok": True,
-                              "last_ts": ts, "intake": 0.0, "bin_prev": None,
-                              "last_raw": w, "ema_w": w,
-                              "age_day": event["age_day"],
-                              "is_new": True, "new_idx": len(new_visits) - 1,
-                              "stepped": False, "db_feed": None,
-                              "closed": False}
-                        mem[bird] = mc
+                        openv[bird] = {"vid": None, "db": False,
+                                       "start": first_dt, "base": None,
+                                       "acc": 0.0, "bin_prev": binkg,
+                                       "registered": rw, "touched": False,
+                                       "is_new": True,
+                                       "new_idx": len(new_visits) - 1}
+                        new_st["visit_id"] = ("new", len(new_visits) - 1)
                         is_start = True
-                        # ingest attaches the boundary row to the NEW visit
-                        # with both flags set — mirrored exactly.
-                        visit_ref = ("new", mc["new_idx"])
-                    else:
-                        mem.pop(bird, None)
-                        mc = None
-                        visit_ref = closed_ref
-                else:
-                    mc["last_ts"] = ts
-                    if w is not None:
-                        mc["ema_w"] = _ema(mc["ema_w"], w)
-                        mc["last_raw"] = w
-                    mc["intake"] += _intake_increment(mc, None, None)
-                    mc["stepped"] = True
-                    visit_ref = (("new", mc["new_idx"]) if mc["is_new"]
-                                 else ("old", mc["visit_id"]))
-            if mc and mc.get("start"):
-                try:
-                    elapsed = max(0.0, (ts - mc["start"]).total_seconds())
-                except Exception:
-                    elapsed = 0.0
-            else:
-                elapsed = 0.0
-            feed = mc["intake"] if mc else 0.0
+                        visit_ref = ("new", len(new_visits) - 1)
+                    registered_this_row = True
+                elif kind == "ratchet":
+                    _, rw = act
+                    ov = openv.get(bird) if bird else None
+                    if ov is not None:
+                        ov["registered"] = rw
+                        if ov.get("is_new"):
+                            new_visits[ov["new_idx"]].initial_weight_g = rw
+                            new_visits[ov["new_idx"]].final_weight_g = rw
+                        else:
+                            visit_updates.append({
+                                "id": ov["vid"], "initial_weight_g": rw,
+                                "final_weight_g": rw})
+                elif kind in ("close", "timeout_close"):
+                    end_dt = (datetime.fromtimestamp(now_ts, tz=timezone.utc)
+                              if kind == "timeout_close" else ts)
+                    ov = openv.get(bird) if bird else None
+                    if ov is not None:
+                        visit_ref, feed_now = _close_ov(ov, end_dt, binkg)
+                        del openv[bird]
+                        is_end = True
+                    new_st["visit_id"] = None
+                    closed_this_row = True
+            if not registered_this_row and not closed_this_row:
+                ov = openv.get(bird) if bird else None
+                if ov is not None:
+                    if binkg is not None:
+                        inc = _intake_increment({"bin_prev": ov["bin_prev"]},
+                                                binkg, None)
+                        ov["acc"] += inc
+                        ov["bin_prev"] = binkg
+                    ov["touched"] = True
+            # elapsed + live feed context (mirrors ingest: visit start, else 0).
+            # Close rows already set feed_now above (credited intake).
+            if not closed_this_row:
+                ov_now = openv.get(bird) if bird else None
+                if ov_now and ov_now.get("start"):
+                    try:
+                        elapsed = max(0.0, (ts - ov_now["start"]).total_seconds())
+                    except Exception:
+                        elapsed = 0.0
+                    feed_now = (ov_now["base"] or 0) + ov_now["acc"]
             log_specs.append((event, ts, ext, is_start, is_end, visit_ref,
-                              round(elapsed, 1), round(feed, 1)))
+                              round(elapsed, 1), round(feed_now, 1)))
             inserted += 1
-        # ---- pass 3: persist (~6 roundtrips per chunk) ----
+        # ---- pass 3: persist (one txn: visits + logs + sessions) ----
         with SessionLocal() as s:
-            # finalize still-OPEN new visits (closed ones were applied
-            # eagerly above): stepped -> values, untouched -> NULLs.
-            for mc in [m for m in mem.values()
-                       if m["is_new"] and not m.get("closed")]:
-                if mc["stepped"]:
-                    nv = new_visits[mc["new_idx"]]
-                    nv.feed_intake_g = 0.0
-                    nv.final_weight_g = mc["ema_w"]
+            # finalize still-OPEN new visits: touched -> feed/final values
+            # (mirrors per-step writes), untouched -> NULLs.
+            for ov in openv.values():
+                if ov.get("is_new") and ov.get("touched"):
+                    nv = new_visits[ov["new_idx"]]
+                    nv.feed_intake_g = ov["acc"]
+                    nv.final_weight_g = ov["registered"]
+            # touches on adopted open visits (mirror per-step writes).
+            for ov in openv.values():
+                if not ov.get("is_new") and ov.get("touched"):
+                    visit_updates.append({
+                        "id": ov["vid"],
+                        "feed_intake_g": (ov["base"] or 0) + ov["acc"],
+                        "final_weight_g": ov["registered"],
+                        "temp_c": None, "humidity": None})
             if new_visits:
                 s.add_all(new_visits)
                 s.flush()  # PKs assigned, still one txn
                 new_ids = [v.id for v in new_visits]
             else:
                 new_ids = []
+            # resolve ("new", idx) visit markers held by sessions
+            for st in sess.values():
+                vmk = st.get("visit_id")
+                if isinstance(vmk, tuple) and vmk[0] == "new":
+                    st["visit_id"] = new_ids[vmk[1]]
+            # resolve ("new", idx) markers (registers + ratchets)
+            for key, st in sess.items():
+                if key in dirty_sess and isinstance(st.get("visit_id"), tuple):
+                    tag, idx = st["visit_id"]
+                    if tag == "new":
+                        st["visit_id"] = new_ids[idx]
             log_objs = []
             for (event, ts, ext, is_start, is_end, visit_ref,
                  elapsed, feed) in log_specs:
@@ -612,22 +679,34 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             if log_objs:
                 s.add_all(log_objs)
                 s.flush()
-            # closes: adopted rows -> bulk update (collected eagerly above;
-            # each adopted visit is closed at most once — after a close the
-            # bird either reopens fresh or leaves mem); new rows already final
-            adopted_closes = closed_adopted
-            adopted_touches = []
-            for mc in mem.values():
-                if (mc["is_new"] or mc.get("closed") or not mc["stepped"]):
-                    continue
-                adopted_touches.append({"id": mc["visit_id"],
-                                        "feed_intake_g": 0.0,
-                                        "final_weight_g": mc["ema_w"],
-                                        "temp_c": None, "humidity": None})
-            if adopted_closes:
-                s.bulk_update_mappings(Visit, adopted_closes)
-            if adopted_touches:
-                s.bulk_update_mappings(Visit, adopted_touches)
+            if visit_updates:
+                s.bulk_update_mappings(Visit, visit_updates)
+            # sessions (same txn: state can never diverge from data)
+            sess_rows = []
+            for key in dirty_sess:
+                st = sess[key]
+                dev, tag = lane_of.get(key, ("-", "-"))
+                fts = st.get("first_ts")
+                sess_rows.append({
+                    "key": key, "serial": serial, "cycle_id": cycle_id,
+                    "device_id": None if dev == "-" else dev,
+                    "rfid": None if tag == "-" else tag,
+                    "state": st["state"], "candidate": st.get("candidate"),
+                    "stable_count": st.get("count", 0),
+                    "zero_count": st.get("zero_count", 0),
+                    "registered": st.get("registered"),
+                    "visit_id": st.get("visit_id"),
+                    "first_ts": (datetime.fromtimestamp(
+                        fts, tz=timezone.utc) if fts else None),
+                    "updated_at": now_dt})
+            if sess_rows:
+                have_keys = {r.key for r in srows}
+                new_srows = [r for r in sess_rows if r["key"] not in have_keys]
+                upd_srows = [r for r in sess_rows if r["key"] in have_keys]
+                if new_srows:
+                    s.bulk_insert_mappings(WeighingSession, new_srows)
+                if upd_srows:
+                    s.bulk_update_mappings(WeighingSession, upd_srows)
             s.commit()
             # rebuild publish payloads with per-row elapsed/feed saved above
             for (event, ts, ext, is_start, is_end, visit_ref,
@@ -669,5 +748,5 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
     return {"cycle_id": cycle_id, "serial": serial, "fetched": len(fresh),
             "inserted": inserted, "skipped": skipped, "last_id": max_seen,
             "complete": chunk_complete, "remaining": max(0, remaining),
-            "reset": did_reset,
+            "reset": did_reset, "events": events_count,
             "tls_insecure": _TLS_FALLBACK_USED}
