@@ -446,17 +446,22 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
         _require_owner_cycle(s, cycle_id, current)
         rows = (s.query(Visit).filter(Visit.cycle_id == cycle_id, Visit.bird_id.isnot(None)).order_by(Visit.visit_start.desc()).limit(limit).all())
         # hopper level (g) + lane fallback per visit, batched from the
-        # visit-opening logs: unit column first, else the external_id suffix
-        # (:u1/:u2), else lane 1 for legacy rows.
+        # visit's logs: the LATEST log wins (an open visit must track live
+        # refills — e.g. opened while the hopper read 0, refilled to 345g
+        # mid-visit — instead of freezing at the opening snapshot), falling
+        # back to older logs when the newest carries no bin reading. Unit
+        # column first, else the external_id suffix (:u1/:u2), else lane 1
+        # for legacy rows.
         vids = [v.id for v in rows]
         binmap, unitmap = {}, {}
         if vids:
             for vid, fb, ext in (s.query(DeviceLog.visit_id,
                                         DeviceLog.feed_bin_kg,
                                         DeviceLog.external_id)
-                                 .filter(DeviceLog.visit_id.in_(vids),
-                                         DeviceLog.is_visit_start.is_(True)).all()):
-                binmap.setdefault(vid, fb)
+                                 .filter(DeviceLog.visit_id.in_(vids))
+                                 .order_by(DeviceLog.id.desc()).all()):
+                if fb is not None:
+                    binmap.setdefault(vid, fb)
                 if ext and ext.endswith(":u2"):
                     unitmap[vid] = 2
                 elif ext:

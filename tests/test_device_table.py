@@ -63,7 +63,21 @@ E2E = textwrap.dedent('''
         assert mine["elapsed_s"] >= 20, mine
         assert mine["sensor_id"] == "S1" and mine["initial_weight_g"] == 642
         assert mine["unit"] == 1, mine  # single-unit HTTP devices are lane 1
-        assert mine["bin_weight_g"] == 16700.0, mine  # hopper level (g) at visit start
+        assert mine["bin_weight_g"] == 16620.0, mine  # hopper: LATEST log wins (16.62), not frozen at start
+        # id-76 shape: visit opens while hopper reads 0, refill to 345.44g
+        # arrives mid-visit — the open row must track it live.
+        b8 = [
+          {"timestamp": "2026-09-03T09:00:00", "bird_id": "B8", "sensor_id": "S1",
+            "age_day": 18, "weight_g": 220.19, "feed_bin_kg": 0.0, "temp_c": 23.9},
+          {"timestamp": "2026-09-03T09:00:40", "bird_id": "B8", "sensor_id": "S1",
+            "age_day": 18, "weight_g": 220.19, "feed_bin_kg": 0.34544, "temp_c": 23.9},
+        ]
+        [c.post(f"/api/cycles/{cid}/ingest", headers=h, json=r).json() for r in b8]
+        regs2 = c.get(f"/api/cycles/{cid}/registrations", headers=h).json()
+        open8 = [r for r in regs2 if r["bird_id"] == "B8"][0]
+        assert open8["visit_end"] is None, open8
+        assert open8["bin_weight_g"] == 345.44, open8
+        assert open8["initial_weight_g"] == 220.19, open8
         # live device endpoints must never serve stale caches
         for _p in ("/api/uktech/status", "/api/uktech/sessions?cycle_id=" + str(cid)):
             _rh = c.get(_p, headers=h).headers.get("cache-control", "")

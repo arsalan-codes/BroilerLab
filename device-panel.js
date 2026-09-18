@@ -596,8 +596,10 @@
         // cursor ahead of upstream without corroborating evidence: show the
         // reason instead of freezing silently like before.
         setUkStatus(tr("dev.syncStalled", "همگام‌سازی متوقف مانده است.") + " " + (r.stalled_reason || ""));
-      } else if (n > 0) {
-        if (!silent) toast(tr("dev.syncDone", "همگام‌سازی انجام شد: {n} رکورد جدید").replace("{n}", lnum(n)));
+      } else if (n > 0 || ((r && r.events) || 0) > 0) {
+        // refresh on visit events too (ratchet/close/timeout can change
+        // open rows with zero new logs), toast only for new records.
+        if (!silent && n > 0) toast(tr("dev.syncDone", "همگام‌سازی انجام شد: {n} رکورد جدید").replace("{n}", lnum(n)));
         loadStats(selectedCycle); loadRegistrations(selectedCycle);
       } else if (!silent) {
         toast(tr("dev.syncNone", "رکورد جدیدی نبود."));
