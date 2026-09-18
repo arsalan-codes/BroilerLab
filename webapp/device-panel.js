@@ -39,7 +39,12 @@
         if(!isPublic && window.showAuthModal) window.showAuthModal("login");
         throw new Error("401 Unauthorized - please login");
       }
-      if (!r.ok) throw new Error("HTTP " + r.status);
+      if (!r.ok) return r.json().catch(function(){ return {}; }).then(function(j){
+        var d = (j && (j.detail || j.message)) || ("HTTP " + r.status);
+        // surface backend detail for uktech 400/502 while keeping generic fallback
+        if (typeof d === "string" && d.indexOf("HTTP ") === 0) d = j.detail || d;
+        throw new Error(d);
+      });
       return r.status === 204 ? null : r.json();
     });
   }

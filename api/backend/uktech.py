@@ -242,13 +242,22 @@ def sync_status(serial: str = None, cycle_id: int | None = None) -> dict:
 def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                          max_pages: int = None) -> dict:
     """Pull new uktech rows into a cycle. Oldest-first so visit aggregation
-    sees events in chronological order. Returns a summary dict."""
+    sees events in chronological order. Returns a summary dict.
+
+    Standard: fetches **all** new records (no client-side limit). ``limit`` is
+    kept only for backward compat but ignored — page size is fixed at
+    UKTECH_PAGE_SIZE and pages are walked until ``has_more`` is false.
+    ``max_pages`` is a safety cap (default 200 ≈ 40k rows) to avoid a runaway
+    loop if upstream misbehaves; normal syncs stop after 1-2 pages via the
+    ``min_id <= last_id`` early break.
+    """
     from processor import get_processor  # local import: avoids import cycles
     import hub
 
     serial = (serial or UKTECH_SERIAL).strip() or UKTECH_SERIAL
-    page_size = max(1, min(int(limit or UKTECH_PAGE_SIZE), 500))
-    max_pages = int(max_pages or UKTECH_MAX_PAGES)
+    # Ignore caller limit — always fetch all new records standardly
+    page_size = UKTECH_PAGE_SIZE
+    max_pages = int(max_pages or 200)
     global _TLS_FALLBACK_USED
     _TLS_FALLBACK_USED = False
 

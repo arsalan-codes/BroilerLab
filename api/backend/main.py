@@ -571,9 +571,9 @@ def uktech_sync(payload: UktechSyncIn, current: User = Depends(authmod.get_curre
         _require_owner_cycle(s, payload.cycle_id, current)
     import uktech
     try:
+        # Standard: always fetch all new records; limit is ignored
         return uktech.sync_serial_to_cycle(payload.cycle_id,
-                                           serial=payload.serial,
-                                           limit=payload.limit)
+                                           serial=payload.serial)
     except uktech.UktechError as e:
         msg = str(e)
         low = msg.lower()
