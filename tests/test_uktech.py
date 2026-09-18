@@ -41,8 +41,8 @@ def _units(rec, age=5):
 def test_record_mapping_unit1():
     units = _units(REC)
     assert len(units) == 2
-    unit, ev, ext, ts, valid, presence = units[0]
-    assert unit == 1 and valid is True
+    unit, ev, ext, ts, presence = units[0]
+    assert unit == 1
     assert ev["bird_id"] == "4800F4CF9EED"
     assert ev["sensor_id"] == "ESP32-S3-001"
     assert ev["raw_weight_g"] == 219.8  # round(weight_2, 1), bird cell
@@ -51,6 +51,7 @@ def test_record_mapping_unit1():
     assert ev["age_day"] == 5
     assert ev["flock_id"] == "UKTECH-ESP800"
     assert ev["feed_delta_g"] is None
+    assert ev["status"] == "VALID"  # raw flag stored for debugging
     assert ext == "ESP800:1039:u1"
     assert ev["timestamp"] == ts.isoformat()
     assert presence == 0  # total_seconds rides along
@@ -61,28 +62,27 @@ def test_record_mapping_unit2():
                status2="VALID", total_seconds=42.5)
     units = _units(rec)
     assert len(units) == 2
-    unit, ev, ext, ts, valid, presence = units[1]
-    assert unit == 2 and valid is True
+    unit, ev, ext, ts, presence = units[1]
+    assert unit == 2
     assert ev["bird_id"] == "TAG2"
     assert ev["raw_weight_g"] == 350.2  # round(weight_4, 1)
     assert ev["feed_bin_kg"] == 1.8  # weight_3 hopper grams -> kg
+    assert ev["status"] == "VALID"
     assert ext == "ESP800:1039:u2"
     assert presence == 42.5
 
 
-def test_invalid_status_skips_session_but_keeps_log():
-    # status2 INVALID (like the fixture): unit 2 maps but is flagged invalid
+def test_status_flag_stored_never_gates():
+    # The flag is flaky upstream (identical payloads arrive VALID and
+    # INVALID), so it is stored verbatim but never suppresses sessions:
+    # an INVALID row with a real weight still classifies normally.
     units = _units(REC)
-    _u1, _e1, _x1, _t1, valid1, _p1 = units[0]
-    _u2, _e2, _x2, _t2, valid2, _p2 = units[1]
-    assert valid1 is True
-    assert valid2 is False
-    # missing flags (legacy rows) fail open to VALID
-    rec = dict(REC)
-    rec.pop("status1")
-    rec.pop("status2")
+    assert units[0][1]["status"] == "VALID"
+    assert units[1][1]["status"] == "INVALID"
+    rec = dict(REC, status1="INVALID", weight_2=455.97)
     units = _units(rec)
-    assert all(u[4] is True for u in units)
+    assert units[0][1]["status"] == "INVALID"
+    assert units[0][1]["weight_g"] == 456.0  # round(455.97, 1)
 
 
 def test_float_artefact_rounding_and_rfid_fallback():
@@ -180,8 +180,8 @@ def test_tls_auto_fallback_on_self_signed(monkeypatch):
 def test_sync_is_idempotent_sqlite(tmp_path, monkeypatch):
     """Two syncs of the same stubbed page insert once (external_id dedupe).
 
-    Each record fans out to 2 unit lanes (u1 valid bird, u2 INVALID status
-    in the fixture), so 2 records -> 4 raw logs but a single weighing event.
+    Each record fans out to 2 unit lanes (u1 bird, u2 empty in the fixture),
+    so 2 records -> 4 raw logs but a single weighing event.
     """
     db = tmp_path / "uk.db"
     monkeypatch.setenv("BROILER_DATABASE_URL", f"sqlite:///{db.as_posix()}")
@@ -230,11 +230,13 @@ def test_sync_is_idempotent_sqlite(tmp_path, monkeypatch):
     with SessionLocal() as s:
         assert s.query(DeviceLog).filter(DeviceLog.cycle_id == cid).count() == 4
         assert s.query(Visit).filter(Visit.cycle_id == cid).count() == 1
-        # INVALID-flagged unit-2 rows are stored raw but never open visits
+        # empty unit-2 rows are stored raw but never open visits; the
+        # upstream flag rides along verbatim for debugging
         bad = s.query(DeviceLog).filter(
             DeviceLog.cycle_id == cid,
             DeviceLog.external_id.like("%:u2")).all()
         assert len(bad) == 2 and all(r.visit_id is None for r in bad)
+        assert {r.status for r in bad} == {"INVALID"}
         assert uktech.get_cursor("ESP800", cid) == 1002
 
 
@@ -298,6 +300,65 @@ def test_two_units_independent_lanes(tmp_path, monkeypatch):
             # raw tier keeps all six unit rows
             assert s.query(DeviceLog).filter(
                 DeviceLog.cycle_id == cid).count() == 6
+    finally:
+        processor._processors.pop(cid, None)
+
+
+def test_invalid_flag_with_real_weight_still_registers(tmp_path, monkeypatch):
+    """Regression: the device flags empty-hopper rows INVALID while the bird
+    weight is real (live id 24: w1=0, w2=455.97, status INVALID). The flaky
+    flag must not suppress the weighing — the session machine decides."""
+    db = tmp_path / "ukinv.db"
+    monkeypatch.setenv("BROILER_DATABASE_URL", f"sqlite:///{db.as_posix()}")
+    import config
+    import models
+    import processor
+    import importlib
+    importlib.reload(config)
+    importlib.reload(models)
+    importlib.reload(uktech)
+    importlib.reload(processor)
+    models.Base.metadata.create_all(models.engine)
+    from models import Cycle, DeviceLog, SessionLocal, Visit
+
+    def rec(rid, w1, w2, st, ts):
+        return {"id": rid, "device_id": "ESP32-S3-001",
+                "rfid1": "B1", "rfid2": "",
+                "weight_1": w1, "weight_2": w2,
+                "weight_3": 0, "weight_4": 0,
+                "total_weight": (w1 or 0) + (w2 or 0),
+                "status1": st, "status2": "INVALID", "total_seconds": 0,
+                "created_at": ts}
+    page = [
+        rec(20, 38.47, 448.30, "VALID", "2026-09-18 19:25:47"),
+        rec(21, 38.47, 453.82, "VALID", "2026-09-18 19:25:50"),
+        rec(22, 38.47, 455.43, "VALID", "2026-09-18 19:25:56"),
+        # hopper emptied, device flags INVALID — bird weight is still real
+        rec(23, 0.0, 455.98, "INVALID", "2026-09-18 19:30:41"),
+        rec(24, 0.0, 455.97, "INVALID", "2026-09-18 19:34:49"),
+    ]
+    monkeypatch.setattr(uktech, "fetch_records", lambda *a, **k: (list(page), False))
+    with SessionLocal() as s:
+        c = Cycle(cycle_code="UKI", label="invalid flag", strain="ross308",
+                  bird_count=1)
+        s.add(c)
+        s.commit()
+        cid = c.id
+    try:
+        r = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r["inserted"] == 10 and r["events"] >= 1, r  # 5 recs x 2 units
+        with SessionLocal() as s:
+            visits = (s.query(Visit).filter(Visit.cycle_id == cid).all())
+            assert len(visits) >= 1
+            # the INVALID-flagged rows refined the same visit, not new ones;
+            # latest bird weight visible despite the flag
+            latest = max(visits, key=lambda v: v.id)
+            assert abs(latest.initial_weight_g - 455.97) <= 2.0 or \
+                abs(latest.final_weight_g - 455.97) <= 2.0 + 1e-9, \
+                [(v.initial_weight_g, v.final_weight_g) for v in visits]
+            inv = s.query(DeviceLog).filter(
+                DeviceLog.cycle_id == cid, DeviceLog.status == "INVALID").all()
+            assert len(inv) >= 2  # flags preserved for debugging
     finally:
         processor._processors.pop(cid, None)
 

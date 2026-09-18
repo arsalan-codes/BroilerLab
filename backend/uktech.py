@@ -131,17 +131,6 @@ def _to_float(v):
         return None
 
 
-def _valid_status(val) -> bool:
-    """Per-unit data-validation flag. Missing/empty means legacy rows that
-    predate the flag — treated as VALID (fail-open for old data)."""
-    if val is None:
-        return True
-    s = str(val).strip()
-    if not s:
-        return True
-    return s.upper() == "VALID"
-
-
 def record_to_unit_events(rec: dict, age_day, serial: str):
     """Map one uktech row -> list of per-unit tuples.
 
@@ -150,12 +139,13 @@ def record_to_unit_events(rec: dict, age_day, serial: str):
       unit 2: rfid2 / weight_4     / weight_3     / status2
     Unit-1 channels honor UKTECH_BIRD_CHANNEL / UKTECH_BIN_CHANNEL (defaults
     weight_2 / weight_1); unit 2 follows the fixed device contract.
-    A unit whose status flag is present and not VALID is skipped for
-    sessions/visits (faulty data) but still stored as a visitless raw log.
-    total_seconds rides along as presence_s (stored on visit close).
-    Returns [(unit, event, external_id, ts, valid, presence), ...] with
-    external ids namespaced per unit ("<serial>:<id>:u1") so lanes collide
-    neither with each other nor with legacy "<serial>:<id>" rows.
+    The raw status flag rides along on the event for storage only — it is
+    flaky upstream (identical payloads arrive VALID and INVALID) and never
+    gates session/visit decisions; the weighing session machine is the
+    filter. total_seconds rides along as presence_s (stored on visit close).
+    Returns [(unit, event, external_id, ts, presence), ...] with external
+    ids namespaced per unit ("<serial>:<id>:u1") so lanes collide neither
+    with each other nor with legacy "<serial>:<id>" rows.
     """
     cfg = _weighing.load_config()
     ts = parse_tehran_utc(rec.get("created_at"))
@@ -179,7 +169,9 @@ def record_to_unit_events(rec: dict, age_day, serial: str):
             raw = round(raw, 1)
         bin_g = _to_float(rec.get(bin_f))
         bin_kg = round(bin_g / 1000.0, 3) if bin_g is not None else None
-        valid = _valid_status(rec.get(status_f))
+        status_raw = rec.get(status_f)
+        status = str(status_raw).strip() or None \
+            if status_raw is not None else None
         presence = _to_float(rec.get("total_seconds"))
         event = {
             "timestamp": ts.isoformat(),
@@ -196,16 +188,17 @@ def record_to_unit_events(rec: dict, age_day, serial: str):
             "temp_c": None,
             "humidity": None,
             "rssi": None,
+            "status": status,
         }
         out.append((unit, event,
                     f"{external_id(serial, rec.get('id'))}:u{unit}", ts,
-                    valid, presence))
+                    presence))
     return out
 
 
 def record_to_event(rec: dict, age_day, serial: str):
     """Backward-compat wrapper: unit-1 view of record_to_unit_events."""
-    for unit, event, ext, ts, _valid in record_to_unit_events(rec, age_day, serial):
+    for unit, event, ext, ts, _presence in record_to_unit_events(rec, age_day, serial):
         if unit == 1:
             return event, ext.rsplit(":u1", 1)[0], ts
     raise UktechError("record has no unit-1 data")
@@ -485,7 +478,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 DeviceLog.cycle_id == cycle_id,
                 DeviceLog.external_id.in_(ext_ids)).all()}
         # ---- pass 1: guards + shaping (no DB writes) ----
-        # planned rows: (rid, unit, ext, event, ts, valid, presence)
+        # planned rows: (rid, unit, ext, event, ts, presence)
         planned = []
         for rid, rec in todo:
             max_seen = max(max_seen, rid)
@@ -505,11 +498,11 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             except UktechError:
                 skipped += 1
                 continue
-            for unit, event, ext, _ts, valid, presence in units:
+            for unit, event, ext, _ts, presence in units:
                 if ext in have:
                     skipped += 1
                     continue
-                planned.append((rid, unit, ext, event, _ts, valid, presence))
+                planned.append((rid, unit, ext, event, _ts, presence))
         # ---- pass 2: session classification + visit planning ----
         # Every planned row runs through the weighing session machine
         # (weighing.classify). Only REGISTERED events open visits; residuals,
@@ -519,14 +512,14 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
         # (feed attribution, close writes, elapsed) — only the open/close
         # DECISIONS now come from sessions instead of time gaps.
         cfg = _weighing.load_config()
-        now_dt = max((_ts for _, _, _, _, _ts, _, _ in planned),
+        now_dt = max((_ts for _, _, _, _, _ts, _ in planned),
                      default=utcnow())
         now_ts = now_dt.timestamp()
         # Session lanes are per unit: the lane device is suffixed (#u1/#u2)
         # so two units never share a session even with identical rfids,
         # while the stored sensor_id stays the plain device id.
         lane_of = {}
-        for _, unit, _, event, _, _, _ in planned:
+        for _, unit, _, event, _, _ in planned:
             dev = (event["sensor_id"] or "").strip() or "-"
             k = _weighing.session_key(serial, cycle_id, f"{dev}#u{unit}",
                                       event["bird_id"])
@@ -549,7 +542,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
         # open-visit context (authoritative DB state): bin baseline, elapsed
         # start, accumulated feed base. Session.visit_id is only a hint and
         # is revalidated against this set before any close/ratchet.
-        birds = sorted({e["bird_id"] for _, _, _, e, _, _, _ in planned
+        birds = sorted({e["bird_id"] for _, _, _, e, _, _ in planned
                         if e["bird_id"]})
         with SessionLocal() as s:
             orows = (s.query(Visit.id, Visit.bird_id, Visit.visit_start,
@@ -607,7 +600,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 close_map["unit"] = lane_unit
             visit_updates.append(close_map)
             return ("old", ov["vid"]), feed
-        for rid, unit, ext, event, ts, valid, presence in planned:
+        for rid, unit, ext, event, ts, presence in planned:
             bird = event["bird_id"]
             w = event["weight_g"]
             binkg = event["feed_bin_kg"]
@@ -617,13 +610,6 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             is_start = is_end = False
             visit_ref = None
             elapsed, feed_now = 0.0, 0.0
-            if not valid:
-                # Faulty unit flag (status != VALID): keep the raw log for
-                # debugging, but never let it touch sessions or visits.
-                log_specs.append((event, ts, ext, False, False, None,
-                                  0.0, 0.0))
-                inserted += 1
-                continue
             st = sess.get(key)
             if st is None:
                 st = _weighing.fresh_state()
@@ -770,7 +756,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                     temp_c=event["temp_c"], humidity=event["humidity"],
                     rssi=event["rssi"], visit_id=vid,
                     is_visit_start=is_start, is_visit_end=is_end,
-                    external_id=ext))
+                    external_id=ext, status=event.get("status")))
             if log_objs:
                 s.add_all(log_objs)
                 s.flush()

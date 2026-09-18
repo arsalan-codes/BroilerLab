@@ -129,6 +129,10 @@ class DeviceLog(Base):
     visit_id = Column(Integer, ForeignKey("visits.id", ondelete="SET NULL"), nullable=True)
     is_visit_start = Column(Boolean, default=False)
     is_visit_end = Column(Boolean, default=False)
+    # Raw upstream per-unit validation flag (status1/status2) as sent. Stored
+    # for debugging only — it is flaky (identical payloads arrive VALID and
+    # INVALID) and must NEVER gate session/visit decisions.
+    status = Column(String(16), nullable=True)
     # Online-ingest idempotency: "<serial>:<remote id>" (e.g. "ESP800:1039").
     # NULL for manually ingested rows; unique per cycle so a re-sync never
     # duplicates rows.
@@ -259,6 +263,10 @@ def init_db():
                 conn.execute(text("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0"))
                 print("[migrate] added users.token_version")
             visit_cols = {c["name"] for c in insp.get_columns("visits")}
+            log_cols = {c["name"] for c in insp.get_columns("device_logs")}
+            if "status" not in log_cols:
+                conn.execute(text("ALTER TABLE device_logs ADD COLUMN status VARCHAR(16)"))
+                print("[migrate] added device_logs.status")
             if "presence_s" not in visit_cols:
                 conn.execute(text("ALTER TABLE visits ADD COLUMN presence_s FLOAT"))
                 print("[migrate] added visits.presence_s")
