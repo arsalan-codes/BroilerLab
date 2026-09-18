@@ -279,10 +279,10 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
     page_size = UKTECH_PAGE_SIZE
     max_pages = int(max_pages or 200)
     try:
-        batch = max(1, int(os.getenv("UKTECH_SYNC_BATCH", "60")
+        batch = max(1, int(os.getenv("UKTECH_SYNC_BATCH", "50")
                            if batch is None else batch))
     except (TypeError, ValueError):
-        batch = 60
+        batch = 50
     global _TLS_FALLBACK_USED
     _TLS_FALLBACK_USED = False
 
@@ -338,31 +338,43 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             have = {r[0] for r in s.query(DeviceLog.external_id).filter(
                 DeviceLog.cycle_id == cycle_id,
                 DeviceLog.external_id.in_(ext_ids)).all()}
-        for rid, rec in todo:
-            max_seen = max(max_seen, rid)
-            ext = external_id(serial, rid)
-            if ext in have:
-                skipped += 1
-                continue
-            try:
-                _event_ts = parse_tehran_utc(rec.get("created_at"))
-            except UktechError:
-                skipped += 1
-                continue
-            age_day = None
-            if start_day is not None:
+        # One shared session + a single commit for the whole chunk: with
+        # autoflush off, flush per row so each row sees the previous rows'
+        # state (open-visit checks). A mid-chunk DB error rolls the chunk
+        # back; the endpoint 502s, the client retries, and the have-check
+        # above dedupes — progress is never lost, just redone.
+        with SessionLocal() as s:
+            published = []
+            for rid, rec in todo:
+                max_seen = max(max_seen, rid)
+                ext = external_id(serial, rid)
+                if ext in have:
+                    skipped += 1
+                    continue
                 try:
-                    age_day = max(0, (_event_ts.date() - start_day).days)
-                except Exception:
-                    age_day = None
-            event, _ext, _ts = record_to_event(rec, age_day, serial)
-            event["external_id"] = ext  # stored at insert, no extra UPDATE
-            log_d = proc.ingest(event)
+                    _event_ts = parse_tehran_utc(rec.get("created_at"))
+                except UktechError:
+                    skipped += 1
+                    continue
+                age_day = None
+                if start_day is not None:
+                    try:
+                        age_day = max(0, (_event_ts.date() - start_day).days)
+                    except Exception:
+                        age_day = None
+                event, _ext, _ts = record_to_event(rec, age_day, serial)
+                event["external_id"] = ext  # stored at insert, no extra UPDATE
+                log_d = proc.ingest(event, s=s)
+                s.flush()
+                published.append(log_d)
+                inserted += 1
+            s.commit()
+        # publish only after commit — never show rows that rolled back
+        for log_d in published:
             try:
                 hub.publish(log_d)  # live UI update; never breaks the sync
             except Exception:
                 pass
-            inserted += 1
 
     # Per-cycle cursor for tenant isolation
     ck = state_key(serial, cycle_id)

@@ -17,11 +17,32 @@ import json
 import math
 from datetime import datetime, timezone
 
+from contextlib import contextmanager
+
 from config import (
     RAW_WEIGHT_SIGMA, EMA_ALPHA,
     BIN_CAPACITY_KG, VISIT_QUEUE_TIMEOUT_S,
 )
 from models import SessionLocal, Cycle, Visit, DeviceLog
+
+
+@contextmanager
+def _session_scope(s):
+    """Use the caller's session (bulk/chunked callers, one commit) or a
+    short-lived one (single-event callers, commit inside)."""
+    if s is not None:
+        yield s
+    else:
+        with SessionLocal() as _s:
+            yield _s
+
+
+def _persist(s, owned):
+    """Commit owned sessions; flush shared ones (ids assigned, one txn)."""
+    if owned:
+        s.commit()
+    else:
+        s.flush()
 
 
 def _now():
@@ -71,7 +92,7 @@ class CycleProcessor:
                 }
 
     # ---- public: feed one raw device event ----
-    def ingest(self, event: dict):
+    def ingest(self, event: dict, s=None):
         """event: dict with the 12-col fields (+ optional 'kind').
         Returns the persisted DeviceLog row (as dict) for live push.
         """
@@ -106,7 +127,7 @@ class CycleProcessor:
         if bird_id and ctx is None:
             is_start = True
             ctx = self._open_visit(bird_id, ts, sensor_id, rssi, weight_g,
-                                   age_day, bin_kg)
+                                   age_day, bin_kg, s=s)
         elif ctx is not None:
             # continuation or end
             dt_last = ctx["last_ts"]
@@ -125,7 +146,7 @@ class CycleProcessor:
                     ctx["bin_prev"] = bin_kg
                 closed_id = ctx["visit_id"]
                 self._close_visit(ctx, ts, weight_g, temp_c, humidity,
-                                  final_inc=end_inc)
+                                  final_inc=end_inc, s=s)
                 is_end = True
                 # Reopen only when this row carries weight data (a genuine new
                 # start). Pure exit/closing rows belong to the visit that just
@@ -133,16 +154,17 @@ class CycleProcessor:
                 if weight_g is not None or raw is not None:
                     is_start = True
                     ctx = self._open_visit(bird_id, ts, sensor_id, rssi,
-                                           weight_g, age_day, bin_kg)
+                                           weight_g, age_day, bin_kg, s=s)
                 else:
                     ctx = None
             else:
                 # mid or end: update bin intake + weight EMA
                 self._step(ctx, ts, raw, weight_g, bin_kg, feed_delta,
-                           temp_c, humidity)
+                           temp_c, humidity, s=s)
 
         # ---- persist raw log ----
-        with SessionLocal() as s:
+        owned = s is None
+        with _session_scope(s) as s:
             log = DeviceLog(
                 cycle_id=self.cycle_id,
                 timestamp=ts, flock_id=flock_id, bird_id=bird_id,
@@ -155,7 +177,7 @@ class CycleProcessor:
                 external_id=ext_id,
             )
             s.add(log)
-            s.commit()
+            _persist(s, owned)
             # realtime-table context: elapsed seconds since visit start and
             # feed consumed so far in this visit (0 for fresh start rows).
             if ctx and ctx.get("start"):
@@ -173,9 +195,10 @@ class CycleProcessor:
 
     # ---- internal state machine ----
     def _open_visit(self, bird_id, ts, sensor, rssi, weight_g, age_day,
-                    bin_kg=None):
+                    bin_kg=None, s=None):
         ema_w = weight_g
-        with SessionLocal() as s:
+        owned = s is None
+        with _session_scope(s) as s:
             # Converge instead of duplicating: another worker process (or a
             # pre-restart row) may already hold this bird's open visit.
             existing = (s.query(Visit)
@@ -193,7 +216,7 @@ class CycleProcessor:
                     initial_weight_g=weight_g, age_day=age_day,
                     rssi=rssi, read_ok=(bird_id is not None),
                 )
-                s.add(v); s.commit()
+                s.add(v); _persist(s, owned)
             vid, start, init_w = v.id, v.visit_start, v.initial_weight_g
         ctx = {
             "visit_id": vid, "bird_id": bird_id, "start": start,
@@ -205,7 +228,8 @@ class CycleProcessor:
         self.open[bird_id] = ctx
         return ctx
 
-    def _step(self, ctx, ts, raw, weight_g, bin_kg, feed_delta, temp_c, humidity):
+    def _step(self, ctx, ts, raw, weight_g, bin_kg, feed_delta, temp_c, humidity,
+              s=None):
         ctx["last_ts"] = ts
         # weight EMA
         if weight_g is not None:
@@ -220,19 +244,21 @@ class CycleProcessor:
         if bin_kg is not None:
             ctx["bin_prev"] = bin_kg
         # persist incremental intake on the visit
-        with SessionLocal() as s:
+        owned = s is None
+        with _session_scope(s) as s:
             v = s.get(Visit, ctx["visit_id"])
             if v:
                 v.feed_intake_g = (v.feed_intake_g or 0) + inc
                 v.final_weight_g = ctx["ema_w"]
                 v.temp_c = temp_c
                 v.humidity = humidity
-                s.commit()
+                _persist(s, owned)
         return inc
 
     def _close_visit(self, ctx, end_ts, weight_g, temp_c, humidity,
-                     final_inc=0.0):
-        with SessionLocal() as s:
+                     final_inc=0.0, s=None):
+        owned = s is None
+        with _session_scope(s) as s:
             v = s.get(Visit, ctx["visit_id"])
             if v:
                 v.visit_end = end_ts
@@ -240,7 +266,7 @@ class CycleProcessor:
                 v.final_weight_g = ctx["ema_w"] if weight_g is None else weight_g
                 v.temp_c = temp_c
                 v.humidity = humidity
-                s.commit()
+                _persist(s, owned)
         bird = ctx.get("bird_id")
         if bird and bird in self.open:
             del self.open[bird]
