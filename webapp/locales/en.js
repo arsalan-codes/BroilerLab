@@ -759,4 +759,7 @@ window.I18N_EN={
 "dev.syncFail": "Sync failed: ",
 "dev.syncLast": "Last sync: {t} — record {n}",
 "dev.syncNever": "Not synced yet.",
+"dev.syncInsecure": "⚠ unverified TLS (self-signed host)",
+"dev.syncNoToken": "Device API token is not set on the server.",
+"dev.syncTLS": "Device host TLS certificate error.",
 };

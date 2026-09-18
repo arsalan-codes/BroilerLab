@@ -370,8 +370,12 @@
       if (n > 0) toast(tr("dev.syncDone", "همگام‌سازی انجام شد: {n} رکورد جدید").replace("{n}", lnum(n)));
       else toast(tr("dev.syncNone", "رکورد جدیدی نبود."));
       loadStats(selectedCycle); loadRegistrations(selectedCycle); loadUkStatus();
+      if (r && r.tls_insecure) setUkStatus(($("uk-sync-status") ? $("uk-sync-status").textContent + " " : "") + tr("dev.syncInsecure", "⚠ اتصال بدون تأیید گواهی (self-signed)"));
     }).catch(function (e) {
-      toast(tr("dev.syncFail", "خطا در دریافت داده: ") + e.message);
+      var m = String((e && e.message) || e || "");
+      if (/token is not configured/i.test(m)) m = tr("dev.syncNoToken", "توکن API دستگاه روی سرور تنظیم نشده است.");
+      else if (/CERTIFICATE_VERIFY|certificate verify|SSL/i.test(m)) m = tr("dev.syncTLS", "خطای گواهی TLS هاست دستگاه.");
+      toast(tr("dev.syncFail", "خطا در دریافت داده: ") + m);
       loadUkStatus();
     }).then(function () { if (btn) btn.disabled = false; });
   }

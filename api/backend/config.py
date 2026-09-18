@@ -79,9 +79,12 @@ UKTECH_TOKEN = os.getenv("UKTECH_API_TOKEN") or os.getenv("BROILER_UKTECH_TOKEN"
 UKTECH_TIMEOUT_S = int(os.getenv("UKTECH_TIMEOUT_S", "15"))
 UKTECH_PAGE_SIZE = int(os.getenv("UKTECH_PAGE_SIZE", "200"))
 UKTECH_MAX_PAGES = int(os.getenv("UKTECH_MAX_PAGES", "20"))
-# TLS verification for the uktech host. Keep TRUE everywhere except hosts
-# whose chain Python cannot verify (then set false explicitly + firewall).
-UKTECH_VERIFY_SSL = (os.getenv("UKTECH_VERIFY_SSL", "true").lower() == "true")
+# TLS verification for the uktech host: "true" (strict) / "false" (skip) /
+# "auto" (default: try strict, fall back to unverified ONCE with a loud
+# warning — the uktech host currently serves a self-signed chain, so strict
+# by default would break sync out of the box; the fallback is surfaced in
+# the sync summary so the admin always knows).
+UKTECH_VERIFY_SSL = os.getenv("UKTECH_VERIFY_SSL", "auto").strip().lower()
 # Local-dev auto poll (lifespan background task). Keep OFF on Vercel/serverless.
 UKTECH_AUTO_POLL = (os.getenv("UKTECH_AUTO_POLL", "false").lower() == "true")
 UKTECH_POLL_SECONDS = int(os.getenv("UKTECH_POLL_SECONDS", "120"))

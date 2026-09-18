@@ -43,7 +43,7 @@ postgresql://USER:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/neondb?sslm
 | `BROILER_CORS_ORIGINS` | `https://arsalan-codes.github.io` |
 | `UKTECH_API_TOKEN` | توکن `ttoken` دستگاه توزین آنلاین (مثلا `ARIYAN_WEIGHT_API_XYZ123`) — بدون آن دکمه «دریافت داده دستگاه» خطای 400 می‌دهد |
 | `UKTECH_SERIAL` | سریال دستگاه (پیش‌فرض `ESP800`) — اختیاری |
-| `UKTECH_VERIFY_SSL` | اگر پایتون زنجیره TLS هاست را رد کرد `false` بگذارید (پیش‌فرض `true`) |
+| `UKTECH_VERIFY_SSL` | پیش‌فرض `auto`: اول strict بعد با هشدار fallback بدون تأیید (هاست uktech گواهی self-signed دارد). `true` = همیشه strict، `false` = همیشه بدون تأیید |
 
 4. **Deploy** را بزنید. Vercel با `vercel.json`، درخواست‌های `/api/*` را به
    `api/index.py` (FastAPI) می‌فرستد و جدول‌ها اولین بار خودکار ساخته می‌شوند

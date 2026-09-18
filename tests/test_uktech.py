@@ -39,6 +39,7 @@ def test_record_mapping():
     assert ev["bird_id"] == "4800F4CF9EED"
     assert ev["sensor_id"] == "ESP32-S3-001"
     assert ev["raw_weight_g"] == 219.8  # round(219.81, 1)
+    assert ev["weight_g"] == 219.8  # table display + visit init weight
     assert ev["age_day"] == 5
     assert ev["flock_id"] == "UKTECH-ESP800"
     assert ev["feed_bin_kg"] is None and ev["feed_delta_g"] is None
@@ -70,6 +71,61 @@ def test_fetch_requires_token():
         assert "token" in str(e).lower()
     else:  # pragma: no cover
         raise AssertionError("fetch without token must fail closed")
+
+
+def _fake_page_ok(*a, **k):
+    import io
+    import json as _json
+
+    class _Resp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *e):
+            return False
+
+        def read(self):
+            return _json.dumps({"status": "success", "meta": {"has_more": False},
+                                "data": [dict(REC, id=2001)]}).encode("utf-8")
+    return _Resp()
+
+
+def test_tls_auto_fallback_on_self_signed(monkeypatch):
+    """Auto mode: strict attempt hits a self-signed chain -> one unverified
+    retry, flagged so the UI can warn. Strict mode must fail instead."""
+    import importlib
+    import ssl as _ssl
+    import urllib.error
+    import urllib.request
+    import config
+    monkeypatch.setenv("UKTECH_VERIFY_SSL", "auto")
+    importlib.reload(config)
+    importlib.reload(uktech)
+    calls = {"n": 0}
+
+    def fake_urlopen(req, timeout=None, context=None):
+        calls["n"] += 1
+        if context is None:
+            raise urllib.error.URLError(
+                _ssl.SSLCertVerificationError(1, "self-signed certificate"))
+        return _fake_page_ok()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    recs, more = uktech.fetch_records("ESP800", "TOK", limit=1)
+    assert [r["id"] for r in recs] == [2001] and more is False
+    assert calls["n"] == 2 and uktech._TLS_FALLBACK_USED is True
+
+    importlib.reload(uktech)  # reset the flag for the strict check below
+    monkeypatch.setenv("UKTECH_VERIFY_SSL", "true")
+    importlib.reload(config)
+    importlib.reload(uktech)
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    try:
+        uktech.fetch_records("ESP800", "TOK", limit=1)
+    except uktech.UktechError as e:
+        assert "unreachable" in str(e).lower()
+    else:  # pragma: no cover
+        raise AssertionError("strict mode must not downgrade")
 
 
 def test_sync_is_idempotent_sqlite(tmp_path, monkeypatch):

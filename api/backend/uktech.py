@@ -11,6 +11,7 @@ Mapping onto the 12-col device schema (processor.ingest):
   bird_id       <- rfid1 or rfid2 (None when both empty: weight-only row)
   sensor_id     <- device_id
   raw_weight_g  <- total_weight (rounded; float artefacts like 216.74..01)
+  weight_g      <- same rounded raw (table display + visit init weight)
   flock_id      <- "UKTECH-<serial>" (traceability)
   age_day       <- days since the target cycle's start_date
   feed/temp/humidity/rssi <- absent upstream -> None (visits carry weights,
@@ -26,6 +27,8 @@ The API token never leaves the server: it is read from env (UKTECH_API_TOKEN
 or BROILER_UKTECH_TOKEN) and never logged or sent to browsers.
 """
 import json
+import logging
+import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -47,6 +50,16 @@ _TEHRAN_FIXED = timedelta(hours=3, minutes=30)  # Iran: +3:30 year-round (no DST
 
 class UktechError(Exception):
     """Upstream unreachable, misconfigured, or target cycle missing."""
+
+
+def _tls_mode() -> str:
+    m = (UKTECH_VERIFY_SSL or "auto").strip().lower()
+    return m if m in ("true", "false", "auto") else "auto"
+
+
+# Set when auto mode downgrades to unverified TLS (surfaced per-sync so the
+# admin knows the channel was not authenticated).
+_TLS_FALLBACK_USED = False
 
 
 def state_key(serial: str) -> str:
@@ -104,7 +117,9 @@ def record_to_event(rec: dict, age_day, serial: str):
         "sensor_id": sensor,
         "age_day": age_day,
         "raw_weight_g": raw,
-        "weight_g": None,       # processor applies EMA from raw
+        # weight_g mirrors raw: the table + visit aggregates need a display
+        # weight (processor still smooths per-visit EMA on top of it).
+        "weight_g": raw,
         "feed_bin_kg": None,    # weighing station: no feed bin
         "feed_delta_g": None,
         "temp_c": None,
@@ -114,9 +129,41 @@ def record_to_event(rec: dict, age_day, serial: str):
     return event, external_id(serial, rec.get("id")), ts
 
 
+def _fetch_once(url: str, timeout: int, verify: bool):
+    """Single GET attempt. Raises UktechError on any transport/payload fault."""
+    ctx = None
+    if not verify:
+        ctx = ssl._create_unverified_context()
+    req = urllib.request.Request(url, headers={"Accept": "application/json",
+                                               "User-Agent": "ArianBackend/1.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as r:
+            payload = json.loads(r.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        raise UktechError(f"uktech API HTTP {e.code}")
+    except urllib.error.URLError as e:
+        err = UktechError(f"uktech API unreachable: {getattr(e, 'reason', e)}")
+        err.reason = getattr(e, "reason", None)
+        raise err
+    except (ValueError, TimeoutError) as e:
+        raise UktechError(f"uktech API bad response: {e}")
+    if str(payload.get("status", "")).lower() != "success":
+        raise UktechError(f"uktech API error: {payload.get('message', payload.get('code', '?'))}")
+    meta = payload.get("meta") or {}
+    return payload.get("data") or [], bool(meta.get("has_more"))
+
+
+def _is_cert_failure(err: UktechError) -> bool:
+    return isinstance(getattr(err, "reason", None), ssl.SSLCertVerificationError)
+
+
 def fetch_records(serial: str, token: str, limit: int = 100, offset: int = 0,
-                  base: str = None, timeout: int = None):
-    """Fetch one page (newest first). Returns (records, has_more)."""
+                   base: str = None, timeout: int = None):
+    """Fetch one page (newest first). Returns (records, has_more).
+
+    TLS mode comes from UKTECH_VERIFY_SSL: strict / skip / auto-fallback
+    (strict first, then one unverified retry flagged via _TLS_FALLBACK_USED).
+    """
     if not token:
         raise UktechError("uktech API token is not configured on the server")
     base = base or UKTECH_API_BASE
@@ -124,31 +171,26 @@ def fetch_records(serial: str, token: str, limit: int = 100, offset: int = 0,
         "serial": serial, "limit": limit, "offset": offset, "ttoken": token,
     })
     url = f"{base}?{qs}"
-    req = urllib.request.Request(url, headers={"Accept": "application/json",
-                                               "User-Agent": "ArianBackend/1.0"})
-    ctx = None
-    if not UKTECH_VERIFY_SSL:
-        import logging
-        import ssl
-        ctx = ssl._create_unverified_context()
+    mode = _tls_mode()
+    timeout = timeout or UKTECH_TIMEOUT_S
+    if mode == "false":
         if not globals().get("_warned_insecure"):
             globals()["_warned_insecure"] = True
             logging.getLogger(__name__).warning(
                 "UKTECH_VERIFY_SSL=false: TLS certs NOT verified (use only behind firewall)")
+        return _fetch_once(url, timeout, verify=False)
     try:
-        with urllib.request.urlopen(req, timeout=timeout or UKTECH_TIMEOUT_S,
-                                    context=ctx) as r:
-            payload = json.loads(r.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        raise UktechError(f"uktech API HTTP {e.code}")
-    except urllib.error.URLError as e:
-        raise UktechError(f"uktech API unreachable: {getattr(e, 'reason', e)}")
-    except (ValueError, TimeoutError) as e:
-        raise UktechError(f"uktech API bad response: {e}")
-    if str(payload.get("status", "")).lower() != "success":
-        raise UktechError(f"uktech API error: {payload.get('message', payload.get('code', '?'))}")
-    meta = payload.get("meta") or {}
-    return payload.get("data") or [], bool(meta.get("has_more"))
+        return _fetch_once(url, timeout, verify=True)
+    except UktechError as e:
+        if mode == "auto" and _is_cert_failure(e):
+            global _TLS_FALLBACK_USED
+            _TLS_FALLBACK_USED = True
+            logging.getLogger(__name__).warning(
+                "uktech TLS verify failed (%s) — retrying UNVERIFIED "
+                "(self-signed host?). Set UKTECH_VERIFY_SSL=true to forbid this.",
+                e)
+            return _fetch_once(url, timeout, verify=False)
+        raise
 
 
 def get_cursor(serial: str) -> int:
@@ -180,6 +222,8 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
     serial = (serial or UKTECH_SERIAL).strip() or UKTECH_SERIAL
     page_size = max(1, min(int(limit or UKTECH_PAGE_SIZE), 500))
     max_pages = int(max_pages or UKTECH_MAX_PAGES)
+    global _TLS_FALLBACK_USED
+    _TLS_FALLBACK_USED = False
 
     with SessionLocal() as s:
         cycle = s.get(Cycle, cycle_id)
@@ -270,4 +314,4 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
 
     return {"cycle_id": cycle_id, "serial": serial, "fetched": len(fresh),
             "inserted": inserted, "skipped": skipped, "last_id": max_seen,
-            "complete": complete}
+            "complete": complete, "tls_insecure": _TLS_FALLBACK_USED}

@@ -759,4 +759,7 @@ window.I18N_FA={
 "dev.syncFail": "خطا در دریافت داده: ",
 "dev.syncLast": "آخرین همگام‌سازی: {t} — رکورد {n}",
 "dev.syncNever": "هنوز همگام‌سازی انجام نشده است.",
+"dev.syncInsecure": "⚠ اتصال بدون تأیید گواهی (self-signed)",
+"dev.syncNoToken": "توکن API دستگاه روی سرور تنظیم نشده است.",
+"dev.syncTLS": "خطای گواهی TLS هاست دستگاه.",
 };
