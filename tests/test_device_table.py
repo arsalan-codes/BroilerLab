@@ -134,6 +134,15 @@ def test_frontend_renders_seven_columns():
     assert "bin_weight_g" in js, "device-panel must render the hopper column"
 
 
+def test_frontend_patches_rows_from_change_analysis():
+    js = (WEBAPP / "device-panel.js").read_text(encoding="utf-8")
+    assert "function patchRegChanges" in js, \
+        "smart patch path missing (sync changes -> in-place row updates)"
+    assert "function fillRegRow" in js, \
+        "shared row renderer missing (patch + reload must render identically)"
+    assert "changes" in js, "auto-poll must consume the sync change analysis"
+
+
 def test_locales_have_device_headers():
     for loc, feed, elapsed, dt, hop in (("fa.js", "غذای مصرف‌شده", "زمان سپری‌شده", "تاریخ و ساعت", "وزن مخزن"),
                                         ("en.js", "Feed consumed", "Elapsed", "Date & time", "Hopper weight")):

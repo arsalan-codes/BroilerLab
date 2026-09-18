@@ -177,7 +177,10 @@ def record_to_unit_events(rec: dict, age_day, serial: str):
         if raw is not None:
             raw = round(raw, 1)
         bin_g = _to_float(rec.get(bin_f))
-        bin_kg = round(bin_g / 1000.0, 3) if bin_g is not None else None
+        # full precision (no kg rounding): 345.44g must survive the trip
+        # (0.345kg would display as 345.0). Display rounds to 2 decimals
+        # at read time; intake diffs are sub-gram exact instead of 1g steps.
+        bin_kg = bin_g / 1000.0 if bin_g is not None else None
         status_raw = rec.get(status_f)
         status = str(status_raw).strip() or None \
             if status_raw is not None else None
@@ -324,10 +327,45 @@ def sync_status(serial: str = None, cycle_id: int | None = None) -> dict:
         }
 
 
+def _probe_latest_id(serial: str, token: str):
+    """Cheapest possible upstream check: the newest single record.
+
+    Live polls (every few seconds) usually find nothing new — one 1-row
+    probe answers that for ~1KB instead of downloading + parsing a full
+    page. Returns (probe_max, probe_total): the highest upstream id seen
+    (None when upstream is empty or the probe row carries no usable id)
+    and the probe page's total_records meta (None when unknown).
+    Transport/auth faults propagate exactly like a normal page fetch.
+    """
+    records, _has_more = fetch_records(serial, token, 1, 0)
+    try:
+        total = (_LAST_META or {}).get("total_records")
+        total = int(total) if total is not None else None
+    except (TypeError, ValueError):
+        total = None
+    probe_max = None
+    for rec in records or []:
+        try:
+            rid = int((rec or {}).get("id"))
+        except (TypeError, ValueError):
+            continue
+        probe_max = rid if probe_max is None else max(probe_max, rid)
+    return probe_max, total
+
+
 def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                          max_pages: int = None, batch: int | None = None) -> dict:
     """Pull new uktech rows into a cycle. Oldest-first so visit aggregation
     sees events in chronological order. Returns a summary dict.
+
+    Latest-id first: a 1-row probe finds the upstream max id, and pages are
+    walked only for the delta past the cursor — a caught-up live poll costs
+    one tiny request and zero writes. An unreadable probe falls back to the
+    legacy full walk rather than trusting a blind probe.
+    The summary carries the probe (`upstream_max`, `upstream_delta`) plus a
+    `changes` array: one registrations-shaped entry per visit this call
+    created or touched (new weighings, weight/hopper/feed updates, closes),
+    newest first, so the UI can patch exactly those rows.
 
     Chunked for serverless time limits: at most ``batch`` rows are written
     per call (default UKTECH_SYNC_BATCH=60); the cursor advances to the last
@@ -363,6 +401,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             start_day = None
 
     last_id = get_cursor(serial, cycle_id)
+    entry_last_id = last_id
     global _LAST_META
     _LAST_META = None
     fresh = []  # (remote_id, record) with id > last_id
@@ -370,33 +409,51 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
     offset = 0
     complete = True
     exhausted = True  # False if we stopped early (cursor hit or page cap)
-    for _ in range(max_pages):
-        records, has_more = fetch_records(serial, UKTECH_TOKEN, page_size, offset)
-        if not records:
-            break
-        for rec in records:
+    # ---- latest-id probe: walk pages only for the delta past the cursor.
+    # A caught-up poll downloads nothing further; the probe id still seeds
+    # seen_ids so the cursor-ahead (reset/stalled) check below keeps working.
+    probe_max, _probe_total = _probe_latest_id(serial, UKTECH_TOKEN)
+    upstream_max = probe_max
+    if probe_max is None or probe_max > last_id:
+        # new data upstream (or an unreadable probe: fall back to the
+        # legacy walk instead of trusting it).
+        for _ in range(max_pages):
+            records, has_more = fetch_records(serial, UKTECH_TOKEN, page_size, offset)
+            if not records:
+                break
+            for rec in records:
+                try:
+                    rid = int(rec.get("id"))
+                except (TypeError, ValueError):
+                    continue
+                seen_ids.add(rid)
+                if rid > last_id:
+                    fresh.append((rid, rec))
+            offset += len(records)
+            if not has_more:
+                break
+            # pages arrive newest-first: stop once a page reaches already-synced rows
             try:
-                rid = int(rec.get("id"))
+                if min(int(r.get("id")) for r in records) <= last_id:
+                    exhausted = False
+                    break
             except (TypeError, ValueError):
-                continue
-            seen_ids.add(rid)
-            if rid > last_id:
-                fresh.append((rid, rec))
-        offset += len(records)
-        if not has_more:
-            break
-        # pages arrive newest-first: stop once a page reaches already-synced rows
-        try:
-            if min(int(r.get("id")) for r in records) <= last_id:
                 exhausted = False
                 break
-        except (TypeError, ValueError):
+        else:
+            complete = False  # page cap hit while upstream still has more
             exhausted = False
-            break
-    else:
-        complete = False  # page cap hit while upstream still has more
-        exhausted = False
-    fresh.sort(key=lambda t: t[0])  # oldest first for the visit state machine
+        fresh.sort(key=lambda t: t[0])  # oldest first for the visit state machine
+        if seen_ids:
+            top_seen = max(seen_ids)
+            upstream_max = top_seen if upstream_max is None else max(upstream_max, top_seen)
+    elif probe_max is not None:
+        seen_ids.add(probe_max)
+    try:
+        upstream_delta = max(0, int(upstream_max) - int(entry_last_id)) \
+            if upstream_max is not None else 0
+    except (TypeError, ValueError):
+        upstream_delta = 0
 
     # ---- upstream-reset detection ----
     # If the device DB was wiped (ids restart), our cursor points past all
@@ -417,7 +474,6 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
     did_reset = False
     stalled = False
     stalled_reason = ""
-    upstream_max = max(seen_ids) if seen_ids else None
     try:
         total_up = (_LAST_META or {}).get("total_records")
         total_up = int(total_up) if total_up is not None else None
@@ -503,6 +559,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
     inserted, skipped, max_seen = 0, 0, last_id
     published = []
     events_count = 0
+    changes = []  # registrations-shaped entries per affected visit (built after commit)
     if todo:
         # external ids are per-unit ("<serial>:<id>:u1"); legacy bare ids
         # can never collide with them, so old rows are never "already have".
@@ -611,6 +668,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
         visit_updates = []  # bulk mappings for closes/ratchets/touches
         dirty_sess = set()
         log_specs = []  # (event, ts, ext, is_start, is_end, visit_ref, elapsed, feed)
+        affected = []  # visit refs ("new", idx) / ("old", vid) this call created or touched
 
         def _close_ov(ov, end_dt, binkg, lane_unit=None):
             """Close one open-visit entry (new or adopted). Returns
@@ -677,7 +735,9 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                         # orphan open visit leaks with ever-growing elapsed.
                         prev = openv.get(lane)
                         if prev is not None:
-                            _close_ov(prev, ts, binkg, lane_unit=unit)
+                            preref, _, _ = _close_ov(prev, ts, binkg,
+                                                     lane_unit=unit)
+                            affected.append(preref)
                             del openv[lane]
                             # elapsed for a pre-close is covered by the new
                             # visit below; nothing to display here.
@@ -738,6 +798,9 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                         is_end = True
                     new_st["visit_id"] = None
                     closed_this_row = True
+            # the row's own visit (registered or closed above) changed.
+            if visit_ref is not None:
+                affected.append(visit_ref)
             # track the lane clock on every row (any validity) so the next
             # VALID row accrues exactly the span since this one.
             new_st["last_seen"] = ts_ep
@@ -762,6 +825,17 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                                 pass
                         ov["last_valid"] = ts_ep
                     ov["touched"] = True
+                    # touch-only rows still evolve the visit (feed accrues,
+                    # hopper refills, presence grows): the UI must patch it.
+                    if ov.get("is_new"):
+                        affected.append(("new", ov["new_idx"]))
+                        # the row belongs to the visit it just touched: link
+                        # it so per-visit reads (hopper level, log chain)
+                        # see touch-only rows, not just start/close rows.
+                        visit_ref = ("new", ov["new_idx"])
+                    elif ov.get("vid") is not None:
+                        affected.append(("old", ov["vid"]))
+                        visit_ref = ("old", ov["vid"])
             # elapsed + live feed context: validated-accumulated presence so
             # far ((pbase or 0) + tacc). Close rows set elapsed above to the
             # final presence.
@@ -865,6 +939,68 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 if upd_srows:
                     s.bulk_update_mappings(WeighingSession, upd_srows)
             s.commit()
+            # ---- change analysis: one registrations-shaped entry per visit
+            # this call created or touched (newest first), so the UI patches
+            # exactly those rows instead of re-rendering the whole table.
+            aff_vids, opened_vids = [], set()
+            for ref in affected:
+                if ref[0] == "new" and ref[1] < len(new_ids):
+                    aff_vids.append(new_ids[ref[1]])
+                    opened_vids.add(new_ids[ref[1]])
+                elif ref[0] == "old":
+                    aff_vids.append(ref[1])
+            aff_vids = list(dict.fromkeys(aff_vids))  # dedupe, keep order
+            if aff_vids and len(aff_vids) <= 200:
+                vrows = s.query(Visit).filter(Visit.id.in_(aff_vids)).all()
+                binlast = {}
+                for _vid2, _fb2 in (s.query(DeviceLog.visit_id,
+                                           DeviceLog.feed_bin_kg)
+                                    .filter(DeviceLog.visit_id.in_(aff_vids))
+                                    .order_by(DeviceLog.id.desc()).all()):
+                    if _fb2 is not None:
+                        binlast.setdefault(_vid2, _fb2)
+                now_ck = utcnow()
+                tmp = []
+                for _v in vrows:
+                    if _v.presence_s is not None:
+                        try:
+                            _el = max(0.0, float(_v.presence_s))
+                        except (TypeError, ValueError):
+                            _el = 0.0
+                    else:
+                        try:
+                            _end = _v.visit_end or now_ck
+                            _el = max(0.0, (_aware_utc(_end) - _aware_utc(
+                                _v.visit_start)).total_seconds()) \
+                                if _v.visit_start else 0.0
+                        except Exception:
+                            _el = 0.0
+                    _bk = binlast.get(_v.id)
+                    tmp.append((_v.visit_start,
+                                {"id": _v.id, "bird_id": _v.bird_id,
+                                 "initial_weight_g": _v.initial_weight_g,
+                                 "final_weight_g": _v.final_weight_g,
+                                 "feed_intake_g": (round(_v.feed_intake_g, 1)
+                                                   if _v.feed_intake_g is not None
+                                                   else None),
+                                 "elapsed_s": round(_el, 1),
+                                 "presence_s": _v.presence_s,
+                                 "unit": _v.unit if _v.unit in (1, 2) else 1,
+                                 "bin_weight_g": (round(_bk * 1000.0, 2)
+                                                  if _bk is not None else None),
+                                 "registered_at": (_v.visit_start.isoformat()
+                                                   if _v.visit_start else None),
+                                 "visit_end": (_v.visit_end.isoformat()
+                                               if _v.visit_end else None),
+                                 "sensor_id": _v.sensor_id,
+                                 "is_new": _v.id in opened_vids,
+                                 "is_closed": _v.visit_end is not None}))
+                try:
+                    tmp.sort(key=lambda t: (t[0] is None, t[0]),
+                             reverse=True)
+                except TypeError:
+                    pass  # mixed tz-aware/naive starts: keep commit order
+                changes = [c for _, c in tmp]
             # rebuild publish payloads with per-row elapsed/feed saved above.
             # unit lane parsed from the external id suffix; hopper level in
             # grams for the per-unit live tables.
@@ -916,4 +1052,6 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             "complete": chunk_complete, "remaining": max(0, remaining),
             "reset": did_reset, "events": events_count,
             "stalled": stalled, "stalled_reason": stalled_reason,
-            "tls_insecure": _TLS_FALLBACK_USED}
+            "tls_insecure": _TLS_FALLBACK_USED,
+            "probed": True, "upstream_max": upstream_max,
+            "upstream_delta": upstream_delta, "changes": changes}

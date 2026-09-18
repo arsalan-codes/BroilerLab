@@ -249,12 +249,22 @@ def test_sync_registers_one_visit_for_acceptance_sequence(tmp_path, monkeypatch)
             assert v.bird_id == "B1"
             assert abs(v.initial_weight_g - 219.35) <= 2.0
             assert v.visit_end is not None
-            # only the register row (is_start) and the closing zero row
-            # (is_end) link to the visit; every residual stays visitless
-            # raw data, never a table row of its own.
+            # visit linkage: the register row (is_start) opens the visit,
+            # every later row of the lane links to it — stable reads AND
+            # unloading residuals (120/45/12/6.77/3.2) — so per-visit reads
+            # (hopper level, log chain) see the full span, and the closing
+            # zero row (is_end) ends it. Pre-detect noise + the empty lane
+            # stay visitless; residuals never open table rows of their own
+            # (exactly one visit above).
+            logs = s.query(DeviceLog).filter(
+                DeviceLog.cycle_id == cid).order_by(DeviceLog.id).all()
+            attached = [l for l in logs if l.visit_id is not None]
+            assert len(attached) == 10, [l.external_id for l in attached]
+            assert sum(1 for l in attached if l.is_visit_start) == 1
+            assert sum(1 for l in attached if l.is_visit_end) == 1
             assert s.query(DeviceLog).filter(
                 DeviceLog.cycle_id == cid,
-                DeviceLog.visit_id.is_(None)).count() == 2 * len(seq) - 2
+                DeviceLog.visit_id.is_(None)).count() == 2 * len(seq) - 10
             # sessions persisted (u1 bird lane + u2 empty lane); the u1
             # lane re-armed to EMPTY for the next weighing
             sess = {x.key: x for x in s.query(WeighingSession).all()}

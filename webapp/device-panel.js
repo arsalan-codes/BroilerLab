@@ -304,6 +304,59 @@
     setTimeout(function () { row.classList.remove("new"); }, 1700);
   }
 
+  function fillRegRow(row, r) {
+    // single mapping from a registrations-shaped object onto a row —
+    // shared by full reloads and smart change patches so both render
+    // identical cells (feed/weight/hopper/elapsed/datetime/bird/device).
+    if (r.id != null) {
+      try { row.setAttribute("data-visit-id", r.id); } catch (e) {}
+    }
+    try {
+      row.setAttribute("data-eopen", r.visit_end ? "" : "1");
+      row.setAttribute("data-eval", (r.elapsed_s != null && !isNaN(+r.elapsed_s)) ? +r.elapsed_s : 0);
+      row.setAttribute("data-et0", Date.now());
+    } catch (e) {}
+    var w = r.initial_weight_g != null ? r.initial_weight_g : r.final_weight_g;
+    row.innerHTML = regRowHtml({
+      feed: r.feed_intake_g, w: w, bin: r.bin_weight_g,
+      elap: r.elapsed_s, dtJoin: regDateJoin(r.registered_at || ""),
+      bird: r.bird_id, sensor: r.sensor_id
+    });
+  }
+  function patchRegChanges(changes) {
+    // Smart incremental update: patch exactly the visits the sync's change
+    // analysis reports (new weighings, weight/hopper/feed updates, closes)
+    // instead of a full re-render — no flicker, ticker bases stay exact.
+    // Returns false on any unknown shape so the caller falls back to a
+    // full reload (correctness over cleverness).
+    if (!changes || !changes.length) return false;
+    var touched = 0;
+    for (var i = changes.length - 1; i >= 0; i--) {
+      var c = changes[i];
+      if (!c || c.id == null) return false;
+      var body = regBodyFor(regUnitOf(c));
+      if (!body) return false;
+      if (body.querySelector(".reg-empty")) body.innerHTML = "";
+      var row = null;
+      try { row = body.querySelector('[data-visit-id="' + c.id + '"]'); }
+      catch (e) { return false; }
+      if (row) {
+        row.classList.remove("new");
+        fillRegRow(row, c);
+      } else {
+        row = document.createElement("div");
+        row.className = "reg-row new";
+        fillRegRow(row, c);
+        body.insertBefore(row, body.firstChild);
+        while (body.childNodes.length > regMax) body.removeChild(body.lastChild);
+        (function (rw) { setTimeout(function () { rw.classList.remove("new"); }, 1700); })(row);
+      }
+      body.dataset.loaded = "1";
+      touched++;
+    }
+    return touched > 0;
+  }
+
   function loadRegistrations(id) {
     var b1 = $("reg-body-u1"), b2 = $("reg-body-u2");
     if (!b1 && !b2) return;
@@ -334,20 +387,7 @@
         rows.forEach(function (r) {
           var row = document.createElement("div");
           row.className = "reg-row";
-          if (r.id != null) {
-            try { row.setAttribute("data-visit-id", r.id); } catch (e) {}
-          }
-          try {
-            row.setAttribute("data-eopen", r.visit_end ? "" : "1");
-            row.setAttribute("data-eval", (r.elapsed_s != null && !isNaN(+r.elapsed_s)) ? +r.elapsed_s : 0);
-            row.setAttribute("data-et0", Date.now());
-          } catch (e) {}
-          var w = r.initial_weight_g != null ? r.initial_weight_g : r.final_weight_g;
-          row.innerHTML = regRowHtml({
-            feed: r.feed_intake_g, w: w, bin: r.bin_weight_g,
-            elap: r.elapsed_s, dtJoin: regDateJoin(r.registered_at || ""),
-            bird: r.bird_id, sensor: r.sensor_id
-          });
+          fillRegRow(row, r);
           body.appendChild(row);
         });
       });
@@ -591,11 +631,17 @@
       ukFails = 0;
       ukLastOk = Date.now();
       devLog("[device] poll ok", "inserted=" + n, "events=" + ((r && r.events) || 0),
+             "delta=" + ((r && r.upstream_delta) || 0),
              "reset=" + !!(r && r.reset), "stalled=" + ((r && r.stalled_reason) || "-"));
       if (r && r.stalled) {
         // cursor ahead of upstream without corroborating evidence: show the
         // reason instead of freezing silently like before.
         setUkStatus(tr("dev.syncStalled", "همگام‌سازی متوقف مانده است.") + " " + (r.stalled_reason || ""));
+      } else if ((r && r.changes && r.changes.length) && patchRegChanges(r.changes)) {
+        // smart path: the sync analysed exactly which visits changed — patch
+        // those rows in place; stats still reload, no full re-render needed.
+        loadStats(selectedCycle);
+        devLog("[device] poll patched", "rows=" + r.changes.length);
       } else if (n > 0 || ((r && r.events) || 0) > 0) {
         // refresh on visit events too (ratchet/close/timeout can change
         // open rows with zero new logs), toast only for new records.

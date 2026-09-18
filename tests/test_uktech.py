@@ -578,3 +578,122 @@ def test_small_rewind_stays_silent(tmp_path, monkeypatch):
     finally:
         import processor
         processor._processors.pop(cid, None)
+
+
+def _probe_harness(tmp_path, monkeypatch, name="uksmart.db", code="UKP"):
+    db = tmp_path / name
+    monkeypatch.setenv("BROILER_DATABASE_URL", f"sqlite:///{db.as_posix()}")
+    import config
+    import models
+    import processor
+    import importlib
+    importlib.reload(config)
+    importlib.reload(models)
+    importlib.reload(uktech)
+    importlib.reload(processor)
+    models.Base.metadata.create_all(models.engine)
+    from models import Cycle, SessionLocal
+    with SessionLocal() as s:
+        c = Cycle(cycle_code=code, label="probe test", strain="ross308",
+                  bird_count=1)
+        s.add(c)
+        s.commit()
+        cid = c.id
+    return cid
+
+
+def test_probe_skips_page_walk_when_caught_up(tmp_path, monkeypatch):
+    """Latest-id probe: a caught-up poll costs exactly one 1-row probe —
+    no page walk, zero writes, empty changes."""
+    cid = _probe_harness(tmp_path, monkeypatch)
+    page = [dict(REC, id=50 + i,
+                 created_at=f"2026-09-18 12:0{i}:00") for i in range(3)]
+    calls = []
+
+    def counting(*a, **k):
+        calls.append(a[2] if len(a) > 2 else k.get("limit"))
+        return list(page), False
+
+    monkeypatch.setattr(uktech, "fetch_records", counting)
+    try:
+        r1 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r1["inserted"] == 6, r1  # 3 recs x 2 units
+        n1 = len(calls)
+        assert n1 >= 2 and calls[0] == 1, calls  # probe first, limit=1
+        r2 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r2["inserted"] == 0 and r2["fetched"] == 0, r2
+        assert len(calls) == n1 + 1, calls  # probe only, no walk
+        assert calls[-1] == 1, calls
+        assert r2["probed"] is True and r2["upstream_max"] == 52, r2
+        assert r2["upstream_delta"] == 0 and r2["changes"] == [], r2
+    finally:
+        import processor
+        processor._processors.pop(cid, None)
+
+
+def test_probe_fetches_only_the_delta(tmp_path, monkeypatch):
+    """Probe max past the cursor walks pages but writes only the delta."""
+    cid = _probe_harness(tmp_path, monkeypatch, "ukdelta.db", "UKD")
+    first = [dict(REC, id=1 + i,
+                  created_at=f"2026-09-18 12:0{i}:00") for i in range(5)]
+    monkeypatch.setattr(uktech, "fetch_records",
+                        lambda *a, **k: (list(first), False))
+    try:
+        r1 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert uktech.get_cursor("ESP800", cid) == 5, r1
+        grown = [dict(REC, id=1 + i,
+                      created_at=f"2026-09-18 12:{i // 60:02d}:{i % 60:02d}")
+                 for i in range(8)]
+
+        def fetch_grown(*a, **k):
+            uktech._LAST_META = {"total_records": 8}
+            return list(grown), False
+
+        monkeypatch.setattr(uktech, "fetch_records", fetch_grown)
+        r2 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r2["fetched"] == 3, r2  # only ids 6,7,8 are new
+        assert r2["inserted"] == 6, r2  # 3 recs x 2 units
+        assert r2["upstream_max"] == 8 and r2["upstream_delta"] == 3, r2
+        assert uktech.get_cursor("ESP800", cid) == 8, r2
+    finally:
+        import processor
+        processor._processors.pop(cid, None)
+
+
+def test_changes_track_new_visit_then_hopper_refill(tmp_path, monkeypatch):
+    """Change analysis over the id-74..76 shape: the register call reports
+    the new visit (hopper 0 at open); the refill call patches the SAME
+    visit with the live hopper instead of a full reload."""
+    cid = _probe_harness(tmp_path, monkeypatch, "ukchg.db", "UKC")
+    seq1 = [dict(REC, id=69 + i, weight_1=0,
+                 weight_2=w, total_weight=w,
+                 created_at=f"2026-09-18 22:20:{i:02d}")
+            for i, w in enumerate([0, 0, 0, 212.44, 218.06, 219.62])]
+    monkeypatch.setattr(uktech, "fetch_records",
+                        lambda *a, **k: (list(seq1), False))
+    try:
+        r1 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r1["inserted"] == 12, r1  # 6 recs x 2 units
+        assert len(r1["changes"]) >= 1, r1
+        opened = [c for c in r1["changes"] if c.get("is_new")]
+        assert len(opened) == 1, r1["changes"]
+        assert abs(opened[0]["initial_weight_g"] - 219.6) < 0.01, opened
+        assert opened[0]["bin_weight_g"] == 0.0, opened  # hopper 0 at open
+        assert opened[0]["is_closed"] is False, opened
+        vid = opened[0]["id"]
+        seq2 = [dict(REC, id=75 + i, weight_1=b, weight_2=220.19,
+                     total_weight=b + 220.19,
+                     created_at=f"2026-09-18 22:21:{30 + i * 6:02d}")
+                for i, b in enumerate([343.74, 345.44])]
+        monkeypatch.setattr(uktech, "fetch_records",
+                            lambda *a, **k: (list(seq2), False))
+        r2 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r2["inserted"] == 4, r2
+        assert len(r2["changes"]) >= 1, r2
+        same = [c for c in r2["changes"] if c["id"] == vid]
+        assert len(same) == 1, r2["changes"]
+        assert same[0]["bin_weight_g"] == 345.44, same  # live refill patched
+        assert same[0]["is_closed"] is False, same
+    finally:
+        import processor
+        processor._processors.pop(cid, None)
