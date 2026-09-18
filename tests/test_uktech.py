@@ -62,6 +62,7 @@ def test_empty_tags_give_weight_only_row():
 def test_external_id_format():
     assert uktech.external_id("ESP800", 1039) == "ESP800:1039"
     assert uktech.state_key("ESP800") == "uktech:ESP800"
+    assert uktech.state_key("ESP800", 5) == "uktech:ESP800:cycle:5"
 
 
 def test_fetch_requires_token():
@@ -157,11 +158,12 @@ def test_sync_is_idempotent_sqlite(tmp_path, monkeypatch):
         r1 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
         assert r1["inserted"] == 2 and r1["last_id"] == 1002
         assert r1["complete"] is True
-        # wipe the cursor -> the same page is fetched again and must be
-        # deduped by external_id (no duplicate rows)
+        # wipe the per-cycle cursor -> the same page is fetched again and must be
+        # deduped by external_id (no duplicate rows). Per-cycle isolation means
+        # we delete the cycle-specific key, not the legacy global one.
         with SessionLocal() as s:
             s.query(SyncState).filter(
-                SyncState.key == uktech.state_key("ESP800")).delete()
+                SyncState.key == uktech.state_key("ESP800", cid)).delete()
             s.commit()
         r2 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
         assert r2["inserted"] == 0 and r2["skipped"] == 2
@@ -174,4 +176,4 @@ def test_sync_is_idempotent_sqlite(tmp_path, monkeypatch):
     assert r2["inserted"] == 0 and r2["skipped"] == 2
     with SessionLocal() as s:
         assert s.query(DeviceLog).filter(DeviceLog.cycle_id == cid).count() == 2
-        assert uktech.get_cursor("ESP800") == 1002
+        assert uktech.get_cursor("ESP800", cid) == 1002

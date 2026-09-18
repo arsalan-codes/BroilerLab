@@ -62,7 +62,14 @@ def _tls_mode() -> str:
 _TLS_FALLBACK_USED = False
 
 
-def state_key(serial: str) -> str:
+def state_key(serial: str, cycle_id: int | None = None) -> str:
+    """Per-cycle cursor: each cycle owns its sync progress (tenant-isolated).
+
+    Legacy global key ``uktech:<serial>`` is kept as fallback for continuity
+    until the per-cycle key is created.
+    """
+    if cycle_id is not None:
+        return f"uktech:{serial}:cycle:{cycle_id}"
     return f"uktech:{serial}"
 
 
@@ -193,19 +200,39 @@ def fetch_records(serial: str, token: str, limit: int = 100, offset: int = 0,
         raise
 
 
-def get_cursor(serial: str) -> int:
+def get_cursor(serial: str, cycle_id: int | None = None) -> int:
+    """Per-cycle cursor with fallback to legacy global cursor for migration."""
     with SessionLocal() as s:
-        row = s.get(SyncState, state_key(serial))
-        return row.last_id if row else 0
+        if cycle_id is not None:
+            row = s.get(SyncState, state_key(serial, cycle_id))
+            if row:
+                return row.last_id
+            # Fallback: existing DBs have only the global key
+            row = s.get(SyncState, state_key(serial))
+            if row:
+                return row.last_id
+        else:
+            row = s.get(SyncState, state_key(serial))
+            if row:
+                return row.last_id
+        return 0
 
 
-def sync_status(serial: str = None) -> dict:
+def sync_status(serial: str = None, cycle_id: int | None = None) -> dict:
     serial = (serial or UKTECH_SERIAL).strip() or UKTECH_SERIAL
     with SessionLocal() as s:
-        row = s.get(SyncState, state_key(serial))
+        row = None
+        if cycle_id is not None:
+            row = s.get(SyncState, state_key(serial, cycle_id))
+            if not row:
+                # Fallback to global for pre-migration DBs
+                row = s.get(SyncState, state_key(serial))
+        else:
+            row = s.get(SyncState, state_key(serial))
         return {
             "configured": bool(UKTECH_TOKEN),
             "serial": serial,
+            "cycle_id": cycle_id,
             "last_id": row.last_id if row else 0,
             "updated_at": row.updated_at.isoformat() if row and row.updated_at else None,
             "note": row.note if row else None,
@@ -234,7 +261,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
         except Exception:
             start_day = None
 
-    last_id = get_cursor(serial)
+    last_id = get_cursor(serial, cycle_id)
     fresh = []  # (remote_id, record) with id > last_id
     offset = 0
     complete = True
@@ -299,10 +326,15 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 pass
             inserted += 1
 
+    # Per-cycle cursor for tenant isolation
+    ck = state_key(serial, cycle_id)
     with SessionLocal() as s:
-        row = s.get(SyncState, state_key(serial))
+        row = s.get(SyncState, ck)
         if row is None:
-            row = SyncState(key=state_key(serial), last_id=max_seen,
+            # Check if we should migrate from global key
+            global_row = s.get(SyncState, state_key(serial))
+            # Always create per-cycle key; don't delete global for backward compat
+            row = SyncState(key=ck, last_id=max_seen,
                             updated_at=utcnow(),
                             note=f"cycle {cycle_id}: +{inserted}")
             s.add(row)

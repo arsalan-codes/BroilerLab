@@ -584,10 +584,19 @@ def uktech_sync(payload: UktechSyncIn, current: User = Depends(authmod.get_curre
 
 @app.get("/api/uktech/status")
 def uktech_status(serial: str | None = None,
+                  cycle_id: int | None = None,
                   current: User = Depends(authmod.get_current_user)):
-    """Sync cursor for a device serial (cursor only — the token is never exposed)."""
+    """Sync cursor for a device serial (per-cycle when cycle_id given).
+
+    Cursor is per-cycle for tenant isolation; without cycle_id it falls back
+    to the legacy global cursor. The token is never exposed.
+    """
     import uktech
-    return uktech.sync_status(serial)
+    # If a cycle is specified, enforce ownership (fail-closed 404)
+    if cycle_id is not None:
+        with SessionLocal() as s:
+            _require_owner_cycle(s, cycle_id, current)
+    return uktech.sync_status(serial, cycle_id)
 def _ws_auth_or_close(ws: WebSocket):
     """Browsers cannot set headers on a WS handshake, so the JWT travels as
     ?token=. Returns the authenticated User or None (caller must close)."""

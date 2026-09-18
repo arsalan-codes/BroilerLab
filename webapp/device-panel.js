@@ -66,7 +66,7 @@
           if (e.target.closest(".cy-del")) {
             if(window.MDialog){ MDialog.confirm({title:window.tr?window.tr("dev.deleteTitle"):"حذف دوره", message:(window.tr?window.tr("dev.deleteMsg").replace("{code}",c.cycle_code):"دوره " + c.cycle_code + " و تمام داده‌های آن حذف شود؟\nاین عمل قابل بازگشت نیست."), confirmText:window.tr?window.tr("dev.deleteConfirm"):"حذف", cancelText:window.tr?window.tr("dialog.cancel"):"انصراف", icon:"danger", danger:true}).then(function(ok){ if(!ok) return; api("/api/cycles/" + c.id, { method: "DELETE" }).then(function () { if (selectedCycle === c.id) { selectedCycle = null; clearStats(); clearRegs(); } loadCycles(); }); }); return; } if (!confirm(window.tr?window.tr("dev.deleteMsg").replace("{code}",c.cycle_code):"دوره " + c.cycle_code + " و تمام داده‌های آن حذف شود؟")) return;
             api("/api/cycles/" + c.id, { method: "DELETE" }).then(function () {
-              if (selectedCycle === c.id) { selectedCycle = null; clearStats(); clearRegs(); }
+              if (selectedCycle === c.id) { selectedCycle = null; clearStats(); clearRegs(); stopUkLive(); }
               loadCycles();
             });
             return;
@@ -76,6 +76,7 @@
           loadStats(c.id);
           loadRegistrations(c.id);
           loadUkStatus();
+          startUkLive();
         });
         box.appendChild(el);
       });
@@ -97,7 +98,7 @@
       $("cy-code").value = ""; $("cy-label").value = "";
       selectedCycle = c.id;
       loadCycles(); loadStats(c.id);
-      clearRegs(); loadRegistrations(c.id);
+      clearRegs(); loadRegistrations(c.id); startUkLive();
       toast(window.tr?window.tr("dev.created").replace("{code}",c.cycle_code):"دوره " + c.cycle_code + " ایجاد شد");
     }).catch(function (e) { toast((window.tr?window.tr("dev.backendError"):"خطا: ") + e.message); });
   }
@@ -121,6 +122,7 @@
   function clearStats() {
     ["st-visits", "st-birds", "st-rows", "st-intake", "st-avgw", "st-miss"]
       .forEach(function (id) { var e = $(id); if (e) e.textContent = "—"; });
+    stopUkLive();
   }
   function clearRegs() {
     var body = $("reg-body");
@@ -340,6 +342,7 @@
   }
 
   // ---------- Online device sync (uktech weight API via backend) ----------
+  var ukLiveTimer = null, ukSyncing = false;
   function setUkStatus(msg) {
     var st = $("uk-sync-status");
     if (st) st.textContent = msg;
@@ -352,19 +355,86 @@
     return String(iso).replace("T", " ").slice(0, 19);
   }
   function loadUkStatus() {
-    api("/api/uktech/status").then(function (s) {
+    var q = selectedCycle ? "?cycle_id=" + encodeURIComponent(selectedCycle) : "";
+    api("/api/uktech/status" + q).then(function (s) {
       if (s && s.updated_at) {
-        setUkStatus(tr("dev.syncLast", "آخرین همگام‌سازی: {t}").replace("{t}", fmtDT(s.updated_at)).replace("{n}", s.last_id));
+        var t = fmtDT(s.updated_at);
+        var last = s.last_id || 0;
+        var base = tr("dev.syncLast", "آخرین همگام‌سازی: {t}").replace("{t}", t).replace("{n}", lnum(last));
+        // live indicator when auto-poll is active
+        if (ukLiveTimer && selectedCycle) base += " · " + tr("dev.liveOn", "زنده");
+        setUkStatus(base);
       } else {
-        setUkStatus(tr("dev.syncNever", "هنوز همگام‌سازی انجام نشده است."));
+        var txt = tr("dev.syncNever", "هنوز همگام‌سازی انجام نشده است.");
+        if (ukLiveTimer && selectedCycle) txt += " · " + tr("dev.liveOn", "زنده");
+        setUkStatus(txt);
       }
+      // toggle live badge
+      var badge = document.querySelector(".dev-regs__live");
+      if (badge) badge.style.opacity = (ukLiveTimer && selectedCycle) ? "1" : "0.45";
     }).catch(function () {});
+  }
+  function setUkLiveDot(on) {
+    var b = document.querySelector(".dev-regs__live i");
+    if (!b) return;
+    b.style.color = on ? "#19c39a" : "";
+    b.style.animation = on ? "ukPulse 1.2s infinite" : "";
+  }
+  function startUkLive() {
+    stopUkLive();
+    if (!selectedCycle) return;
+    setUkLiveDot(true);
+    // immediate sync (silent), then every 8s
+    autoSyncUktech(true);
+    ukLiveTimer = setInterval(function () {
+      if (document.hidden) return; // pause when tab hidden
+      if (selectedCycle) autoSyncUktech(true);
+    }, 8000);
+    loadUkStatus();
+  }
+  function stopUkLive() {
+    if (ukLiveTimer) { clearInterval(ukLiveTimer); ukLiveTimer = null; }
+    setUkLiveDot(false);
+    loadUkStatus();
+  }
+  function autoSyncUktech(silent) {
+    if (!selectedCycle || ukSyncing) return;
+    ukSyncing = true;
+    // default limit (200) lets the first poll catch up fully (1061 rows in ~6 pages);
+    // subsequent polls stop after 1 page when min_id <= last_id — cheap live polling.
+    api("/api/uktech/sync", { method: "POST", body: JSON.stringify({ cycle_id: selectedCycle }) }).then(function (r) {
+      var n = (r && r.inserted) || 0;
+      if (n > 0) {
+        if (!silent) toast(tr("dev.syncDone", "همگام‌سازی انجام شد: {n} رکورد جدید").replace("{n}", lnum(n)));
+        loadStats(selectedCycle); loadRegistrations(selectedCycle);
+      } else if (!silent) {
+        toast(tr("dev.syncNone", "رکورد جدیدی نبود."));
+      }
+      loadUkStatus();
+      if (r && r.tls_insecure) {
+        var st = $("uk-sync-status");
+        var cur = st ? st.textContent : "";
+        if (cur.indexOf("self-signed") === -1 && cur.indexOf("خودامضا") === -1) {
+          setUkStatus(cur + " " + tr("dev.syncInsecure", "⚠ اتصال بدون تأیید گواهی (self-signed)"));
+        }
+      }
+    }).catch(function (e) {
+      if (silent) { ukSyncing = false; return; }
+      var m = String((e && e.message) || e || "");
+      if (/token is not configured/i.test(m)) m = tr("dev.syncNoToken", "توکن API دستگاه روی سرور تنظیم نشده است.");
+      else if (/CERTIFICATE_VERIFY|certificate verify|SSL/i.test(m)) m = tr("dev.syncTLS", "خطای گواهی TLS هاست دستگاه.");
+      else if (/429/.test(m)) m = tr("dev.syncRateLimit", "درخواست‌ها زیاد است — کمی صبر کنید.");
+      toast(tr("dev.syncFail", "خطا در دریافت داده: ") + m);
+      loadUkStatus();
+    }).then(function () { ukSyncing = false; });
   }
   function syncUktech() {
     if (!selectedCycle) { toast(tr("dev.syncNeedCycle", "اول یک دوره را انتخاب کنید.")); return; }
     var btn = $("uk-sync");
     if (btn) btn.disabled = true;
     setUkStatus(tr("dev.syncing", "در حال دریافت..."));
+    // manual sync fetches more (full page) and always shows toast
+    ukSyncing = true;
     api("/api/uktech/sync", { method: "POST", body: JSON.stringify({ cycle_id: selectedCycle }) }).then(function (r) {
       var n = (r && r.inserted) || 0;
       if (n > 0) toast(tr("dev.syncDone", "همگام‌سازی انجام شد: {n} رکورد جدید").replace("{n}", lnum(n)));
@@ -377,7 +447,7 @@
       else if (/CERTIFICATE_VERIFY|certificate verify|SSL/i.test(m)) m = tr("dev.syncTLS", "خطای گواهی TLS هاست دستگاه.");
       toast(tr("dev.syncFail", "خطا در دریافت داده: ") + m);
       loadUkStatus();
-    }).then(function () { if (btn) btn.disabled = false; });
+    }).then(function () { ukSyncing = false; if (btn) btn.disabled = false; });
   }
 
   // ---------- init ----------
@@ -391,6 +461,16 @@
     var curP=document.querySelector("section.view.on"); var onPub=curP && (curP.id==="v-landing" || curP.id==="v-about");
     if(authed2 || !onPub) loadCycles();
     connectWS();
+    // pause live when tab hidden, resume on visible
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden && selectedCycle && !ukLiveTimer) startUkLive();
+    });
+    // stop live when leaving device view
+    window.addEventListener("rossim:view", function (e) {
+      var v = e && e.detail;
+      if (v && v !== "v-dev") stopUkLive();
+      else if (v === "v-dev" && selectedCycle) startUkLive();
+    });
   }
 
   if (document.readyState === "loading")
