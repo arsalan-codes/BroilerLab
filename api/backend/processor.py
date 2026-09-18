@@ -125,6 +125,12 @@ class CycleProcessor:
         # Optional idempotency tag (uktech sync sets it) — stored at insert
         # so callers don't need a second UPDATE roundtrip per row.
         ext_id = (event.get("external_id") or "").strip() or None
+        # Weighing-unit lane (single-unit HTTP devices are unit 1).
+        try:
+            unit = int(event.get("unit") or 1)
+        except (TypeError, ValueError):
+            unit = 1
+        unit = unit if unit in (1, 2) else 1
 
         # If weight_g missing but raw present, apply EMA smoothing.
         if weight_g is None and raw is not None:
@@ -141,7 +147,7 @@ class CycleProcessor:
         if bird_id and ctx is None:
             is_start = True
             ctx = self._open_visit(bird_id, ts, sensor_id, rssi, weight_g,
-                                   age_day, bin_kg, s=s)
+                                   age_day, bin_kg, s=s, unit=unit)
         elif ctx is not None:
             # continuation or end
             dt_last = ctx["last_ts"]
@@ -168,7 +174,8 @@ class CycleProcessor:
                 if weight_g is not None or raw is not None:
                     is_start = True
                     ctx = self._open_visit(bird_id, ts, sensor_id, rssi,
-                                           weight_g, age_day, bin_kg, s=s)
+                                           weight_g, age_day, bin_kg, s=s,
+                                           unit=unit)
                 else:
                     ctx = None
             else:
@@ -204,12 +211,16 @@ class CycleProcessor:
             log_d = _log_to_dict(log, {
                 "elapsed_s": round(elapsed, 1),
                 "visit_feed_g": round(ctx["intake"] if ctx else 0.0, 1),
+                # unit lane + hopper level (g) for the per-unit live tables
+                "unit": unit,
+                "bin_weight_g": round(bin_kg * 1000.0, 2)
+                if bin_kg is not None else None,
             })
         return log_d
 
     # ---- internal state machine ----
     def _open_visit(self, bird_id, ts, sensor, rssi, weight_g, age_day,
-                    bin_kg=None, s=None):
+                    bin_kg=None, s=None, unit=1):
         ema_w = weight_g
         owned = s is None
         with _session_scope(s) as s:
@@ -229,6 +240,7 @@ class CycleProcessor:
                     visit_start=ts, sensor_id=sensor,
                     initial_weight_g=weight_g, age_day=age_day,
                     rssi=rssi, read_ok=(bird_id is not None),
+                    unit=unit,
                 )
                 s.add(v); _persist(s, owned)
             vid, start, init_w = v.id, v.visit_start, v.initial_weight_g

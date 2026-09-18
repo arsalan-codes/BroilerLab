@@ -230,6 +230,11 @@ def test_sync_is_idempotent_sqlite(tmp_path, monkeypatch):
     with SessionLocal() as s:
         assert s.query(DeviceLog).filter(DeviceLog.cycle_id == cid).count() == 4
         assert s.query(Visit).filter(Visit.cycle_id == cid).count() == 1
+        # INVALID-flagged unit-2 rows are stored raw but never open visits
+        bad = s.query(DeviceLog).filter(
+            DeviceLog.cycle_id == cid,
+            DeviceLog.external_id.like("%:u2")).all()
+        assert len(bad) == 2 and all(r.visit_id is None for r in bad)
         assert uktech.get_cursor("ESP800", cid) == 1002
 
 
@@ -281,9 +286,15 @@ def test_two_units_independent_lanes(tmp_path, monkeypatch):
             # each bird weighed on its own unit lane
             assert by_bird["B1"].initial_weight_g == 201.0
             assert by_bird["B2"].initial_weight_g == 301.0
+            assert by_bird["B1"].unit == 1 and by_bird["B2"].unit == 2
             # both closed by the zero row, presence stored from device
             assert all(v.visit_end is not None for v in visits)
             assert all(v.presence_s == 130 for v in visits)
+            # each lane's hopper level stored on its own rows (g, not mixed)
+            bins = {(l.bird_id, l.sensor_id): l.feed_bin_kg for l in
+                    s.query(DeviceLog).filter(DeviceLog.cycle_id == cid).all()
+                    if l.external_id and l.external_id.endswith(":u1")}
+            assert set(bins.values()) == {5.0}
             # raw tier keeps all six unit rows
             assert s.query(DeviceLog).filter(
                 DeviceLog.cycle_id == cid).count() == 6

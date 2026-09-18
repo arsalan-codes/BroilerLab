@@ -56,11 +56,14 @@ E2E = textwrap.dedent('''
         assert logs[2]["is_visit_end"] is True, logs[2]  # closing row ends, no ghost visit
         assert logs[1]["elapsed_s"] == 11.0, logs[1]
         assert logs[1]["visit_feed_g"] == 40.0, logs[1]  # 0.04kg bin drop -> g
+        assert logs[1]["unit"] == 1 and logs[1]["bin_weight_g"] == 16660.0, logs[1]
         regs = c.get(f"/api/cycles/{cid}/registrations", headers=h).json()
         mine = [r for r in regs if r["bird_id"] == "B7" and r["feed_intake_g"] > 0][0]
         assert mine["feed_intake_g"] == 44.0, mine      # 40 bin + 4 closing delta
         assert mine["elapsed_s"] >= 20, mine
         assert mine["sensor_id"] == "S1" and mine["initial_weight_g"] == 642
+        assert mine["unit"] == 1, mine  # single-unit HTTP devices are lane 1
+        assert mine["bin_weight_g"] == 16700.0, mine  # hopper level (g) at visit start
         # ownership isolation still holds on the new shape
         assert c.get(f"/api/cycles/{cid}/registrations").status_code == 401
     print("DEVICE-TABLE E2E OK")
@@ -79,7 +82,8 @@ def test_registrations_returns_six_params():
     assert m, "recent_registrations not found in backend/main.py"
     body = m.group(1)
     for field in ("feed_intake_g", "elapsed_s", "visit_end", "final_weight_g",
-                  "registered_at", "sensor_id", "bird_id", "initial_weight_g"):
+                  "registered_at", "sensor_id", "bird_id", "initial_weight_g",
+                  "presence_s", "unit", "bin_weight_g"):
         assert field in body, f"registrations response missing {field}"
 
 
@@ -93,25 +97,30 @@ def test_intake_single_rule_with_unit_fix():
         "start rows must seed the bin baseline"
 
 
-def test_frontend_renders_six_columns():
+def test_frontend_renders_seven_columns():
     html = (WEBAPP / "index.html").read_text(encoding="utf-8")
-    m = re.search(r'<div class="reg-thead">(.*?)</div>', html, re.S)
-    assert m, "reg-thead not found"
-    cells = re.findall(r"reg-cell--(\w+)", m.group(1))
-    assert cells == ["feed", "w", "elapsed", "dt", "tag", "sensor"], \
-        f"thead must be feed/weight/elapsed/datetime/bird/device, got {cells}"
+    heads = re.findall(r'<div class="reg-thead">(.*?)</div>', html, re.S)
+    assert len(heads) == 2, f"two per-unit tables expected, got {len(heads)}"
+    for head in heads:
+        cells = re.findall(r"reg-cell--(\w+)", head)
+        assert cells == ["feed", "w", "bin", "elapsed", "dt", "tag", "sensor"], \
+            f"thead must be feed/weight/bin/elapsed/datetime/bird/device, got {cells}"
+    assert 'id="reg-body-u1"' in html and 'id="reg-body-u2"' in html, \
+        "per-unit table bodies missing"
     js = (WEBAPP / "device-panel.js").read_text(encoding="utf-8")
     assert "visit_feed_g" in js and "elapsed_s" in js and "feed_intake_g" in js, \
         "device-panel must render the new live + history fields"
+    assert "bin_weight_g" in js, "device-panel must render the hopper column"
 
 
 def test_locales_have_device_headers():
-    for loc, feed, elapsed, dt in (("fa.js", "غذای مصرف‌شده", "زمان سپری‌شده", "تاریخ و ساعت"),
-                                   ("en.js", "Feed consumed", "Elapsed", "Date & time")):
+    for loc, feed, elapsed, dt, hop in (("fa.js", "غذای مصرف‌شده", "زمان سپری‌شده", "تاریخ و ساعت", "وزن مخزن"),
+                                        ("en.js", "Feed consumed", "Elapsed", "Date & time", "Hopper weight")):
         src = (ROOT / "webapp" / "locales" / loc).read_text(encoding="utf-8")
-        for key in ("dev.reg.feed", "dev.reg.elapsed", "dev.reg.datetime", "dev.reg.sec"):
+        for key in ("dev.reg.feed", "dev.reg.elapsed", "dev.reg.datetime", "dev.reg.sec",
+                    "dev.reg.bin", "dev.unit1", "dev.unit2"):
             assert key in src, f"{loc} missing {key}"
-        assert feed in src and elapsed in src and dt in src, f"{loc} header text wrong"
+        assert feed in src and elapsed in src and dt in src and hop in src, f"{loc} header text wrong"
 
 
 def test_migration_003_chain():

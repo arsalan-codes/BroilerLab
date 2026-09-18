@@ -553,29 +553,34 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                         if e["bird_id"]})
         with SessionLocal() as s:
             orows = (s.query(Visit.id, Visit.bird_id, Visit.visit_start,
-                             Visit.initial_weight_g, Visit.feed_intake_g)
+                             Visit.initial_weight_g, Visit.feed_intake_g,
+                             Visit.unit)
                      .filter(Visit.cycle_id == cycle_id,
                              Visit.bird_id.in_(birds),
                              Visit.visit_end.is_(None)).all()) if birds else []
+        # open visits keyed by (bird, unit): the two hopper lanes never share
+        # bin baselines or elapsed clocks, even for the same RFID.
         openv = {}
-        for _vid, _bird, _start, _initw, _feed in orows:
-            openv[_bird] = {"vid": _vid, "db": True,
-                            "start": _aware_utc(_start),
-                            "base": _feed, "acc": 0.0, "bin_prev": None,
-                            "registered": _initw, "touched": False,
-                            "presence": None,
-                            "is_new": False, "new_idx": None}
+        for _vid, _bird, _start, _initw, _feed, _unit in orows:
+            openv[(_bird, _unit or 1)] = {
+                "vid": _vid, "db": True,
+                "start": _aware_utc(_start),
+                "base": _feed, "acc": 0.0, "bin_prev": None,
+                "registered": _initw, "touched": False,
+                "presence": None, "db_unit": _unit,
+                "is_new": False, "new_idx": None}
         new_visits = []
         visit_updates = []  # bulk mappings for closes/ratchets/touches
         dirty_sess = set()
         log_specs = []  # (event, ts, ext, is_start, is_end, visit_ref, elapsed, feed)
 
-        def _close_ov(ov, end_dt, binkg, presence):
+        def _close_ov(ov, end_dt, binkg, presence, lane_unit=None):
             """Close one open-visit entry (new or adopted). Returns
             (visit_ref, feed) for the closing row's live payload.
 
             presence_s (device-accumulated seconds until exit) lands on the
-            visit here — the only moment its final value is known.
+            visit here — the only moment its final value is known. Unit is
+            backfilled on adopted rows that predate the lane column.
             """
             end_inc = _intake_increment({"bin_prev": ov["bin_prev"]},
                                         binkg, None)
@@ -592,12 +597,15 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 nv_old.final_weight_g = ov["registered"]
                 nv_old.presence_s = ov.get("presence")
                 return ("new", ov["new_idx"]), feed
-            visit_updates.append({
+            close_map = {
                 "id": ov["vid"], "visit_end": end_dt,
                 "feed_intake_g": feed,
                 "final_weight_g": ov["registered"],
                 "presence_s": ov.get("presence"),
-                "temp_c": None, "humidity": None})
+                "temp_c": None, "humidity": None}
+            if ov.get("db_unit") is None and lane_unit is not None:
+                close_map["unit"] = lane_unit
+            visit_updates.append(close_map)
             return ("old", ov["vid"]), feed
         for rid, unit, ext, event, ts, valid, presence in planned:
             bird = event["bird_id"]
@@ -630,14 +638,16 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 if kind == "register":
                     _, rw, first_ep = act
                     events_count += 1
+                    lane = (bird, unit)
                     if bird:
                         # quick-swap: a previous visit may still be open
                         # (no zero seen between loads) — close it first so no
                         # orphan open visit leaks with ever-growing elapsed.
-                        prev = openv.get(bird)
+                        prev = openv.get(lane)
                         if prev is not None:
-                            _close_ov(prev, ts, binkg, presence)
-                            del openv[bird]
+                            _close_ov(prev, ts, binkg, presence,
+                                      lane_unit=unit)
+                            del openv[lane]
                     if bird:
                         first_dt = datetime.fromtimestamp(
                             first_ep, tz=timezone.utc)
@@ -646,9 +656,9 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                             visit_start=first_dt,
                             sensor_id=event["sensor_id"],
                             initial_weight_g=rw, age_day=event["age_day"],
-                            rssi=event["rssi"], read_ok=True)
+                            rssi=event["rssi"], read_ok=True, unit=unit)
                         new_visits.append(nv)
-                        openv[bird] = {"vid": None, "db": False,
+                        openv[lane] = {"vid": None, "db": False,
                                        "start": first_dt, "base": None,
                                        "acc": 0.0, "bin_prev": binkg,
                                        "registered": rw, "touched": False,
@@ -661,7 +671,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                     registered_this_row = True
                 elif kind == "ratchet":
                     _, rw = act
-                    ov = openv.get(bird) if bird else None
+                    ov = openv.get((bird, unit)) if bird else None
                     if ov is not None:
                         ov["registered"] = rw
                         if ov.get("is_new"):
@@ -674,16 +684,17 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 elif kind in ("close", "timeout_close"):
                     end_dt = (datetime.fromtimestamp(now_ts, tz=timezone.utc)
                               if kind == "timeout_close" else ts)
-                    ov = openv.get(bird) if bird else None
+                    ov = openv.get((bird, unit)) if bird else None
                     if ov is not None:
                         visit_ref, feed_now = _close_ov(ov, end_dt, binkg,
-                                                       presence)
-                        del openv[bird]
+                                                       presence,
+                                                       lane_unit=unit)
+                        del openv[(bird, unit)]
                         is_end = True
                     new_st["visit_id"] = None
                     closed_this_row = True
             if not registered_this_row and not closed_this_row:
-                ov = openv.get(bird) if bird else None
+                ov = openv.get((bird, unit)) if bird else None
                 if ov is not None:
                     if binkg is not None:
                         inc = _intake_increment({"bin_prev": ov["bin_prev"]},
@@ -696,7 +707,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             # elapsed + live feed context (mirrors ingest: visit start, else 0).
             # Close rows already set feed_now above (credited intake).
             if not closed_this_row:
-                ov_now = openv.get(bird) if bird else None
+                ov_now = openv.get((bird, unit)) if bird else None
                 if ov_now and ov_now.get("start"):
                     try:
                         elapsed = max(0.0, (ts - ov_now["start"]).total_seconds())
@@ -715,14 +726,19 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                     nv = new_visits[ov["new_idx"]]
                     nv.feed_intake_g = ov["acc"]
                     nv.final_weight_g = ov["registered"]
-            # touches on adopted open visits (mirror per-step writes).
-            for ov in openv.values():
+            # touches on adopted open visits (mirror per-step writes). Unit
+            # is backfilled when missing (pre-migration rows); never clobbered
+            # otherwise — a visit belongs to exactly one lane.
+            for (_bird, _lane_unit), ov in openv.items():
                 if not ov.get("is_new") and ov.get("touched"):
-                    visit_updates.append({
+                    upd = {
                         "id": ov["vid"],
                         "feed_intake_g": (ov["base"] or 0) + ov["acc"],
                         "final_weight_g": ov["registered"],
-                        "temp_c": None, "humidity": None})
+                        "temp_c": None, "humidity": None}
+                    if ov.get("db_unit") is None:
+                        upd["unit"] = _lane_unit
+                    visit_updates.append(upd)
             if new_visits:
                 s.add_all(new_visits)
                 s.flush()  # PKs assigned, still one txn
@@ -787,11 +803,18 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 if upd_srows:
                     s.bulk_update_mappings(WeighingSession, upd_srows)
             s.commit()
-            # rebuild publish payloads with per-row elapsed/feed saved above
+            # rebuild publish payloads with per-row elapsed/feed saved above.
+            # unit lane parsed from the external id suffix; hopper level in
+            # grams for the per-unit live tables.
             for (event, ts, ext, is_start, is_end, visit_ref,
                  elapsed, feed), _lo in zip(log_specs, log_objs):
+                unit = 2 if ext.endswith(":u2") else 1
+                binkg = event.get("feed_bin_kg")
                 published.append(_log_to_dict(_lo, {
-                    "elapsed_s": elapsed, "visit_feed_g": feed}))
+                    "elapsed_s": elapsed, "visit_feed_g": feed,
+                    "unit": unit,
+                    "bin_weight_g": round(binkg * 1000.0, 2)
+                    if binkg is not None else None}))
         # Drop any cached in-memory visit state for this cycle: the bulk write
         # went straight to the DB, so a cached processor would hold stale ctx.
         # Clearing forces a DB rebuild on next use (existing-check converges).

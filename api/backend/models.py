@@ -98,6 +98,9 @@ class Visit(Base):
     # Device-reported presence seconds, accumulated by the hardware until the
     # bird exits (uktech total_seconds). Set on visit close; NULL while open.
     presence_s = Column(Float, nullable=True)
+    # Weighing-unit lane (uktech two-unit records: 1 or 2). HTTP-ingest and
+    # legacy rows default to 1 (single-unit devices); NULL only predates it.
+    unit = Column(Integer, nullable=True, index=True)
     sensor_id = Column(String(32), nullable=True)
     rssi = Column(Float, nullable=True)
     read_ok = Column(Boolean, default=True)
@@ -259,6 +262,25 @@ def init_db():
             if "presence_s" not in visit_cols:
                 conn.execute(text("ALTER TABLE visits ADD COLUMN presence_s FLOAT"))
                 print("[migrate] added visits.presence_s")
+            if "unit" not in visit_cols:
+                conn.execute(text("ALTER TABLE visits ADD COLUMN unit INTEGER"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_visits_unit ON visits(unit)"))
+                print("[migrate] added visits.unit")
+                # backfill lanes from the opening log's external_id suffix
+                try:
+                    conn.execute(text(
+                        "UPDATE visits SET unit = 1 WHERE unit IS NULL AND id IN "
+                        "(SELECT visit_id FROM device_logs WHERE is_visit_start "
+                        "AND (external_id LIKE '%:u1' OR external_id IS NULL))"))
+                    conn.execute(text(
+                        "UPDATE visits SET unit = 2 WHERE unit IS NULL AND id IN "
+                        "(SELECT visit_id FROM device_logs WHERE is_visit_start "
+                        "AND external_id LIKE '%:u2')"))
+                    conn.execute(text(
+                        "UPDATE visits SET unit = 1 WHERE unit IS NULL"))
+                    print("[migrate] backfilled visits.unit lanes")
+                except Exception as be:
+                    print(f"[migrate] visits.unit backfill skipped: {be}")
             # scope cycle_code uniqueness per owner (drop legacy global index)
             idx_names = {i["name"] for i in insp.get_indexes("cycles")}
             try:

@@ -445,6 +445,22 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
     with SessionLocal() as s:
         _require_owner_cycle(s, cycle_id, current)
         rows = (s.query(Visit).filter(Visit.cycle_id == cycle_id, Visit.bird_id.isnot(None)).order_by(Visit.visit_start.desc()).limit(limit).all())
+        # hopper level (g) + lane fallback per visit, batched from the
+        # visit-opening logs: unit column first, else the external_id suffix
+        # (:u1/:u2), else lane 1 for legacy rows.
+        vids = [v.id for v in rows]
+        binmap, unitmap = {}, {}
+        if vids:
+            for vid, fb, ext in (s.query(DeviceLog.visit_id,
+                                        DeviceLog.feed_bin_kg,
+                                        DeviceLog.external_id)
+                                 .filter(DeviceLog.visit_id.in_(vids),
+                                         DeviceLog.is_visit_start.is_(True)).all()):
+                binmap.setdefault(vid, fb)
+                if ext and ext.endswith(":u2"):
+                    unitmap[vid] = 2
+                elif ext:
+                    unitmap.setdefault(vid, 1)
         now = datetime.now(timezone.utc)
         out = []
         for v in rows:
@@ -453,11 +469,15 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
                 elapsed = max(0.0, (end - v.visit_start).total_seconds()) if v.visit_start else 0.0
             except Exception:
                 elapsed = 0.0
+            binkg = binmap.get(v.id)
             out.append({"bird_id": v.bird_id, "initial_weight_g": v.initial_weight_g,
                         "final_weight_g": v.final_weight_g,
                         "feed_intake_g": round(v.feed_intake_g or 0, 1),
                         "elapsed_s": round(elapsed, 1),
                         "presence_s": v.presence_s,
+                        "unit": v.unit if v.unit in (1, 2) else unitmap.get(v.id, 1),
+                        "bin_weight_g": round(binkg * 1000.0, 2)
+                        if binkg is not None else None,
                         "registered_at": _iso(v.visit_start), "visit_end": _iso(v.visit_end),
                         "age_day": v.age_day, "sensor_id": v.sensor_id,
                         "rssi": v.rssi, "read_ok": v.read_ok})
@@ -557,6 +577,14 @@ def ingest_event(cycle_id: int, payload: IngestIn, current: User = Depends(authm
     data = payload.model_dump()
     data["cycle"] = _code_for(cycle_id)
     log_d = proc.ingest(data)
+    # single-unit HTTP devices live on lane 1 with their hopper level (g)
+    log_d["unit"] = 1
+    try:
+        _fb = data.get("feed_bin_kg")
+        log_d["bin_weight_g"] = round(float(_fb) * 1000.0, 2) \
+            if _fb is not None else None
+    except (TypeError, ValueError):
+        log_d["bin_weight_g"] = None
     hub.publish(log_d)
     return log_d
 

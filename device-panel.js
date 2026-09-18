@@ -129,9 +129,17 @@
       .forEach(function (id) { var e = $(id); if (e) e.textContent = "—"; });
     stopUkLive();
   }
+  function regEmptyHtml() {
+    return '<div class="reg-empty"><i class="fa-solid fa-inbox" aria-hidden="true"></i>'+(window.tr?window.tr("dev.regEmpty"):"هنوز ثبت لحظه‌ای دریافت نشده است.<br>پرنده‌ها هنگام ورود اینجا ظاهر می‌شوند.")+'</div>';
+  }
   function clearRegs() {
-    var body = $("reg-body");
-    if (body) body.innerHTML = '<div class="reg-empty"><i class="fa-solid fa-inbox" aria-hidden="true"></i>'+(window.tr?window.tr("dev.regEmpty"):"هنوز ثبت لحظه‌ای دریافت نشده است.<br>پرنده‌ها هنگام ورود اینجا ظاهر می‌شوند.")+'</div>';
+    ["reg-body-u1", "reg-body-u2"].forEach(function (id) {
+      var body = $(id);
+      if (body) body.innerHTML = regEmptyHtml();
+    });
+  }
+  function regBodyFor(unit) {
+    return $(unit === 2 ? "reg-body-u2" : "reg-body-u1") || $("reg-body-u1");
   }
 
   // ---------- Live WebSocket (auth via ?token=, polling fallback) ----------
@@ -195,22 +203,23 @@
     while (feed.childNodes.length > 60) feed.removeChild(feed.lastChild);
   }
 
-  // ---------- Realtime registrations (bird entry log) ----------
+  // ---------- Realtime registrations (bird entry log, per unit) ----------
   var regMax = 50;
-  function pushReg(d) {
-    var body = $("reg-body");
-    if (!body) return;
-    // clear empty placeholder on first entry
-    var empty = body.querySelector(".reg-empty");
-    if (empty) empty.remove();
-    // Only validated weighing events open table rows: the uktech sync path
-    // sets is_visit_start exclusively on REGISTERED session events (with a
-    // visit attached). The old fallback heuristic (any bird+weight row)
-    // would reintroduce unloading residuals like 6.77 as table rows.
-    var isEntry = d.is_visit_start === true && d.visit_id != null;
-    if (!isEntry) return;
-
-    var dt = d.timestamp || d.registered_at || "";
+  function regUnitOf(d) {
+    var u = parseInt(d && d.unit, 10);
+    return u === 2 ? 2 : 1;
+  }
+  function regRowHtml(o) {
+    // o: {feed, w, bin, elap, dtJoin, bird, sensor}
+    return '<span class="reg-cell reg-cell--feed">' + (o.feed != null ? lnum(o.feed, 2) : "—") + '<span class="reg-unit">g</span></span>' +
+      '<span class="reg-cell reg-cell--w">' + (o.w != null ? lnum(o.w, 2) : "—") + '<span class="reg-unit">g</span></span>' +
+      '<span class="reg-cell reg-cell--bin">' + (o.bin != null ? lnum(o.bin, 2) : "—") + '<span class="reg-unit">g</span></span>' +
+      '<span class="reg-cell reg-cell--elapsed">' + (o.elap != null ? lnum(o.elap, 2) : "—") + '<span class="reg-unit">' + tr("dev.reg.sec", "s") + '</span></span>' +
+      '<span class="reg-cell reg-cell--dt">' + esc(o.dtJoin) + '</span>' +
+      '<span class="reg-cell reg-cell--tag">' + esc(o.bird || "—") + '</span>' +
+      '<span class="reg-cell reg-cell--sensor">' + esc(o.sensor || "—") + '</span>';
+  }
+  function regDateJoin(dt) {
     var datePart = "", timePart = "";
     if (dt) {
       if (typeof window.formatDate==="function") {
@@ -225,20 +234,30 @@
         else { datePart = dt.slice(0, 10); timePart = dt.slice(11, 19); }
       }
     }
+    return (datePart && timePart) ? datePart + " " + timePart : (datePart || timePart || "—");
+  }
+  function pushReg(d) {
+    var body = regBodyFor(regUnitOf(d));
+    if (!body) return;
+    // clear empty placeholder on first entry
+    var empty = body.querySelector(".reg-empty");
+    if (empty) empty.remove();
+    // Only validated weighing events open table rows: the uktech sync path
+    // sets is_visit_start exclusively on REGISTERED session events (with a
+    // visit attached). The old fallback heuristic (any bird+weight row)
+    // would reintroduce unloading residuals like 6.77 as table rows.
+    var isEntry = d.is_visit_start === true && d.visit_id != null;
+    if (!isEntry) return;
+
     var w = d.initial_weight_g != null ? d.initial_weight_g : d.weight_g;
     var feed = d.visit_feed_g != null ? d.visit_feed_g : d.feed_intake_g;
-    var elap = d.elapsed_s;
-    var dtJoin = (datePart && timePart) ? datePart + " " + timePart : (datePart || timePart || "—");
-
     var row = document.createElement("div");
     row.className = "reg-row new";
-    row.innerHTML =
-      '<span class="reg-cell reg-cell--feed">' + (feed != null ? lnum(feed, 2) : "—") + '<span class="reg-unit">g</span></span>' +
-      '<span class="reg-cell reg-cell--w">' + (w != null ? lnum(w, 2) : "—") + '<span class="reg-unit">g</span></span>' +
-      '<span class="reg-cell reg-cell--elapsed">' + (elap != null ? lnum(elap, 2) : "—") + '<span class="reg-unit">' + tr("dev.reg.sec", "s") + '</span></span>' +
-      '<span class="reg-cell reg-cell--dt">' + esc(dtJoin) + '</span>' +
-      '<span class="reg-cell reg-cell--tag">' + esc(d.bird_id || "—") + '</span>' +
-      '<span class="reg-cell reg-cell--sensor">' + esc(d.sensor_id || "—") + '</span>';
+    row.innerHTML = regRowHtml({
+      feed: feed, w: w, bin: d.bin_weight_g, elap: d.elapsed_s,
+      dtJoin: regDateJoin(d.timestamp || d.registered_at || ""),
+      bird: d.bird_id, sensor: d.sensor_id
+    });
     body.insertBefore(row, body.firstChild);
     while (body.childNodes.length > regMax) body.removeChild(body.lastChild);
     // remove flash class after animation
@@ -246,39 +265,31 @@
   }
 
   function loadRegistrations(id) {
-    var body = $("reg-body");
-    if (!body) return;
-    api("/api/cycles/" + id + "/registrations?limit=50").then(function (list) {
-      body.innerHTML = "";
-      if (!list.length) {
-        body.innerHTML = '<div class="reg-empty"><i class="fa-solid fa-inbox" aria-hidden="true"></i>'+(window.tr?window.tr("dev.regEmpty"):"هنوز ثبت لحظه‌ای دریافت نشده است.<br>پرنده‌ها هنگام ورود اینجا ظاهر می‌شوند.")+'</div>';
-        return;
-      }
-      list.forEach(function (r) {
-        var row = document.createElement("div");
-        row.className = "reg-row";
-        var datePart = r.registered_at || "";
-        var timePart = "";
-        if (typeof window.formatDate==="function" && datePart) {
-          datePart = window.formatDate(r.registered_at);
-          timePart = window.formatTime(r.registered_at);
-        } else if (window.Shamsi && datePart && (typeof LANG==="undefined" || LANG==="fa")) {
-          datePart = window.Shamsi.toShamsi(datePart);
-          timePart = window.Shamsi.toShamsi(r.registered_at, { withTime: true }).split(" ").pop();
-        } else {
-          datePart = datePart.slice(0, 10);
-          timePart = (r.registered_at || "").slice(11, 19);
-        }
-        var dtJoin = (datePart && timePart) ? datePart + " " + timePart : (datePart || timePart || "—");
-        var w = r.initial_weight_g != null ? r.initial_weight_g : r.final_weight_g;
-        row.innerHTML =
-          '<span class="reg-cell reg-cell--feed">' + (r.feed_intake_g != null ? lnum(r.feed_intake_g, 2) : "—") + '<span class="reg-unit">g</span></span>' +
-          '<span class="reg-cell reg-cell--w">' + (w != null ? lnum(w, 2) : "—") + '<span class="reg-unit">g</span></span>' +
-          '<span class="reg-cell reg-cell--elapsed">' + (r.elapsed_s != null ? lnum(r.elapsed_s, 2) : "—") + '<span class="reg-unit">' + tr("dev.reg.sec", "s") + '</span></span>' +
-          '<span class="reg-cell reg-cell--dt">' + esc(dtJoin) + '</span>' +
-          '<span class="reg-cell reg-cell--tag">' + esc(r.bird_id || "—") + '</span>' +
-          '<span class="reg-cell reg-cell--sensor">' + esc(r.sensor_id || "—") + '</span>';
-        body.appendChild(row);
+    var b1 = $("reg-body-u1"), b2 = $("reg-body-u2");
+    if (!b1 && !b2) return;
+    api("/api/cycles/" + id + "/registrations?limit=100").then(function (list) {
+      var groups = { 1: [], 2: [] };
+      (list || []).forEach(function (r) {
+        var u = regUnitOf(r);
+        groups[u].push(r);
+      });
+      [[1, b1], [2, b2]].forEach(function (pair) {
+        var body = pair[1];
+        if (!body) return;
+        body.innerHTML = "";
+        var rows = groups[pair[0]].slice(0, regMax);
+        if (!rows.length) { body.innerHTML = regEmptyHtml(); return; }
+        rows.forEach(function (r) {
+          var row = document.createElement("div");
+          row.className = "reg-row";
+          var w = r.initial_weight_g != null ? r.initial_weight_g : r.final_weight_g;
+          row.innerHTML = regRowHtml({
+            feed: r.feed_intake_g, w: w, bin: r.bin_weight_g,
+            elap: r.elapsed_s, dtJoin: regDateJoin(r.registered_at || ""),
+            bird: r.bird_id, sensor: r.sensor_id
+          });
+          body.appendChild(row);
+        });
       });
     }).catch(function () {});
   }
