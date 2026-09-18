@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <script src="config.local.js"></script>
-<script src="config.js?v=1.8.60"></script>
-<script src="services/api.js?v=1.8.60"></script>
+<script src="config.js?v=1.8.53"></script>
+<script src="services/api.js?v=1.8.53"></script>
 <script id="early-auth-gate">(function(){try{
   var tok=localStorage.getItem("broiler_token");
   var valid=false;
@@ -199,7 +199,7 @@ html[data-theme=light] .strain-select__option:hover,
 html[data-theme=light] .strain-select__option:focus{background:#f1f5f9;color:#19c39a}
 html[data-theme=light] .strain-select__option[aria-selected="true"]{background:rgba(25,195,154,.1);color:#19c39a}
 /* dd-select: native <select> upgraded to strain-select look */
-.dd-hidden{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;clip-path:inset(50%)}
+.dd-hidden{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px}
 .dd-select{min-width:160px;max-width:220px;width:100%;font-size:12px}
 .dd-select .dd-current{height:36px;padding:0 14px 0 12px}
 .dd-select .dd-list{max-height:280px;min-width:100%;width:max-content;min-width:max-content}
@@ -408,7 +408,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 .hctl .vbadge{align-self:center;display:inline-flex;align-items:center}
 .hpills{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.56).
+/* ---------- header controls (tablet & below): hamburger REMOVED (v1.8.53).
    .hctl (desktop inline controls) is display:none on mobile; every drawer
    entry lives in the user menu (dropdown + bottom sheet). ---------- */
 @media(max-width:992px){
@@ -1423,7 +1423,7 @@ html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
   padding:8px 10px;border-radius:8px;border:none;background:transparent;color:var(--txt);cursor:pointer;font-family:inherit;font-size:12.5px}
 .auth-dropdown-item:hover{background:var(--bg2)}
 .auth-dropdown-item.danger{color:var(--bad)}
-/* merged hamburger entries (v1.8.56): divider + language/theme segments */
+/* merged hamburger entries (v1.8.53): divider + language/theme segments */
 .auth-sep{border-top:1px solid var(--line);margin:6px 2px}
 .auth-seg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:6px 10px;font-size:12px;color:var(--mut);font-weight:600}
@@ -1587,7 +1587,7 @@ html[data-theme=light] .ws-card:hover{box-shadow:var(--sh-md)}
    to unreadable sizes. */
 .landing-title .brand-hero{font-size:clamp(34px,6.1vw,72px);font-weight:1000;letter-spacing:-.024em;line-height:1.08;display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:.04em .22em;text-wrap:balance}
 .landing-title .brand-hero [data-i18n="landing.heroPrefix"]{font-weight:1000;color:var(--tx)}
-.brand-hero-accent{position:relative;display:inline-block;padding:.12em .18em .2em .16em;color:transparent;background:linear-gradient(135deg,#19c39a 0%,#0ea5e9 48%,#7c3aed 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:1000;font-size:1.06em;letter-spacing:-.02em;filter:drop-shadow(0 2px 12px rgba(25,195,154,.22))}
+.brand-hero-accent{position:relative;display:inline-block;padding:0 .01em .14em;color:transparent;background:linear-gradient(135deg,#19c39a 0%,#0ea5e9 48%,#7c3aed 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:1000;font-size:1.06em;letter-spacing:-.02em;filter:drop-shadow(0 2px 12px rgba(25,195,154,.22))}
 html[data-theme=dark] .brand-hero-accent{filter:drop-shadow(0 1px 8px rgba(25,195,154,.18))}
 .brand-hero-accent [data-i18n="brand.name"]{position:relative;z-index:1}
 .brand-hero-sub{font-weight:500;color:var(--mut);opacity:.9;margin-top:6px;min-height:1.5em;display:block;letter-spacing:.01em;
@@ -1607,9 +1607,7 @@ html[data-theme=light] .landing-badge .lb-fact b{color:var(--acc2);text-shadow:n
 .landing-badge .lb-fact i{font-size:11px;opacity:.9}
 .landing-badge .lb-sep{color:color-mix(in srgb, var(--acc) 45%, transparent);font-weight:900}
 @media(max-width:560px){.landing-badge{border-radius:16px}.landing-badge .lb-sep{display:none}.landing-badge .lb-fact{padding:2px 8px;border-radius:999px;background:color-mix(in srgb, var(--acc) 7%, transparent)}}
-.landing-title{margin:16px 0 10px;font-size:clamp(26px,4.2vw,38px);line-height:1.18;font-weight:900;letter-spacing:-.03em;
-  /* breathing room so 1000-weight hero glyphs and the negative letter-spacing never kiss the card edge */
-  padding:.08em .12em .1em .04em}
+.landing-title{margin:16px 0 10px;font-size:clamp(26px,4.2vw,38px);line-height:1.18;font-weight:900;letter-spacing:-.03em}
 .landing-title > span:not(.brand-hero-sub):not(.brand-hero){display:block;font-size:clamp(15px,1.8vw,19px);font-weight:700;color:var(--mut);margin-top:6px;min-height:26px}
 /* landing-desc-box removed — unused */
 .landing-cta{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 18px}
@@ -1760,7 +1758,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     <div class="hgroup">
       <span class="hlabel" data-i18n="hdr.lang">زبان</span>
       <div class="langseg" role="group" aria-label="Language">
-        <button id="lang-fa" class="on" aria-pressed="true" lang="fa">�ا</button><button id="lang-en" aria-pressed="false" lang="en">EN</button>
+        <button id="lang-fa" class="on" aria-pressed="true" lang="fa">فا</button><button id="lang-en" aria-pressed="false" lang="en">EN</button>
       </div>
     </div>
     <button id="btn-help" class="icon-btn" aria-label="Help" data-title-i18n="hdr.help" title="؟"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button>
@@ -1795,7 +1793,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
           <div class="settings-row">
             <span class="settings-label" data-i18n="hdr.lang">زبان</span>
             <div class="langseg" role="group" aria-label="Language">
-              <button id="lang-fa-dd" class="on" aria-pressed="true" lang="fa" role="menuitem">�ا</button>
+              <button id="lang-fa-dd" class="on" aria-pressed="true" lang="fa" role="menuitem">فا</button>
               <button id="lang-en-dd" aria-pressed="false" lang="en" role="menuitem">EN</button>
             </div>
           </div>
@@ -1860,8 +1858,8 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <section id="account-sheet" class="account-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-user-name" hidden></section>
 
 <nav id="mainnav">
-  <button class="tab on" data-v="v-landing" id="tab-landing"><span data-i18n="nav.landing">ص�حه اصلی</span></button>
-  <button class="tab" id="nav-feed-btn" data-v="v-feed"><span data-i18n="nav.feedGroup">سیستم پایش مصر� خوراک</span></button>
+  <button class="tab on" data-v="v-landing" id="tab-landing"><span data-i18n="nav.landing">صفحه اصلی</span></button>
+  <button class="tab" id="nav-feed-btn" data-v="v-feed"><span data-i18n="nav.feedGroup">سیستم پایش مصرف خوراک</span></button>
   <button class="tab" data-v="v-env"><span data-i18n="nav.env">کنترل محیطی</span></button>
   <button class="tab" data-v="v-sci"><span data-i18n="nav.sci">مبانی علمی</span></button>
   <button class="tab" data-v="v-met"><span data-i18n="nav.met">روش‌شناسی</span></button>
@@ -1888,7 +1886,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
       <div class="landing-cta">
         <button class="btn primary lg" id="landing-login"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="landing.login">ورود به پنل</span></button>
         <button class="btn ghost lg" id="landing-register" data-i18n="landing.register">ثبت‌نام رایگان</button>
-        <button class="btn ghost lg" id="landing-guest" data-i18n="landing.guest">مشاهده معر�ی</button>
+        <button class="btn ghost lg" id="landing-guest" data-i18n="landing.guest">مشاهده معرفی</button>
       </div>
       <div class="landing-stats">
         <div class="ls"><b data-i18n="landing.stat.trials">طرح‌های آزمایشی</b></div>
@@ -1901,8 +1899,8 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
   </div>
   <div class="landing-grid">
     <div class="lcard" data-go="v-dash" role="button" tabindex="0"><i class="fa-solid fa-chart-line"></i><h3 data-i18n="landing.card.dash.t">داشبورد اعتبارسنجی</h3><p data-i18n="landing.card.dash.p">مقایسه لحظه‌ای نتایج شبیه‌سازی با عملکرد استاندارد سویه، همراه با نمودار رشد و ضریب تبدیل خوراک اختصاصی هر کاربر.</p></div>
-    <div class="lcard" data-go="v-exp" role="button" tabindex="0"><i class="fa-solid fa-vial"></i><h3 data-i18n="landing.card.exp.t">طرح آزمایش</h3><p data-i18n="landing.card.exp.p">تعری� دوره‌های پرورشی، گروه‌های تیمار و تکرارهای آزمایشی — هر دوره به‌صورت کامل و ایزوله در حساب کاربری شما ثبت می‌شود.</p></div>
-    <div class="lcard" data-go="v-farm" role="button" tabindex="0"><i class="fa-solid fa-map"></i><h3 data-i18n="landing.card.farm.t">نقشه �ارم پویا</h3><p data-i18n="landing.card.farm.p">جانمایی جایگاه‌های پرورشی، حسگرها و نمایش وضعیت زنده �ارم — داده‌ها به‌صورت اختصاصی و ایزوله در اختیار شما قرار دارد.</p></div>
+    <div class="lcard" data-go="v-exp" role="button" tabindex="0"><i class="fa-solid fa-vial"></i><h3 data-i18n="landing.card.exp.t">طرح آزمایش</h3><p data-i18n="landing.card.exp.p">تعریف دوره‌های پرورشی، گروه‌های تیمار و تکرارهای آزمایشی — هر دوره به‌صورت کامل و ایزوله در حساب کاربری شما ثبت می‌شود.</p></div>
+    <div class="lcard" data-go="v-farm" role="button" tabindex="0"><i class="fa-solid fa-map"></i><h3 data-i18n="landing.card.farm.t">نقشه فارم پویا</h3><p data-i18n="landing.card.farm.p">جانمایی جایگاه‌های پرورشی، حسگرها و نمایش وضعیت زنده فارم — داده‌ها به‌صورت اختصاصی و ایزوله در اختیار شما قرار دارد.</p></div>
     <div class="lcard" data-go="v-sim" role="button" tabindex="0"><i class="fa-solid fa-satellite-dish"></i><h3 data-i18n="landing.card.sim.t">شبیه‌سازی زنده</h3><p data-i18n="landing.card.sim.p">اجرای سناریو با شناسه اختصاصی و مشاهده بلادرنگ نتایج و خروجی‌های شبیه‌سازی.</p></div>
     <div class="lcard" data-go="v-scn" role="button" tabindex="0"><i class="fa-solid fa-layer-group"></i><h3 data-i18n="landing.card.scn.t">سناریوها</h3><p data-i18n="landing.card.scn.p">ذخیره‌سازی، مقایسه و اجرای مجدد سناریوهای شخصی‌سازی‌شده با امکان بازبینی دقیق نتایج.</p></div>
     <div class="lcard" data-go="v-dev" role="button" tabindex="0"><i class="fa-solid fa-microchip"></i><h3 data-i18n="landing.card.dev.t">دستگاه و داده</h3><p data-i18n="landing.card.dev.p">ثبت و ذخیره‌سازی خودکار اطلاعات دستگاه‌های پایش — داده‌ها به‌صورت کامل کاربرمحور، ایمن و اختصاصی شما نگهداری می‌شود.</p></div>
@@ -1923,7 +1921,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
       </div>
       <div class="ws-badges">
         <span class="ws-badge ok" id="ws-role" data-i18n="ws.badge.user">کاربر</span>
-        <span class="ws-badge" id="ws-status" data-i18n="ws.badge.active">�عال • کاربرمحور</span>
+        <span class="ws-badge" id="ws-status" data-i18n="ws.badge.active">فعال • کاربرمحور</span>
       </div>
     </div>
     <div class="ws-stats">
@@ -1938,38 +1936,38 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     </div>
     <div class="ws-grid">
       <div class="ws-card" data-go="v-dash"><i class="fa-solid fa-chart-line"></i><h3 data-i18n="ws.card.dash.t">داشبورد اعتبارسنجی</h3><p data-i18n="ws.card.dash.p">مقایسه شبیه‌سازی با داده واقعی و نمودار رشد</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-exp"><i class="fa-solid fa-vial"></i><h3 data-i18n="ws.card.exp.t">طرح آزمایش</h3><p data-i18n="ws.card.exp.p">تعری� دوره‌ها، تیمارها و تکرارها</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-farm"><i class="fa-solid fa-map"></i><h3 data-i18n="ws.card.farm.t">نقشه �ارم پویا</h3><p data-i18n="ws.card.farm.p">جانمایی پن‌ها و حسگرها به‌صورت زنده</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-exp"><i class="fa-solid fa-vial"></i><h3 data-i18n="ws.card.exp.t">طرح آزمایش</h3><p data-i18n="ws.card.exp.p">تعریف دوره‌ها، تیمارها و تکرارها</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-farm"><i class="fa-solid fa-map"></i><h3 data-i18n="ws.card.farm.t">نقشه فارم پویا</h3><p data-i18n="ws.card.farm.p">جانمایی پن‌ها و حسگرها به‌صورت زنده</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
       <div class="ws-card" data-go="v-sim"><i class="fa-solid fa-satellite-dish"></i><h3 data-i18n="ws.card.sim.t">شبیه‌سازی زنده</h3><p data-i18n="ws.card.sim.p">اجرای سناریو با نتیجه بلادرنگ</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
       <div class="ws-card" data-go="v-scn"><i class="fa-solid fa-layer-group"></i><h3 data-i18n="ws.card.scn.t">سناریوها</h3><p data-i18n="ws.card.scn.p">ذخیره، مقایسه و اجرای مجدد</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
       <div class="ws-card" data-go="v-dev"><i class="fa-solid fa-microchip"></i><h3 data-i18n="ws.card.dev.t">دستگاه و داده</h3><p data-i18n="ws.card.dev.p">ثبت خودکار داده‌ها — داده‌های کاربرمحور</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-sci"><i class="fa-solid fa-book-open"></i><h3 data-i18n="ws.card.sci.t">مبانی علمی</h3><p data-i18n="ws.card.sci.p">مدل‌های رشد و مصر� خوراک</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-sci"><i class="fa-solid fa-book-open"></i><h3 data-i18n="ws.card.sci.t">مبانی علمی</h3><p data-i18n="ws.card.sci.p">مدل‌های رشد و مصرف خوراک</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
       <div class="ws-card" data-go="v-met"><i class="fa-solid fa-flask-vial"></i><h3 data-i18n="ws.card.met.t">روش‌شناسی</h3><p data-i18n="ws.card.met.p">روش اندازه‌گیری و اعتبارسنجی</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
     </div>
     <div class="ws-actions">
-      <button class="btn primary" id="ws-go-dash"><i class="fa-solid fa-gauge"></i> <span data-i18n="ws.btn.dash">ر�تن به داشبورد</span></button>
+      <button class="btn primary" id="ws-go-dash"><i class="fa-solid fa-gauge"></i> <span data-i18n="ws.btn.dash">رفتن به داشبورد</span></button>
       <button class="btn ghost" id="ws-change-pass"><i class="fa-solid fa-key"></i> <span data-i18n="ws.btn.pass">تغییر رمز</span></button>
       <button class="btn ghost" id="ws-logout"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="ws.btn.logout">خروج از حساب</span></button>
-      <button class="btn ghost" id="ws-back-landing"><i class="fa-solid fa-house"></i> <span data-i18n="ws.btn.home">بازگشت به ص�حه اصلی</span></button>
+      <button class="btn ghost" id="ws-back-landing"><i class="fa-solid fa-house"></i> <span data-i18n="ws.btn.home">بازگشت به صفحه اصلی</span></button>
     </div>
   </div>
 </section>
 <section class="view" id="v-404" aria-label="Not found">
   <div class="nf-wrap">
     <div class="nf-code">404</div>
-    <h2 data-i18n="nf.title">ص�حه پیدا نشد</h2>
+    <h2 data-i18n="nf.title">صفحه پیدا نشد</h2>
     <p data-i18n="nf.p">آدرسی که وارد کرده‌اید وجود ندارد یا جابه‌جا شده است.</p>
     <div class="nf-actions">
-      <button class="btn primary" data-goto="v-landing"><i class="fa-solid fa-house"></i> <span data-i18n="nf.home">ص�حه اصلی</span></button>
+      <button class="btn primary" data-goto="v-landing"><i class="fa-solid fa-house"></i> <span data-i18n="nf.home">صفحه اصلی</span></button>
       <button class="btn ghost" data-goto="v-about"><i class="fa-solid fa-circle-info"></i> <span data-i18n="nav.about">درباره ما</span></button>
     </div>
   </div>
 </section>
 <section class="view" id="v-feed" aria-label="Feed Monitoring">
   <div class="view-head">
-    <span class="eyebrow">FEED MONITORING · <span data-i18n="nav.feedGroup">سیستم پایش مصر� خوراک</span></span>
-    <h2 data-i18n="feed.h">سیستم پایش مصر� خوراک</h2>
-    <p data-i18n="feed.p">پایش لحظه‌ای مصر� خوراک هر پرنده با حسگرهای RFID و لودسل دوگانه — از طراحی آزمایش تا اعتبارسنجی و تحلیل سناریو، تمام داده‌ها به‌صورت ایزوله در حساب شما</p>
+    <span class="eyebrow">FEED MONITORING · <span data-i18n="nav.feedGroup">سیستم پایش مصرف خوراک</span></span>
+    <h2 data-i18n="feed.h">سیستم پایش مصرف خوراک</h2>
+    <p data-i18n="feed.p">پایش لحظه‌ای مصرف خوراک هر پرنده با حسگرهای RFID و لودسل دوگانه — از طراحی آزمایش تا اعتبارسنجی و تحلیل سناریو، تمام داده‌ها به‌صورت ایزوله در حساب شما</p>
   </div>
 
   <div class="feed-hero">
@@ -1977,7 +1975,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     <div class="feed-hero-inner">
       <div class="feed-badge"><i class="fa-solid fa-satellite-dish"></i> <span data-i18n="feed.badge">پایش ۲۴ ساعته · داده ایزوله</span></div>
       <h2><span data-i18n="feed.hero.t">یکپارچه از مزرعه تا تحلیل</span></h2>
-      <p data-i18n="feed.hero.p">ه�ت ماژول تخصصی در یک گردش کار پیوسته: اعتبارسنجی، طراحی، نقشه زنده، شبیه‌سازی، سناریو، سخت‌ا�زار و روش‌شناسی</p>
+      <p data-i18n="feed.hero.p">هفت ماژول تخصصی در یک گردش کار پیوسته: اعتبارسنجی، طراحی، نقشه زنده، شبیه‌سازی، سناریو، سخت‌افزار و روش‌شناسی</p>
       <div class="feed-hero-cta">
         <button class="btn primary" data-goto="v-sim"><i class="fa-solid fa-play"></i> <span data-i18n="feed.btn.sim">شروع شبیه‌سازی زنده</span></button>
         <button class="btn ghost" data-goto="v-exp"><i class="fa-solid fa-vial"></i> <span data-i18n="feed.btn.exp">طراحی آزمایش</span></button>
@@ -1986,25 +1984,25 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     <div class="feed-visual" aria-hidden="true">
       <div class="feed-vis-grid">
         <div class="feed-vis-card"><i class="fa-solid fa-chart-line"></i><b data-i18n="nav.dash">داشبورد اعتبارسنجی</b><span>MAE ۱–۲٪ · FCR</span></div>
-        <div class="feed-vis-card"><i class="fa-solid fa-map"></i><b data-i18n="nav.farm">نقشه �ارم پویا</b><span>پخش زمانی · اشغال</span></div>
+        <div class="feed-vis-card"><i class="fa-solid fa-map"></i><b data-i18n="nav.farm">نقشه فارم پویا</b><span>پخش زمانی · اشغال</span></div>
         <div class="feed-vis-card"><i class="fa-solid fa-satellite-dish"></i><b data-i18n="nav.sim">شبیه‌سازی زنده</b><span>RFID + لودسل</span></div>
-        <div class="feed-vis-card"><i class="fa-solid fa-microchip"></i><b data-i18n="nav.dev">دستگاه و داده</b><span>۱۲ ستون · ۳ ردی�/وعده</span></div>
+        <div class="feed-vis-card"><i class="fa-solid fa-microchip"></i><b data-i18n="nav.dev">دستگاه و داده</b><span>۱۲ ستون · ۳ ردیف/وعده</span></div>
       </div>
     </div>
   </div>
 
   <div class="feed-kpis">
     <div class="feed-kpi"><b data-i18n="feed.kpi.acc.v">۱–۲٪</b><span class="kpi-l" data-i18n="feed.kpi.acc">دقت اعتبارسنجی</span><span class="kpi-s" data-i18n="feed.kpi.acc.s">MAE وزن در برابر کاتالوگ</span></div>
-    <div class="feed-kpi"><b data-i18n="feed.kpi.live.v">۲۴ ساعته</b><span class="kpi-l" data-i18n="feed.kpi.live">پوشش زمانی</span><span class="kpi-s" data-i18n="feed.kpi.live.s">رکورد ۳-ردی�ه هر وعده</span></div>
+    <div class="feed-kpi"><b data-i18n="feed.kpi.live.v">۲۴ ساعته</b><span class="kpi-l" data-i18n="feed.kpi.live">پوشش زمانی</span><span class="kpi-s" data-i18n="feed.kpi.live.s">رکورد ۳-ردیفه هر وعده</span></div>
     <div class="feed-kpi"><b data-i18n="feed.kpi.iso.v">۱۰۰٪</b><span class="kpi-l" data-i18n="feed.kpi.iso">ایزوله کاربر</span><span class="kpi-s" data-i18n="feed.kpi.iso.s">هر حساب، داده اختصاصی</span></div>
-    <div class="feed-kpi"><b data-i18n="feed.kpi.through.v">۱۰k+</b><span class="kpi-l" data-i18n="feed.kpi.through">ظر�یت</span><span class="kpi-s" data-i18n="feed.kpi.through.s">رکورد در هر دوره</span></div>
+    <div class="feed-kpi"><b data-i18n="feed.kpi.through.v">۱۰k+</b><span class="kpi-l" data-i18n="feed.kpi.through">ظرفیت</span><span class="kpi-s" data-i18n="feed.kpi.through.s">رکورد در هر دوره</span></div>
   </div>
 
   <div class="feed-section">
     <h3><i class="fa-solid fa-diagram-project"></i> <span data-i18n="feed.steps.t">گردش کار</span></h3>
     <div class="feed-steps">
       <div class="feed-step"><div class="step-no">۱</div><b data-i18n="feed.steps.s1.t">۱. طراحی</b><p data-i18n="feed.steps.s1.p">پن‌ها، تیمارها، تراکم</p></div>
-      <div class="feed-step"><div class="step-no">۲</div><b data-i18n="feed.steps.s2.t">۲. شبیه‌سازی</b><p data-i18n="feed.steps.s2.p">موتور Weibull + ص� ۹۰ثانیه</p></div>
+      <div class="feed-step"><div class="step-no">۲</div><b data-i18n="feed.steps.s2.t">۲. شبیه‌سازی</b><p data-i18n="feed.steps.s2.p">موتور Weibull + صف ۹۰ثانیه</p></div>
       <div class="feed-step"><div class="step-no">۳</div><b data-i18n="feed.steps.s3.t">۳. پایش زنده</b><p data-i18n="feed.steps.s3.p">RFID + دو لودسل</p></div>
       <div class="feed-step"><div class="step-no">۴</div><b data-i18n="feed.steps.s4.t">۴. اعتبارسنجی</b><p data-i18n="feed.steps.s4.p">منحنی رشد vs کاتالوگ</p></div>
       <div class="feed-step"><div class="step-no">۵</div><b data-i18n="feed.steps.s5.t">۵. سناریو</b><p data-i18n="feed.steps.s5.p">تنش گرمایی / ایستگاه دوم</p></div>
@@ -2012,15 +2010,15 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
   </div>
 
   <div class="feed-section">
-    <h3><i class="fa-solid fa-layer-group"></i> <span data-i18n="feed.grid.t">ه�ت ماژول — یک سامانه</span></h3>
+    <h3><i class="fa-solid fa-layer-group"></i> <span data-i18n="feed.grid.t">هفت ماژول — یک سامانه</span></h3>
     <div class="feed-grid">
       <div class="feed-card" data-goto="v-dash"><i class="fa-solid fa-chart-line"></i><h4 data-i18n="feed.card.dash.t">داشبورد اعتبارسنجی</h4><p data-i18n="feed.card.dash.p">مقایسه روزبه‌روز با کاتالوگ رسمی سویه، FCR پنجره‌ای و باند نر-ماده</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="feed-card" data-goto="v-exp"><i class="fa-solid fa-vial"></i><h4 data-i18n="feed.card.exp.t">طرح آزمایش</h4><p data-i18n="feed.card.exp.p">تعری� پن، تعداد، تیمار و تکرار — مبنای �ارم و آمار</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="feed-card" data-goto="v-farm"><i class="fa-solid fa-map"></i><h4 data-i18n="feed.card.farm.t">نقشه �ارم پویا</h4><p data-i18n="feed.card.farm.p">پخش زمانی با پرندگان متحرک، اشغال پن و انتخاب پرنده</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-exp"><i class="fa-solid fa-vial"></i><h4 data-i18n="feed.card.exp.t">طرح آزمایش</h4><p data-i18n="feed.card.exp.p">تعریف پن، تعداد، تیمار و تکرار — مبنای فارم و آمار</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-farm"><i class="fa-solid fa-map"></i><h4 data-i18n="feed.card.farm.t">نقشه فارم پویا</h4><p data-i18n="feed.card.farm.p">پخش زمانی با پرندگان متحرک، اشغال پن و انتخاب پرنده</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
       <div class="feed-card" data-goto="v-sim"><i class="fa-solid fa-satellite-dish"></i><h4 data-i18n="feed.card.sim.t">شبیه‌سازی زنده</h4><p data-i18n="feed.card.sim.p">جریان لحظه‌ای RFID/وزن، نمودار زنده و خروجی</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="feed-card" data-goto="v-scn"><i class="fa-solid fa-layer-group"></i><h4 data-i18n="feed.card.scn.t">سناریوها</h4><p data-i18n="feed.card.scn.p">مقایسه ج�ت‌شده با seed یکسان — اثر تیمار</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="feed-card" data-goto="v-dev"><i class="fa-solid fa-microchip"></i><h4 data-i18n="feed.card.dev.t">دستگاه و داده</h4><p data-i18n="feed.card.dev.p">معماری سنسور، منطق ص� و schema ۱۲-ستونه</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="feed-card" data-goto="v-met"><i class="fa-solid fa-flask-vial"></i><h4 data-i18n="feed.card.met.t">روش‌شناسی</h4><p data-i18n="feed.card.met.p">زنجیره مدل، معادلات و محدودیت‌های ش�ا�</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-scn"><i class="fa-solid fa-layer-group"></i><h4 data-i18n="feed.card.scn.t">سناریوها</h4><p data-i18n="feed.card.scn.p">مقایسه جفت‌شده با seed یکسان — اثر تیمار</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-dev"><i class="fa-solid fa-microchip"></i><h4 data-i18n="feed.card.dev.t">دستگاه و داده</h4><p data-i18n="feed.card.dev.p">معماری سنسور، منطق صف و schema ۱۲-ستونه</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-met"><i class="fa-solid fa-flask-vial"></i><h4 data-i18n="feed.card.met.t">روش‌شناسی</h4><p data-i18n="feed.card.met.p">زنجیره مدل، معادلات و محدودیت‌های شفاف</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
     </div>
   </div>
 
@@ -2039,31 +2037,31 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     <p data-i18n="dash.p">dash.p</p>
   </div>
   <div class="strainbanner">
-    🧬 <span data-i18n="dash.active">کاتالوگ �عال:</span> <b id="db-strain">—</b>
+    🧬 <span data-i18n="dash.active">کاتالوگ فعال:</span> <b id="db-strain">—</b>
     <span class="dm">·</span><span id="db-guide">—</span>
     <a class="src-lnk srcs" id="db-glink" href="#" target="_blank" rel="noopener" data-i18n="dash.source">منبع رسمی ↗</a>
   </div>
 
   <div class="grid g4">
-    <div class="card kpi"><h3><span class="ic">⚖�</span><span data-i18n="kpi.bw">وزن نهایی تجمعی d۶۰</span></h3>
+    <div class="card kpi"><h3><span class="ic">⚖️</span><span data-i18n="kpi.bw">وزن نهایی تجمعی d۶۰</span></h3>
       <div class="v acc"><span id="k-bw">—</span><small style="font-size:13px"> g</small></div>
-      <div class="u"><span data-i18n="kpi.poTarget">هد� کاتالوگ:</span> <b id="k-bw-po">—</b> g · <span data-i18n="kpi.dev">انحرا�</span> <b id="k-bw-dev">—</b></div></div>
+      <div class="u"><span data-i18n="kpi.poTarget">هدف کاتالوگ:</span> <b id="k-bw-po">—</b> g · <span data-i18n="kpi.dev">انحراف</span> <b id="k-bw-dev">—</b></div></div>
     <div class="card kpi"><h3><span class="ic">🎯</span><span data-i18n="kpi.mae">MAE وزن مقابل کاتالوگ</span></h3>
       <div class="v blue" id="k-mae" dir="ltr">—</div>
       <div class="u" data-i18n="kpi.maeSub">میانگین قدرمطلق خطا، همه پن‌ها</div></div>
-    <div class="card kpi"><h3><span class="ic">�</span><span data-i18n="kpi.fcr">FCR پنجره‌ای d۱۵–۶۰</span></h3>
+    <div class="card kpi"><h3><span class="ic">🔁</span><span data-i18n="kpi.fcr">FCR پنجره‌ای d۱۵–۶۰</span></h3>
       <div class="v org" id="k-fcr" dir="ltr">—</div>
       <div class="u"><span data-i18n="kpi.ref">مرجع:</span> <b id="k-fcr-po">—</b></div></div>
-    <div class="card kpi"><h3><span class="ic">���</span><span data-i18n="kpi.visits">وعده روزانه هر پرنده</span></h3>
+    <div class="card kpi"><h3><span class="ic">🍽️</span><span data-i18n="kpi.visits">وعده روزانه هر پرنده</span></h3>
       <div class="v prp" id="k-visits">—</div>
       <div class="u">p5–p95: <b id="k-vrange">—</b></div></div>
   </div>
 
   <div class="grid g4" style="margin-top:13px">
-    <div class="ministat"><span class="mv bad" id="ms-deaths">—</span><span class="ml" data-i18n-html="ms.deaths">تل�ات تجمعی<br>(۰٫۰۸٪/روز از d۲۱)</span></div>
-    <div class="ministat"><span class="mv blue" id="ms-fills">—</span><span class="ml" data-i18n-html="ms.fills">شارژ مخزن<br>(آستانه ۳kg � ۲۵kg)</span></div>
-    <div class="ministat"><span class="mv org" id="ms-ovl">—</span><span class="ml" data-i18n-html="ms.ovl">رویداد هم‌زمانی<br>(صر�‌نظر از ص� >۹۰s)</span></div>
-    <div class="ministat"><span class="mv acc" id="ms-rows">—</span><span class="ml" data-i18n-html="ms.rows">رکورد دستگاه<br>(۳ ردی�/وعده)</span></div>
+    <div class="ministat"><span class="mv bad" id="ms-deaths">—</span><span class="ml" data-i18n-html="ms.deaths">تلفات تجمعی<br>(۰٫۰۸٪/روز از d۲۱)</span></div>
+    <div class="ministat"><span class="mv blue" id="ms-fills">—</span><span class="ml" data-i18n-html="ms.fills">شارژ مخزن<br>(آستانه ۳kg ← ۲۵kg)</span></div>
+    <div class="ministat"><span class="mv org" id="ms-ovl">—</span><span class="ml" data-i18n-html="ms.ovl">رویداد هم‌زمانی<br>(صرف‌نظر از صف >۹۰s)</span></div>
+    <div class="ministat"><span class="mv acc" id="ms-rows">—</span><span class="ml" data-i18n-html="ms.rows">رکورد دستگاه<br>(۳ ردیف/وعده)</span></div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
@@ -2078,18 +2076,18 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
       </div>
     </div>
     <div class="card">
-      <h3><span class="ic">🌾</span><span data-i18n="ch.intake">مصر� خوراک روزانه هر پرنده</span></h3>
+      <h3><span class="ic">🌾</span><span data-i18n="ch.intake">مصرف خوراک روزانه هر پرنده</span></h3>
       <div class="chart-box tall"><canvas id="c-intake"></canvas></div>
       <div class="legend">
         <span class="lg"><span class="sw bar" style="background:rgba(61,123,253,.85)"></span><span data-i18n="lg.sim">شبیه‌سازی</span></span>
-        <span class="lg"><span class="sw" style="background:var(--warn)"></span><span data-i18n="lg.target">هد� کاتالوگ</span></span>
+        <span class="lg"><span class="sw" style="background:var(--warn)"></span><span data-i18n="lg.target">هدف کاتالوگ</span></span>
       </div>
     </div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
     <div class="card">
-      <h3><span class="ic">�</span><span data-i18n="ch.fcr">FCR پنجره‌ای به ت�کیک اندازه پن</span></h3>
+      <h3><span class="ic">🔁</span><span data-i18n="ch.fcr">FCR پنجره‌ای به تفکیک اندازه پن</span></h3>
       <div class="chart-box"><canvas id="c-fcr"></canvas></div>
       <div class="note gd" id="fcr-note" style="margin-top:10px"></div>
     </div>
@@ -2098,7 +2096,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
         <small class="src">(18L:6D — [8])</small></h3>
       <div class="chart-box"><canvas id="c-diurnal"></canvas></div>
       <div class="legend">
-        <span class="lg"><span class="sw bar" style="background:rgba(139,92,246,.8)"></span><span data-i18n="lg.hourShare">سهم ساعت از مصر�</span></span>
+        <span class="lg"><span class="sw bar" style="background:rgba(139,92,246,.8)"></span><span data-i18n="lg.hourShare">سهم ساعت از مصرف</span></span>
         <span class="lg"><span class="sw bar" style="background:#232d44"></span><span data-i18n="lg.dark">تاریکی</span></span>
       </div>
     </div>
@@ -2108,14 +2106,14 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     <div class="card">
       <h3><span class="ic">🚦</span><span data-i18n="ch.station">تحلیل اشباع ایستگاه تغذیه</span></h3>
       <div id="st-list"></div>
-      <div class="note wn" style="margin-top:11px" data-i18n-html="dash.stationNote">💡 یا�ته طراحی: از پن ۱۰تایی به بالا اشباع ساعات پیک معنادار می‌شود؛ پن ۱۲تایی از ظر�یت عبور می‌کند ⇒ برای پن ≥۱۰ ایستگاه دوم توصیه می‌شود (تب سناریوها).</div>
+      <div class="note wn" style="margin-top:11px" data-i18n-html="dash.stationNote">💡 یافته طراحی: از پن ۱۰تایی به بالا اشباع ساعات پیک معنادار می‌شود؛ پن ۱۲تایی از ظرفیت عبور می‌کند ⇒ برای پن ≥۱۰ ایستگاه دوم توصیه می‌شود (تب سناریوها).</div>
     </div>
     <div class="card">
       <h3><span class="ic">📋</span><span data-i18n="ch.valTable">جدول تطبیق روزانه</span></h3>
       <div class="tbl-scroll">
         <table><thead><tr>
           <th data-i18n="t.day">روز</th><th class="num" data-i18n="t.simBW">وزن sim</th><th class="num">PO</th>
-          <th class="num" data-i18n="t.dev">انحرا�</th><th class="num" data-i18n="t.simFI">FI sim</th>
+          <th class="num" data-i18n="t.dev">انحراف</th><th class="num" data-i18n="t.simFI">FI sim</th>
           <th class="num">FI PO</th><th data-i18n="t.status">وضعیت</th>
         </tr></thead><tbody id="tb-val"></tbody></table>
       </div>
@@ -2131,8 +2129,8 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     <p data-i18n="exp.p">exp.p</p>
   </div>
   <div class="card">
-    <h3><span class="ic">��</span><span data-i18n="exp.title">طراح آزمایش — پن، تعداد و تیمار</span>
-      <small class="src" data-i18n="exp.sub">پایه نقشه �ارم و خروجی‌ها</small></h3>
+    <h3><span class="ic">🐔</span><span data-i18n="exp.title">طراح آزمایش — پن، تعداد و تیمار</span>
+      <small class="src" data-i18n="exp.sub">پایه نقشه فارم و خروجی‌ها</small></h3>
     <div class="controls">
       <div class="ctrl"><label data-i18n="exp.preset">قالب آماده</label>
         <select id="exp-preset">
@@ -2143,8 +2141,8 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
           <option value="big" data-i18n="pre.big">پن بزرگ واحد — ۵۰</option>
         </select></div>
       <button class="btn ghost" id="btn-exp-preset" data-i18n="btn.apply">↥ اعمال قالب</button>
-      <button class="btn ghost" id="btn-exp-add" data-i18n="btn.addPen">＋ ا�زودن پن</button>
-      <button class="btn ghost" id="btn-exp-defaults">↺ <span data-i18n="btn.defaults">بازگشت به پیش‌�رض</span></button>
+      <button class="btn ghost" id="btn-exp-add" data-i18n="btn.addPen">＋ افزودن پن</button>
+      <button class="btn ghost" id="btn-exp-defaults">↺ <span data-i18n="btn.defaults">بازگشت به پیش‌فرض</span></button>
       <span style="flex:1"></span>
       <span class="pill tag bl" id="exp-totals">—</span>
     </div>
@@ -2155,10 +2153,10 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
         <tbody id="exp-rows"></tbody></table>
     </div>
     <div class="note" style="margin-top:12px" data-i18n-html="exp.effectsNote">
-      <b data-i18n="sci.effectTitle">اثر تیمارها</b> (ضرایب کالیبره جهت‌دار): شاهد = مسیر کاتالوگ · پروبیوتیک ≈ +۱٪ مصر�/+۱٫۵٪ وزن · ا�زاینده رشد ≈ +۲٪/+۲٫۵٪ · واکسن ا�ت موقت ~۱۰٪ d۱۹–۲۲ · کم‌پروتئین +۴٪ مصر�/−۲٫۵٪ وزن · تنش حرارتی موج +۵°C در d۳۲–۳۸.</div>
-    <div class="note wn" data-i18n-html="exp.blockNote">🎲 بند‌بندی تصاد�ی �عال است: پرنده i-ام� همه پن‌ها هم‌ویژگی ساخته می‌شود تا اختلا� پن‌ها اثر واقعی تیمار باشد؛ برای توان آماری، هر تیمار ≥۳ تکرار (پن) بدهید.</div>
+      <b data-i18n="sci.effectTitle">اثر تیمارها</b> (ضرایب کالیبره جهت‌دار): شاهد = مسیر کاتالوگ · پروبیوتیک ≈ +۱٪ مصرف/+۱٫۵٪ وزن · افزاینده رشد ≈ +۲٪/+۲٫۵٪ · واکسن افت موقت ~۱۰٪ d۱۹–۲۲ · کم‌پروتئین +۴٪ مصرف/−۲٫۵٪ وزن · تنش حرارتی موج +۵°C در d۳۲–۳۸.</div>
+    <div class="note wn" data-i18n-html="exp.blockNote">🎲 بند‌بندی تصادفی فعال است: پرنده i-امِ همه پن‌ها هم‌ویژگی ساخته می‌شود تا اختلاف پن‌ها اثر واقعی تیمار باشد؛ برای توان آماری، هر تیمار ≥۳ تکرار (پن) بدهید.</div>
     <div class="controls" style="margin-top:14px">
-      <button class="btn" id="btn-exp-farm" data-i18n="btn.buildFarm">🗺� ساخت نقشه �ارم و اجرای دوره</button>
+      <button class="btn" id="btn-exp-farm" data-i18n="btn.buildFarm">🗺️ ساخت نقشه فارم و اجرای دوره</button>
       <span class="dm" style="font-size:11px;align-self:center">seed = 308 · <span data-i18n="exp.repro">اجرای تکرارپذیر</span></span>
     </div>
   </div>
@@ -2174,7 +2172,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
   <div class="card">
     <div class="controls">
       <button class="btn" id="fm-play">▶ <span data-i18n="btn.play">پخش</span></button>
-      <button class="btn ghost" id="fm-nextday">�� <span data-i18n="btn.nextDay">روز بعد</span></button>
+      <button class="btn ghost" id="fm-nextday">⏭ <span data-i18n="btn.nextDay">روز بعد</span></button>
       <button class="btn ghost" id="fm-restart">🔄 <span data-i18n="btn.restart">از روز ۱۵</span></button>
       <div class="ctrl"><label data-i18n="fm.speed">سرعت زمان</label>
         <select id="fm-speed">
@@ -2194,24 +2192,24 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 
   <div class="farm-grid" style="margin-top:13px">
     <div class="card barn-card">
-      <h3><span class="ic">��</span><span data-i18n="farm.barn">سالن تحقیقاتی — نمای زنده</span>
+      <h3><span class="ic">🏡</span><span data-i18n="farm.barn">سالن تحقیقاتی — نمای زنده</span>
         <small class="src" data-i18n="farm.locked">هر وعده موتور = یک حرکت جوجه</small>
-        <button id="fm-tags" class="tag bl" style="cursor:pointer;border:none" data-on="1">�� <span data-i18n="farm.tags">تگ‌ها</span></button>
+        <button id="fm-tags" class="tag bl" style="cursor:pointer;border:none" data-on="1">🏷 <span data-i18n="farm.tags">تگ‌ها</span></button>
         <span class="lightchip" id="fm-light">💡 <span data-i18n="farm.light">روشنایی</span></span></h3>
       <div class="barn">
         <div class="fanrow"><span class="fan">🌀</span><span class="fan">🌀</span><span class="fan">🌀</span></div>
         <div id="pens-wrap" class="pens-wrap"></div>
         <div class="darkveil" id="fm-veil">🌙 <span data-i18n="farm.dark">دوره تاریکی — 18L:6D</span></div>
         <div class="fm-empty" id="fm-empty">
-          <div class="inner"><div class="e">��</div>
-            <p data-i18n="farm.emptyP">هنوز دوره‌ای ساخته نشده است. از تب «طرح آزمایش» پن‌ها و تیمارها را تعری� کنید.</p>
-            <button class="btn" id="btn-goto-exp" data-i18n="farm.goExp">�� ر�تن به طراح آزمایش</button>
+          <div class="inner"><div class="e">🏡</div>
+            <p data-i18n="farm.emptyP">هنوز دوره‌ای ساخته نشده است. از تب «طرح آزمایش» پن‌ها و تیمارها را تعریف کنید.</p>
+            <button class="btn" id="btn-goto-exp" data-i18n="farm.goExp">🐔 رفتن به طراح آزمایش</button>
           </div></div>
       </div>
     </div>
     <div class="side-col">
       <div class="card insp">
-        <h3><span class="ic">�</span><span data-i18n="farm.insp">اینسپکتور —</span> <span id="insp-title" class="acc" data-i18n="farm.wholeFarm">کل �ارم</span></h3>
+        <h3><span class="ic">🔍</span><span data-i18n="farm.insp">اینسپکتور —</span> <span id="insp-title" class="acc" data-i18n="farm.wholeFarm">کل فارم</span></h3>
         <div id="insp-body"></div>
         <div class="chart-box sm" style="margin-top:9px"><canvas id="c-insp"></canvas></div>
       </div>
@@ -2223,24 +2221,24 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
   </div>
 
   <div class="grid g2" style="margin-top:13px">
-    <div class="card"><h3><span class="ic">📈</span><span data-i18n="ch.farmGrowth">رشد به ت�کیک تیمار ±SE</span></h3>
+    <div class="card"><h3><span class="ic">📈</span><span data-i18n="ch.farmGrowth">رشد به تفکیک تیمار ±SE</span></h3>
       <div class="chart-box tall"><canvas id="c-farm-growth"></canvas></div>
       <div class="legend" id="lg-farm-growth"></div></div>
-    <div class="card"><h3><span class="ic">🌾</span><span data-i18n="ch.farmFi">مصر� روزانه به ت�کیک تیمار</span></h3>
+    <div class="card"><h3><span class="ic">🌾</span><span data-i18n="ch.farmFi">مصرف روزانه به تفکیک تیمار</span></h3>
       <div class="chart-box tall"><canvas id="c-farm-fi"></canvas></div>
       <div class="legend" id="lg-farm-fi"></div></div>
   </div>
 
   <div class="card" style="margin-top:13px">
-    <h3><span class="ic">�</span><span data-i18n="bio.title">آزمایشگاه آمار زیستی</span>
+    <h3><span class="ic">📐</span><span data-i18n="bio.title">آزمایشگاه آمار زیستی</span>
       <small class="src" data-i18n="bio.sub">واحد نمونه = پن · Welch t / ANOVA یک‌راهه / η² / Holm</small></h3>
     <div class="controls">
       <div class="ctrl"><label data-i18n="bio.metric">متغیر پاسخ</label>
         <select id="bio-metric">
           <option value="bw" data-i18n="bio.bw">وزن پایان دوره (g)</option>
-          <option value="fi" data-i18n="bio.fi">کل مصر� هر پرنده (g)</option>
+          <option value="fi" data-i18n="bio.fi">کل مصرف هر پرنده (g)</option>
           <option value="fcr" data-i18n="bio.fcr">FCR پنجره‌ای</option>
-          <option value="mort" data-i18n="bio.mort">تل�ات (%)</option>
+          <option value="mort" data-i18n="bio.mort">تلفات (%)</option>
         </select></div>
       <button class="btn ghost" id="btn-bio-run" data-i18n="btn.runStats">⚡ تحلیل آماری</button>
     </div>
@@ -2267,15 +2265,15 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
         </select></div>
       <div class="ctrl"><label data-i18n="sim.speed">سرعت</label>
         <select id="in-speed">
-          <option value="1">�� ×1</option><option value="4" selected>▶ ×4</option>
-          <option value="12">�� ×12</option><option value="40">⚡ ×40</option>
-          <option value="999">🚀 <span data-i18n="sim.instant">�وری</span></option>
+          <option value="1">🐢 ×1</option><option value="4" selected>▶ ×4</option>
+          <option value="12">⏩ ×12</option><option value="40">⚡ ×40</option>
+          <option value="999">🚀 <span data-i18n="sim.instant">فوری</span></option>
         </select></div>
       <div class="ctrl"><label>seed</label><input type="number" id="in-seed" value="308" min="1" max="99999"></div>
       <button class="btn" id="btn-run">▶ <span data-i18n="btn.run">اجرا</span></button>
-      <button class="btn ghost" id="btn-jump" disabled>�� <span data-i18n="btn.toEnd">پرش به پایان</span></button>
-      <button class="btn ghost" id="btn-pause" disabled>�� <span data-i18n="btn.pause">توق� موقت</span></button>
-      <button class="btn ghost" id="btn-stop" disabled>�� <span data-i18n="btn.stop">پایان</span></button>
+      <button class="btn ghost" id="btn-jump" disabled>⏭ <span data-i18n="btn.toEnd">پرش به پایان</span></button>
+      <button class="btn ghost" id="btn-pause" disabled>⏸ <span data-i18n="btn.pause">توقف موقت</span></button>
+      <button class="btn ghost" id="btn-stop" disabled>⏹ <span data-i18n="btn.stop">پایان</span></button>
       <button class="btn blue" id="btn-export" disabled>⬇ CSV</button>
       <button class="btn warn" id="btn-export-xlsx" disabled>📊 Excel</button>
     </div>
@@ -2288,15 +2286,15 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
   <div class="grid g4" style="margin-top:13px">
     <div class="card kpi"><h3><span class="ic">📅</span><span data-i18n="sim.day">روز جاری</span></h3>
       <div class="v" id="l-day">—</div><div class="u" id="l-date">—</div></div>
-    <div class="card kpi"><h3><span class="ic">⚖�</span><span data-i18n="sim.meanBw">میانگین وزن پن</span></h3>
+    <div class="card kpi"><h3><span class="ic">⚖️</span><span data-i18n="sim.meanBw">میانگین وزن پن</span></h3>
       <div class="v acc" id="l-bw" dir="ltr">—</div>
       <div class="u">PO: <b id="l-bwpo" dir="ltr">—</b> g · 🌡 <b id="l-temp" dir="ltr">—</b>°C</div></div>
-    <div class="card kpi"><h3><span class="ic">🌾</span><span data-i18n="sim.fiToday">مصر� امروز هر پرنده</span></h3>
+    <div class="card kpi"><h3><span class="ic">🌾</span><span data-i18n="sim.fiToday">مصرف امروز هر پرنده</span></h3>
       <div class="v blue" id="l-fi" dir="ltr">—</div>
       <div class="u"><span data-i18n="sim.visits">وعده‌ها</span>: <b id="l-visits">—</b></div></div>
     <div class="card kpi"><h3><span class="ic">🚦</span><span data-i18n="sim.busy">اشباع ایستگاه</span></h3>
       <div class="v org" id="l-busy" dir="ltr">—</div>
-      <div class="u" data-i18n="sim.capacity">ظر�یت سوراخ تغذیه واحد</div></div>
+      <div class="u" data-i18n="sim.capacity">ظرفیت سوراخ تغذیه واحد</div></div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
@@ -2305,16 +2303,16 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
       <div class="dev">
         <div class="dpart"><div class="dbox" id="d-rfid"><span class="led" id="led-rfid"></span>📡 RFID
           <b style="font-size:15px" id="dv-bird">—</b><span>RSSI <b id="dv-rssi">—</b> dBm</span></div></div>
-        <div class="dpart"><div class="dbox" id="d-scale"><span class="led" id="led-scale"></span>⚖� LC1
+        <div class="dpart"><div class="dbox" id="d-scale"><span class="led" id="led-scale"></span>⚖️ LC1
           <span class="big"><span id="dv-w" dir="ltr">—</span> g</span><span>raw: <b id="dv-raw" dir="ltr">—</b></span></div></div>
-        <div class="dpart"><div class="dbox" id="d-bin"><span class="led" id="led-bin"></span>🗄� LC2
+        <div class="dpart"><div class="dbox" id="d-bin"><span class="led" id="led-bin"></span>🗄️ LC2
           <div class="gauge" id="dv-gauge"><i id="dv-gfill"></i><span id="dv-binval" dir="ltr">—</span></div>
           <span>Δ: <b id="dv-delta" dir="ltr">—</b> g</span></div></div>
       </div>
       <div class="statusline" id="dv-status"></div>
     </div>
     <div class="card" style="padding-bottom:0">
-      <h3><span class="ic">🖥�</span><span data-i18n="sim.stream">جریان خام داده</span></h3>
+      <h3><span class="ic">🖥️</span><span data-i18n="sim.stream">جریان خام داده</span></h3>
       <div class="feedwrap">
         <div class="feedhead"><i></i><i></i><i></i><span>sensor_data — live</span></div>
         <div class="feed" id="feed"></div>
@@ -2325,7 +2323,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
   <div class="grid g2" style="margin-top:13px">
     <div class="card"><h3><span class="ic">📈</span><span data-i18n="ch.liveGrowth">رشد زنده vs کاتالوگ</span></h3>
       <div class="chart-box"><canvas id="c-live-growth"></canvas></div></div>
-    <div class="card"><h3><span class="ic">📊</span><span data-i18n="ch.liveCum">مصر� تجمعی vs هد�</span></h3>
+    <div class="card"><h3><span class="ic">📊</span><span data-i18n="ch.liveCum">مصرف تجمعی vs هدف</span></h3>
       <div class="chart-box"><canvas id="c-live-cum"></canvas></div></div>
   </div>
 </section>
@@ -2338,13 +2336,13 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     <p data-i18n="scn.p">scn.p</p>
   </div>
   <div class="card">
-    <h3><span class="ic">🌡�</span><span data-i18n="scn.title">طراحی سناریوی مقایسه‌ای</span>
-      <small class="src" data-i18n="scn.paired">seed ج�ت‌شده — �قط عامل سناریو تغییر می‌کند</small></h3>
+    <h3><span class="ic">🌡️</span><span data-i18n="scn.title">طراحی سناریوی مقایسه‌ای</span>
+      <small class="src" data-i18n="scn.paired">seed جفت‌شده — فقط عامل سناریو تغییر می‌کند</small></h3>
     <div class="controls">
       <div class="ctrl"><label data-i18n="scn.type">سناریو</label>
         <select id="scn-type">
-          <option value="heat" data-i18n="scn.heat">🌡� استرس حرارتی</option>
-          <option value="stn" data-i18n="scn.stn">��� ایستگاه دوم تغذیه</option>
+          <option value="heat" data-i18n="scn.heat">🌡️ استرس حرارتی</option>
+          <option value="stn" data-i18n="scn.stn">🏗️ ایستگاه دوم تغذیه</option>
         </select></div>
       <div id="f-heat" style="display:contents">
         <div class="ctrl"><label data-i18n="scn.from">شروع موج (روز)</label><input type="number" id="in-from" value="32" min="16" max="58"></div>
@@ -2359,13 +2357,13 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
       </div>
       <button class="btn warn" id="btn-scn">⚡ <span data-i18n="btn.compare">اجرای مقایسه</span></button>
     </div>
-    <div class="note wn" data-i18n-html="scn.modelNote">�رضیات کالیبره گرما: FI×exp(−0.045·ΔT) حین موج + ا�ت مستقیم وزن ≈۱٫۲٪/°C با بازیابی جزئی پس از تنش. ضرایب جهت‌دارند نه قطعی؛ مسیر پایه دقیقاً نتایج اعتبارسنجی است.</div>
+    <div class="note wn" data-i18n-html="scn.modelNote">فرضیات کالیبره گرما: FI×exp(−0.045·ΔT) حین موج + افت مستقیم وزن ≈۱٫۲٪/°C با بازیابی جزئی پس از تنش. ضرایب جهت‌دارند نه قطعی؛ مسیر پایه دقیقاً نتایج اعتبارسنجی است.</div>
   </div>
 
   <div id="scn-res" style="display:none">
     <div class="grid g4" style="margin-top:13px">
       <div class="card kpi"><h3><span data-i18n="scn.dBw">Δ وزن نهایی</span></h3><div class="v" id="d-bw" dir="ltr">—</div><div class="u" id="d-bw-sub">—</div></div>
-      <div class="card kpi"><h3><span data-i18n="scn.dip">حداکثر ا�ت حین رویداد</span></h3><div class="v org" id="d-dip" dir="ltr">—</div><div class="u" id="d-dip-sub">—</div></div>
+      <div class="card kpi"><h3><span data-i18n="scn.dip">حداکثر افت حین رویداد</span></h3><div class="v org" id="d-dip" dir="ltr">—</div><div class="u" id="d-dip-sub">—</div></div>
       <div class="card kpi"><h3><span data-i18n="scn.dFcr">FCR پایه→سناریو</span></h3><div class="v blue" id="d-fcr" dir="ltr">—</div><div class="u" id="d-fcr-sub">—</div></div>
       <div class="card kpi"><h3><span data-i18n="scn.dBusy">اشباع پیک بدترین پن</span></h3><div class="v prp" id="d-busy" dir="ltr">—</div><div class="u" id="d-busy-sub">—</div></div>
     </div>
@@ -2376,7 +2374,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
           <span class="lg"><span class="sw" style="background:var(--acc)"></span><span data-i18n="scn.base">پایه</span></span>
           <span class="lg"><span class="sw" style="background:var(--warn)"></span><span data-i18n="scn.scenario">سناریو</span></span>
           <span class="lg"><span class="sw" style="background:#8a95ab"></span>PO</span></div></div>
-      <div class="card"><h3><span data-i18n="scn.chFi">مصر� روزانه پایه vs سناریو</span></h3>
+      <div class="card"><h3><span data-i18n="scn.chFi">مصرف روزانه پایه vs سناریو</span></h3>
         <div class="chart-box"><canvas id="c-scn-fi"></canvas></div></div>
     </div>
     <div class="card" style="margin-top:13px">
@@ -2403,15 +2401,15 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     <div class="card">
       <h3><span class="ic">🔧</span><span data-i18n="dev.arch">معماری دستگاه شبیه‌سازی‌شده</span></h3>
       <div class="srcs" style="line-height:2.2">
-        <p data-i18n-html="dev.lc1"><b>① لودسل ۱ — سکوی توزین:</b> نویز خام σ≈4g روی raw_weight_g و �یلتر EMA برای weight_g مطابق نمونه مرجع کاربر.</p>
-        <p data-i18n-html="dev.lc2"><b>② لودسل ۲ — مخزن ۲۵kg:</b> کاهش لحظه‌ای جرم = مصر�؛ شارژ خودکار در آستانه ۳kg.</p>
+        <p data-i18n-html="dev.lc1"><b>① لودسل ۱ — سکوی توزین:</b> نویز خام σ≈4g روی raw_weight_g و فیلتر EMA برای weight_g مطابق نمونه مرجع کاربر.</p>
+        <p data-i18n-html="dev.lc2"><b>② لودسل ۲ — مخزن ۲۵kg:</b> کاهش لحظه‌ای جرم = مصرف؛ شارژ خودکار در آستانه ۳kg.</p>
         <p data-i18n-html="dev.rfid"><b>③ RFID بال:</b> شناسایی هنگام ورود؛ ۰٫۴٪ بدون ID و RSSI میانگین −۶۵dBm — سازگار با دقت UHF-RFID منتشرشده [7].</p>
-        <p data-i18n-html="dev.queue"><b>④ منطق ص�:</b> سوراخ واحد؛ انتظار ≤۹۰ ثانیه وگرنه رویداد هم‌زمانی — گلوگاه پن‌های بزرگ.</p>
+        <p data-i18n-html="dev.queue"><b>④ منطق صف:</b> سوراخ واحد؛ انتظار ≤۹۰ ثانیه وگرنه رویداد هم‌زمانی — گلوگاه پن‌های بزرگ.</p>
       </div>
-      <div class="note" data-i18n="dev.threeRows">هر وعده دقیقاً ۳ ردی� تولید می‌کند (شروع/میانه/پایان) مثل نمونه سه‌ردی�ی مرجع.</div>
+      <div class="note" data-i18n="dev.threeRows">هر وعده دقیقاً ۳ ردیف تولید می‌کند (شروع/میانه/پایان) مثل نمونه سه‌ردیفی مرجع.</div>
     </div>
     <div class="card">
-      <h3><span class="ic">🗄�</span><span data-i18n="dev.schema">Schema رکورد دستگاه</span></h3>
+      <h3><span class="ic">🗄️</span><span data-i18n="dev.schema">Schema رکورد دستگاه</span></h3>
       <div class="feed" data-skip-i18n-scan style="height:auto;max-height:none;border-radius:9px">
 timestamp,flock_id,bird_id,sensor_id,age_day,raw_weight_g,
 weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
@@ -2420,7 +2418,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 2026-08-22 08:00:01,F01,B023,S04,18,641,642,16.70,-38,23.9,58.6,-63
 2026-08-22 08:00:11,F01,B023,S04,18,638,641,16.66,-71,23.9,58.6,-63
 2026-08-22 08:00:21,F01,B023,S04,18,640,640,16.62,-104,23.9,58.7,-64</div>
-      <div class="note" style="margin-top:12px" data-i18n-html="dev.excelNote"><b>خروجی Excel</b> چهار شیت دارد: خلاصه روزانه · داده دستگاه · طرح آزمایش · کاتالوگ PO مرجع — با هدر �ریز و نمای RTL.</div>
+      <div class="note" style="margin-top:12px" data-i18n-html="dev.excelNote"><b>خروجی Excel</b> چهار شیت دارد: خلاصه روزانه · داده دستگاه · طرح آزمایش · کاتالوگ PO مرجع — با هدر فریز و نمای RTL.</div>
     </div>
   </div>
 
@@ -2461,13 +2459,6 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
       </form>
 
       <div id="cy-list" class="cy-list"></div>
-
-      <div class="uk-syncrow" style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
-        <button type="button" id="uk-sync" class="btn primary">
-          <i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i> <span data-i18n="dev.syncNow">دریا�ت داده دستگاه</span>
-        </button>
-        <span id="uk-sync-status" class="cy-meta" aria-live="polite" data-i18n="dev.syncNever">هنوز همگام‌سازی انجام نشده است.</span>
-      </div>
     </div>
 
     <!-- Live stream card -->
@@ -2475,7 +2466,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
       <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-wave-square" aria-hidden="true"></i></span><span data-i18n="dev.live">جریان داده دستگاه (زنده)</span>
         <span id="ws-dot" class="ws-dot off" title="WebSocket"></span></h3>
       <div id="live-feed" class="live-feed" data-skip-i18n-scan></div>
-      <div class="note" data-i18n="dev.liveNote">رویدادهای خام دستگاه (RFID ورود + لودسل مخزن + تایم وعده) به‌صورت زنده از بک‌اند دریا�ت می‌شوند.</div>
+      <div class="note" data-i18n="dev.liveNote">رویدادهای خام دستگاه (RFID ورود + لودسل مخزن + تایم وعده) به‌صورت زنده از بک‌اند دریافت می‌شوند.</div>
     </div>
   </div>
 
@@ -2484,10 +2475,10 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
     <div id="cy-stats" class="ministats" data-skip-i18n-scan>
       <div class="mstat"><span class="mv" id="st-visits">—</span><span class="ml" data-i18n="dev.stat.visits">بازدید</span></div>
       <div class="mstat"><span class="mv" id="st-birds">—</span><span class="ml" data-i18n="dev.stat.birds">پرندگان یکتا</span></div>
-      <div class="mstat"><span class="mv" id="st-rows">—</span><span class="ml" data-i18n="dev.stat.rows">ردی� دستگاه</span></div>
-      <div class="mstat"><span class="mv" id="st-intake">—</span><span class="ml" data-i18n="dev.stat.intake">مصر� کل (g)</span></div>
+      <div class="mstat"><span class="mv" id="st-rows">—</span><span class="ml" data-i18n="dev.stat.rows">ردیف دستگاه</span></div>
+      <div class="mstat"><span class="mv" id="st-intake">—</span><span class="ml" data-i18n="dev.stat.intake">مصرف کل (g)</span></div>
       <div class="mstat"><span class="mv" id="st-avgw">—</span><span class="ml" data-i18n="dev.stat.avgw">میانگین وزن اولیه (g)</span></div>
-      <div class="mstat"><span class="mv" id="st-miss">—</span><span class="ml" data-i18n="dev.stat.miss">RFID ازدست‌ر�ته</span></div>
+      <div class="mstat"><span class="mv" id="st-miss">—</span><span class="ml" data-i18n="dev.stat.miss">RFID ازدست‌رفته</span></div>
     </div>
   </div>
 
@@ -2499,7 +2490,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
     </h3>
     <div class="reg-table" data-skip-i18n-scan>
       <div class="reg-thead">
-        <span class="reg-cell reg-cell--feed" data-i18n="dev.reg.feed">غذای مصر�‌شده (g)</span>
+        <span class="reg-cell reg-cell--feed" data-i18n="dev.reg.feed">غذای مصرف‌شده (g)</span>
         <span class="reg-cell reg-cell--w" data-i18n="dev.reg.weight">وزن مرغ (g)</span>
         <span class="reg-cell reg-cell--elapsed" data-i18n="dev.reg.elapsed">زمان سپری‌شده (s)</span>
         <span class="reg-cell reg-cell--dt" data-i18n="dev.reg.datetime">تاریخ و ساعت</span>
@@ -2524,7 +2515,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
     <div class="srcs">
       <p><b>[1] Aviagen — Ross Broiler Management Handbook (2025)</b>
         <a href="https://aviagen.com/assets/Tech_Center/Ross_Broiler/Aviagen-ROSS-Broiler-Handbook-EN.pdf" target="_blank" rel="noopener">↗</a><br>
-        <span dir="ltr">“After 27 days of age, the temperature should remain at 20°C�</span> → <span data-i18n="sci.use1">جدول وزن↔دما و برنامه نوری مدل.</span></p>
+        <span dir="ltr">“After 27 days of age, the temperature should remain at 20°C”</span> → <span data-i18n="sci.use1">جدول وزن↔دما و برنامه نوری مدل.</span></p>
       <p><b>[2] Marcato et al. (2008). R. Bras. Zootec.</b>
         <a href="https://redalyc.org/pdf/1797/179713999007.pdf" target="_blank" rel="noopener">↗</a><br>
         «the Gompertz function is the one that best describes them» → <span data-i18n="sci.use2">پارامترهای گومپرتز Ross.</span></p>
@@ -2536,40 +2527,40 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
         <a href="https://aviagen.com/assets/Tech_Center/AA_Broiler/ArborAcres-BroilerPerformanceObjectives2022-EN.pdf" target="_blank" rel="noopener">↗</a> ·
         <b>Hubbard Efficiency Plus (2019 metric)</b>
         <a href="https://www.hubbardbreeders.com/media/broiler_performance_objectives_efficiency_plus_enptes_20190717__026422600_1023_23082019.pdf" target="_blank" rel="noopener">↗</a><br>
-        <span data-i18n="sci.use3">کاتالوگ کامل وزن/مصر�/FCR هر سویه — عیناً از اسناد رسمی و بدون تکرار بین سویه‌ها.</span></p>
+        <span data-i18n="sci.use3">کاتالوگ کامل وزن/مصرف/FCR هر سویه — عیناً از اسناد رسمی و بدون تکرار بین سویه‌ها.</span></p>
       <p><b>[5] van der Sluis et al. (2025). Poultry Science 104:105103</b>
         <a href="https://edepot.wur.nl/691892" target="_blank" rel="noopener">↗</a><br>
-        <span dir="ltr">“The NFV decreased as the birds grew older�</span> → <span data-i18n="sci.use5">موتور وعده‌ها (−۲٫۲۱/day؛ مدت +۲٫۱۹s/day).</span></p>
+        <span dir="ltr">“The NFV decreased as the birds grew older”</span> → <span data-i18n="sci.use5">موتور وعده‌ها (−۲٫۲۱/day؛ مدت +۲٫۱۹s/day).</span></p>
       <p><b>[6] Erensoy et al. (2022). Arch Anim Breed 65:171</b>
         <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9097258" target="_blank" rel="noopener">↗</a><br>
-        <span dir="ltr">“Feed efficiency worsened with larger group size�</span> → <span data-i18n="sci.use6">جهت اثر اندازه گروه.</span></p>
+        <span dir="ltr">“Feed efficiency worsened with larger group size”</span> → <span data-i18n="sci.use6">جهت اثر اندازه گروه.</span></p>
       <p><b>[7] Li et al. (2018). animal — UHF-RFID</b>
         <a href="https://www.sciencedirect.com/science/article/pii/S1751731118003440" target="_blank" rel="noopener">↗</a><br>
         IBN 92.5% / TS 99% · «1.3 to 2.0 min per visit» → <span data-i18n="sci.use7">مدل RFID و مدت وعده.</span></p>
       <p><b>[8] Li et al. (2021). Poultry Science</b>
         <a href="https://pubmed.ncbi.nlm.nih.gov/33662663/" target="_blank" rel="noopener">↗</a><br>
-        <span dir="ltr">“less than 60 s… lights ON/OFF peaks�</span> → <span data-i18n="sci.use8">دیورنال دوقله و هم‌زمانی آخور.</span></p>
+        <span dir="ltr">“less than 60 s… lights ON/OFF peaks”</span> → <span data-i18n="sci.use8">دیورنال دوقله و هم‌زمانی آخور.</span></p>
     </div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
     <div class="card"><h3><span class="ic">🔗</span><span data-i18n="sci.chain">زنجیره مدل‌سازی</span></h3>
       <div class="srcs" style="line-height:2.3">
-        <p><span class="step ok" data-i18n="st.1">گام ۱</span><span data-i18n="chain.1">کاتالوگ سویه = هد� ق�ل‌شده هر روز (BW/FI نر و ماده)</span></p>
-        <p><span class="step ok" data-i18n="st.2">گام ۲</span><span data-i18n="chain.2">انحرا� �ردی CV≈۵٪ + AR(1) + بند‌بندی بین پن‌ها</span></p>
+        <p><span class="step ok" data-i18n="st.1">گام ۱</span><span data-i18n="chain.1">کاتالوگ سویه = هدف قفل‌شده هر روز (BW/FI نر و ماده)</span></p>
+        <p><span class="step ok" data-i18n="st.2">گام ۲</span><span data-i18n="chain.2">انحراف فردی CV≈۵٪ + AR(1) + بند‌بندی بین پن‌ها</span></p>
         <p><span class="step ok" data-i18n="st.3">گام ۳</span><span data-i18n="chain.3">رگرسیون‌های RFID = تعداد/مدت وعده (Weibull shares)</span></p>
         <p><span class="step ok" data-i18n="st.4">گام ۴</span><span data-i18n="chain.4">دیورنال دوقله + نور 18L:6D</span></p>
         <p><span class="step ok" data-i18n="st.5">گام ۵</span><span data-i18n="chain.5">اندازه گروه = تعدیل جزئی FI/BW پن</span></p>
-        <p><span class="step ok" data-i18n="st.6">گام ۶</span><span data-i18n="chain.6">�یزیک لودسل/RFID = نویز، EMA، ص� ≤۹۰s، شارژ مخزن</span></p>
-        <p><span class="step wn" data-i18n="st.stat">آمار</span><span data-i18n="chain.7">اثر تصاد�ی پن (~۱٫۲٪) → واریانس واقعی تکرارها برای ANOVA/Welch</span></p>
-        <p><span class="step ok" data-i18n="st.out">خروجی</span><span data-i18n="chain.8">MAE وزن ≈ ۱–۲٪ نسبت به کاتالوگ سویه �عال</span></p>
+        <p><span class="step ok" data-i18n="st.6">گام ۶</span><span data-i18n="chain.6">فیزیک لودسل/RFID = نویز، EMA، صف ≤۹۰s، شارژ مخزن</span></p>
+        <p><span class="step wn" data-i18n="st.stat">آمار</span><span data-i18n="chain.7">اثر تصادفی پن (~۱٫۲٪) → واریانس واقعی تکرارها برای ANOVA/Welch</span></p>
+        <p><span class="step ok" data-i18n="st.out">خروجی</span><span data-i18n="chain.8">MAE وزن ≈ ۱–۲٪ نسبت به کاتالوگ سویه فعال</span></p>
       </div></div>
-    <div class="card"><h3><span class="ic">⚖�</span><span data-i18n="sci.limits">ش�ا�یت و محدودیت‌ها</span></h3>
+    <div class="card"><h3><span class="ic">⚖️</span><span data-i18n="sci.limits">شفافیت و محدودیت‌ها</span></h3>
       <div class="srcs" style="line-height:2.05">
-        <p data-i18n="lim.1">① Ross booklet سال ۲۰۰۷ است؛ نسخه‌های جدیدتر اهدا� مت�اوت ولی روند یکسان دارند.</p>
+        <p data-i18n="lim.1">① Ross booklet سال ۲۰۰۷ است؛ نسخه‌های جدیدتر اهداف متفاوت ولی روند یکسان دارند.</p>
         <p data-i18n="lim.2">② اثر اندازه گروه در ۳–۱۲ پرنده غالباً غیرمعنی‌دار؛ ضرایب کوچک و جهت‌دارند.</p>
-        <p data-i18n="lim.3">③ مدل ص� ساده (≤۹۰s)؛ رقابت اجتماعی واقعی پیچیده‌تر است.</p>
-        <p data-i18n="lim.4">④ تل�ات احتمال ثابت روزانه از d۲۱ [تأییدنشده].</p>
+        <p data-i18n="lim.3">③ مدل صف ساده (≤۹۰s)؛ رقابت اجتماعی واقعی پیچیده‌تر است.</p>
+        <p data-i18n="lim.4">④ تلفات احتمال ثابت روزانه از d۲۱ [تأییدنشده].</p>
         <p data-i18n="lim.5">⑤ ضرایب تیمارها و سناریو گرما کالیبره‌اند نه استخراج مستقیم منبع.</p>
         <p data-i18n="lim.6">⑥ آمار استنباطی روی «پن» به‌عنوان واحد نمونه است؛ n کم = توان کم.</p>
       </div></div>
@@ -2578,7 +2569,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   <div class="card" style="margin-top:13px">
     <h3><span class="ic">👤</span><span data-i18n="about.title">درباره و مالکیت</span></h3>
     <div class="srcs" style="line-height:2.2">
-      <p data-i18n-html="about.body">آرین نسخه ۳٫۰ — ساخته و نگهداری‌شده توسط <b>Arsalan Rezazadeh</b>. شبیه‌ساز آکادمیک دستگاه RFID + دو لودسل برای سویه‌های گوشتی صنعتی با کاتالوگ‌های رسمی Aviagen/Cobb-Vantress/Hubbard، موتور وعده‌محور و آزمایشگاه آمار زیستی. اجرای کاملاً آ�لاین، بدون سرور، seed تکرارپذیر.</p>
+      <p data-i18n-html="about.body">آرین نسخه ۳٫۰ — ساخته و نگهداری‌شده توسط <b>Arsalan Rezazadeh</b>. شبیه‌ساز آکادمیک دستگاه RFID + دو لودسل برای سویه‌های گوشتی صنعتی با کاتالوگ‌های رسمی Aviagen/Cobb-Vantress/Hubbard، موتور وعده‌محور و آزمایشگاه آمار زیستی. اجرای کاملاً آفلاین، بدون سرور، seed تکرارپذیر.</p>
     </div>
   </div>
 </section>
@@ -2587,11 +2578,11 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <!-- ================= VIEW: METHODOLOGY ================= -->
 <section class="view" id="v-met">
   <div class="card">
-    <h3><span class="ic">�</span><span data-i18n="met.abstractT">چکیده</span></h3>
+    <h3><span class="ic">📝</span><span data-i18n="met.abstractT">چکیده</span></h3>
     <p class="abstract" style="font-size:12.5px;color:var(--mut);line-height:2.2" data-i18n-html="met.abstract">
-      آرین یک شبیه‌ساز گسسته-رویداد از ایستگاه پایش مصر� خوراک طیور است که داده‌های سطح دستگاه
-      (RFID + دو لودسل) را با وضوح سه‌ردی�ی به‌ازای هر وعده تولید می‌کند. موتور وعده‌محور آن روی
-      کاتالوگ‌های عملکردی رسمی چهار سویه صنعتی ق�ل شده و �یزیک سنسورها مطابق ادبیات داوری‌شده کالیبره شده است.
+      آرین یک شبیه‌ساز گسسته-رویداد از ایستگاه پایش مصرف خوراک طیور است که داده‌های سطح دستگاه
+      (RFID + دو لودسل) را با وضوح سه‌ردیفی به‌ازای هر وعده تولید می‌کند. موتور وعده‌محور آن روی
+      کاتالوگ‌های عملکردی رسمی چهار سویه صنعتی قفل شده و فیزیک سنسورها مطابق ادبیات داوری‌شده کالیبره شده است.
       اعتبارسنجی در برابر جداول مرجع MAE وزن ۱–۲٪ نشان می‌دهد.</p>
   </div>
   <div class="grid g2" style="margin-top:13px">
@@ -2600,34 +2591,34 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
       <div class="pipe">
         <div class="pstep"><b>۱</b><span data-i18n="met.p1">کاتالوگ سویه</span><small data-i18n="met.p1s">BW/FI روزانه نر و ماده</small></div>
         <div class="parrow" dir="ltr">→</div>
-        <div class="pstep"><b>۲</b><span data-i18n="met.p2">مدل �ردی</span><small data-i18n="met.p2s" dir="ltr">CV≈۵٪ + AR(1) + بند‌بندی</small></small></div>
+        <div class="pstep"><b>۲</b><span data-i18n="met.p2">مدل فردی</span><small data-i18n="met.p2s" dir="ltr">CV≈۵٪ + AR(1) + بند‌بندی</small></small></div>
 <div class="parrow" dir="ltr">→</div>
         <div class="pstep"><b>۳</b><span data-i18n="met.p3">موتور وعده</span><small data-i18n="met.p3s">Weibull shares + دیورنال دوقله</small></div>
 <div class="parrow" dir="ltr">→</div>
-        <div class="pstep"><b>۴</b><span data-i18n="met.p4">�یزیک دستگاه</span><small data-i18n="met.p4s" dir="ltr">لودسل + RFID + ص� ≤۹۰s</small></small></div>
+        <div class="pstep"><b>۴</b><span data-i18n="met.p4">فیزیک دستگاه</span><small data-i18n="met.p4s" dir="ltr">لودسل + RFID + صف ≤۹۰s</small></small></div>
         <div class="parrow">→</div>
-        <div class="pstep accent"><b>۵</b><span data-i18n="met.p5">رکورد خام</span><small data-i18n="met.p5s">۳ ردی� schema ۱۲ستونه</small></div>
+        <div class="pstep accent"><b>۵</b><span data-i18n="met.p5">رکورد خام</span><small data-i18n="met.p5s">۳ ردیف schema ۱۲ستونه</small></div>
       </div>
     </div>
     <div class="card">
       <h3><span class="ic">🧮</span><span data-i18n="met.eqTitle">معادلات مدل</span></h3>
       <div class="eqs">
         <div class="eq"><code>W(t) = W<sub>cat</sub>(t)·(1+CV+ε_t)·m_pen·γ(t)</code>
-          <small data-i18n="met.e1">وزن �ردی = کاتالوگ × انحرا� ژنتیکی × اثر پن × ضریب تنش</small></div>
+          <small data-i18n="met.e1">وزن فردی = کاتالوگ × انحراف ژنتیکی × اثر پن × ضریب تنش</small></div>
         <div class="eq"><code>ε_t = 0.9·ε_{t−1} + N(0,0.008²)</code>
-          <small data-i18n="met.e2">�رایند خودرگرسیون AR(1) برای نوسان روزانه</small></div>
+          <small data-i18n="met.e2">فرایند خودرگرسیون AR(1) برای نوسان روزانه</small></div>
         <div class="eq"><code>n = max(6, round(FI/rate × 60/D))</code>
-          <small data-i18n="met.e3">تعداد وعده = مصر� ÷ نرخ ÷ مدت وعده [5]</small></div>
+          <small data-i18n="met.e3">تعداد وعده = مصرف ÷ نرخ ÷ مدت وعده [5]</small></div>
         <div class="eq"><code>D(a) = min(135, 45+2.192×(a−15))</code>
           <small data-i18n="met.e4">مدت وعده؛ شیب +۲٫۱۹ s/day [5]</small></div>
         <div class="eq"><code>w ~ Weibull(β=1.35)</code>
           <small data-i18n="met.e5">توزیع اندازه وعده؛ بیشتر &lt;60s [7][8]</small></div>
         <div class="eq"><code>raw = W + N(0,4²); EMA_0.5 → weight_g</code>
-          <small data-i18n="met.e6">لودسل: نویز σ≈4g و �یلتر EMA</small></div>
+          <small data-i18n="met.e6">لودسل: نویز σ≈4g و فیلتر EMA</small></div>
         <div class="eq"><code>RSSI ~ clamp(N(−65,5²))</code>
-          <small data-i18n="met.e7">RFID؛ 0.4% خطا، 2% ضعی� [7]</small></div>
+          <small data-i18n="met.e7">RFID؛ 0.4% خطا، 2% ضعیف [7]</small></div>
         <div class="eq"><code>m_pen ~ N(0,0.012²)</code>
-          <small data-i18n="met.e8">اثر تصاد�ی پن برای واریانس واقعی تکرارها</small></div>
+          <small data-i18n="met.e8">اثر تصادفی پن برای واریانس واقعی تکرارها</small></div>
       </div>
     </div>
   </div>
@@ -2650,15 +2641,15 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
     </div>
     <div class="note gd" style="margin-top:11px" data-i18n-html="met.note">
       💡 هر سویه مستقل شبیه‌سازی و در برابر کاتالوگ خودش مقایسه می‌شود — بدون تکرار بین سویه‌ها.
-      MAE = میانگین قدرمطلق انحرا� وزن روزانه نسبت به PO همان روز؛ FCR = مصر� تجمعی ÷ ا�زایش وزن d۱۵ تا پایان ا�ق.</div>
+      MAE = میانگین قدرمطلق انحراف وزن روزانه نسبت به PO همان روز؛ FCR = مصرف تجمعی ÷ افزایش وزن d۱۵ تا پایان افق.</div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
     <div class="card">
-      <h3><span class="ic">�</span><span data-i18n="met.statT">روش آماری</span></h3>
+      <h3><span class="ic">📐</span><span data-i18n="met.statT">روش آماری</span></h3>
       <div class="srcs" style="line-height:2.15">
         <p><span class="step ok">EU</span><span data-i18n="met.euText">پن آزمایشی واحد نمونه آماری است؛ مشاهدات درون پن همبسته‌اند و تحلیل استنباطی بین‌پنی انجام می‌شود.</span></p>
-        <p><span class="step ok">CRN</span><span data-i18n="met.crnText">بند‌بندی تصاد�ی: پرنده i-ام همه پن‌ها هم‌ویژگی ساخته می‌شود تا اختلا� تیمارها از شانس ت�کیک شود (Common Random Numbers).</span></p>
+        <p><span class="step ok">CRN</span><span data-i18n="met.crnText">بند‌بندی تصادفی: پرنده i-ام همه پن‌ها هم‌ویژگی ساخته می‌شود تا اختلاف تیمارها از شانس تفکیک شود (Common Random Numbers).</span></p>
         <p><span class="step ok">TEST</span><span data-i18n="met.testText">ANOVA یک‌راهه برای اثر کلی + مقایسه‌های زوجی Welch-t (مقاوم به ناهمگنی واریانس) با اصلاح Holm برای کنترل FWER.</span></p>
         <p><span class="step ok">η²</span><span data-i18n="met.etaText">η² نسبت واریانس بین‌گروهی به کل را گزارش می‌کند؛ مقدار >۰٫۱۴ بزرگ و <۰٫۰۶ کوچک تلقی می‌شود.</span></p>
         <p><span class="step wn">POWER</span><span data-i18n="met.powerText">با σ_pen ≈ ۱٫۲٪ و α=۰٫۰۵، تشخیص اثر ۲٪ نیاز به ≥۳ تکرار در هر تیمار دارد.</span></p>
@@ -2681,9 +2672,9 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   </div>
 
   <div class="card" style="margin-top:13px">
-    <h3><span class="ic">�</span><span data-i18n="met.reproT">تکرارپذیری</span></h3>
+    <h3><span class="ic">🔁</span><span data-i18n="met.reproT">تکرارپذیری</span></h3>
     <div class="srcs">
-      <p data-i18n-html="met.reproBody">هر اجرا با seed=<code>308</code> و مولد mulberry32 آغاز می‌شود؛ بلوک‌سازی پرندگان از جریان مستقل (<code>seed×7919+13</code>) تغذیه می‌شود تا ترکیب ژنتیکی همه پن‌های هم‌تیمار یکسان باشد (Common Random Numbers). نتیجه: دو اجرا با seed یکسان بیت‌به‌بیت یکسان‌اند و مقایسه تیمارها �قط اثر واقعی را منعکس می‌کند.</p>
+      <p data-i18n-html="met.reproBody">هر اجرا با seed=<code>308</code> و مولد mulberry32 آغاز می‌شود؛ بلوک‌سازی پرندگان از جریان مستقل (<code>seed×7919+13</code>) تغذیه می‌شود تا ترکیب ژنتیکی همه پن‌های هم‌تیمار یکسان باشد (Common Random Numbers). نتیجه: دو اجرا با seed یکسان بیت‌به‌بیت یکسان‌اند و مقایسه تیمارها فقط اثر واقعی را منعکس می‌کند.</p>
     </div>
   </div>
 </section>
@@ -2695,7 +2686,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   <div class="view-head">
     <span class="eyebrow">ENV · <span data-i18n="env.eyebrow">کنترل محیطی</span></span>
     <h2 data-i18n="env.h.t">سیستم کنترل محیطی</h2>
-    <p data-i18n="env.p">پایش لحظه‌ای دما، رطوبت، رطوبت بستر، مصر� خوراک و آب، گازها، �ن‌ها و روشنایی سالن — با داده مستقیم سنسورها از طریق MQTT و سلامت گله با بینایی ماشین.</p>
+    <p data-i18n="env.p">پایش لحظه‌ای دما، رطوبت، رطوبت بستر، مصرف خوراک و آب، گازها، فن‌ها و روشنایی سالن — با داده مستقیم سنسورها از طریق MQTT و سلامت گله با بینایی ماشین.</p>
   </div>
 
   <!-- status banner: single source of "is the house healthy" -->
@@ -2717,7 +2708,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 
     <!-- climate tiles (live) -->
     <div class="card env-tiles-card">
-      <h3><span class="ic">🌡�</span><span data-i18n="env.tiles.t">شرایط لحظه‌ای سالن</span>
+      <h3><span class="ic">🌡️</span><span data-i18n="env.tiles.t">شرایط لحظه‌ای سالن</span>
         <small class="src" data-i18n="env.tiles.s">به‌روزرسانی زنده · MQTT</small></h3>
       <div class="env-tiles" id="env-tiles"></div>
     </div>
@@ -2733,14 +2724,14 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 
     <!-- herd health (machine vision) -->
     <div class="card">
-      <h3><span class="ic">��</span><span data-i18n="env.health.t">سلامت گله — بینایی ماشین</span>
-        <small class="src" data-i18n="env.health.s">دوربین‌های سالن · تحلیل ر�تار</small></h3>
+      <h3><span class="ic">👁️</span><span data-i18n="env.health.t">سلامت گله — بینایی ماشین</span>
+        <small class="src" data-i18n="env.health.s">دوربین‌های سالن · تحلیل رفتار</small></h3>
       <div class="env-health" id="env-health"></div>
     </div>
 
     <!-- hardware status -->
     <div class="card">
-      <h3><span class="ic">🧩</span><span data-i18n="env.hw.t">سلامت سخت‌ا�زار و سنسورها</span>
+      <h3><span class="ic">🧩</span><span data-i18n="env.hw.t">سلامت سخت‌افزار و سنسورها</span>
         <small class="src" data-i18n="env.hw.s">آخرین پیام هر دستگاه</small></h3>
       <div class="tbl-scroll" style="max-height:290px">
         <table><thead><tr>
@@ -2757,10 +2748,10 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
     <div class="card env-export-card">
       <h3><span class="ic">📤</span><span data-i18n="env.export.t">گزارش تغییرات</span>
         <small class="src" data-i18n="env.export.s">میانگین‌های تجمیعی · ساعتی/روزانه/ماهانه/بازه دلخواه</small></h3>
-      <p class="env-export-hint" data-i18n="env.export.hint">نوع گزارش را انتخاب و �ایل را دریا�ت کنید — شامل همه سنجه‌های محیطی همان سالن.</p>
+      <p class="env-export-hint" data-i18n="env.export.hint">نوع گزارش را انتخاب و فایل را دریافت کنید — شامل همه سنجه‌های محیطی همان سالن.</p>
       <div class="env-export-bar">
         <div class="env-scope" id="env-scope" role="group" aria-label="Report scope">
-          <button id="btn-env-exp-hour" class="on" data-scope="hour"><span class="sc-ic">��</span><span data-i18n="env.export.hour">ساعتی</span></button>
+          <button id="btn-env-exp-hour" class="on" data-scope="hour"><span class="sc-ic">⏱</span><span data-i18n="env.export.hour">ساعتی</span></button>
           <button id="btn-env-exp-day" data-scope="day"><span class="sc-ic">📅</span><span data-i18n="env.export.day">روزانه</span></button>
           <button id="btn-env-exp-month" data-scope="month"><span class="sc-ic">🗓</span><span data-i18n="env.export.month">ماهانه</span></button>
           <button id="btn-env-exp-range" data-scope="range"><span class="sc-ic">🧾</span><span data-i18n="env.export.range">بازه دلخواه</span></button>
@@ -2777,7 +2768,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
           </label>
         </div>
         <div class="env-export-actions">
-          <button class="btn primary" id="btn-env-exp-go">⬇ <span data-i18n="env.export.go">دریا�ت �ایل اکسل</span></button>
+          <button class="btn primary" id="btn-env-exp-go">⬇ <span data-i18n="env.export.go">دریافت فایل اکسل</span></button>
           <span class="env-exp-status" id="env-exp-lbl" role="status" aria-live="polite"></span>
         </div>
       </div>
@@ -2790,7 +2781,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <section class="view" id="v-products" aria-label="Products and Services">
   <div class="prod-hero">
     <h2 data-i18n="prod.hero.t">محصولات و خدمات آرین</h2>
-    <p data-i18n="prod.hero.p">سامانه‌های هوشمند پرورش و اصلاح نژاد طیور گوشتی — از ثبت دقیق داده در واحد آزمایشی تا کنترل خودکار شرایط محیطی سالن؛ طراحی‌شده برای مراکز تحقیقاتی، واحدهای مادر و �ارم‌های تجاری.</p>
+    <p data-i18n="prod.hero.p">سامانه‌های هوشمند پرورش و اصلاح نژاد طیور گوشتی — از ثبت دقیق داده در واحد آزمایشی تا کنترل خودکار شرایط محیطی سالن؛ طراحی‌شده برای مراکز تحقیقاتی، واحدهای مادر و فارم‌های تجاری.</p>
   </div>
   <div class="prod-grid">
 
@@ -2798,18 +2789,18 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
       <div class="prod-ic"><i class="fa-solid fa-utensils" aria-hidden="true"></i></div>
       <div>
         <div class="prod-tag" data-i18n="prod.p1.tag">محصول ۱</div>
-        <h3 data-i18n="prod.p1.t">سیستم پایش مصر� خوراک</h3>
+        <h3 data-i18n="prod.p1.t">سیستم پایش مصرف خوراک</h3>
       </div>
-      <p class="prod-desc" data-i18n="prod.p1.d">ثبت خودکار بازدید هر پرنده از ایستگاه تغذیه با شناسایی الکترونیکی و توزین هم‌زمان؛ محاسبه دقیق مصر� خوراک �ردی، وزن‌کشی پیوسته و تشخیص هوشمند وعده‌های تغذیه‌ای — بدون دخالت انسانی و بدون استرس گله.</p>
+      <p class="prod-desc" data-i18n="prod.p1.d">ثبت خودکار بازدید هر پرنده از ایستگاه تغذیه با شناسایی الکترونیکی و توزین هم‌زمان؛ محاسبه دقیق مصرف خوراک فردی، وزن‌کشی پیوسته و تشخیص هوشمند وعده‌های تغذیه‌ای — بدون دخالت انسانی و بدون استرس گله.</p>
       <ul class="prod-feats">
         <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f1">شناسایی الکترونیکی هر پرنده با بال‌تگ و ثبت لحظه‌ای ورود و خروج</span></li>
         <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f2">حسگرهای وزن‌کشی با هموارسازی نویز و دقت در حد گرم</span></li>
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f3">محاسبه خودکار مصر� خوراک �ردی، شمارش بازدید و بستن وعده</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f3">محاسبه خودکار مصرف خوراک فردی، شمارش بازدید و بستن وعده</span></li>
         <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f4">مدیریت دوره‌های پرورشی با داده‌های کاملاً اختصاصی هر کاربر</span></li>
         <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f5">ثبت و ذخیره‌سازی خودکار داده‌ها و استریم زنده به داشبورد</span></li>
       </ul>
       <div class="prod-foot">
-        <span class="prod-status"><span class="dot"></span> <span data-i18n="prod.p1.status">�عال · داده زنده ۲۴ ساعته</span></span>
+        <span class="prod-status"><span class="dot"></span> <span data-i18n="prod.p1.status">فعال · داده زنده ۲۴ ساعته</span></span>
         <button class="prod-cta" data-goto="v-dev"><i class="fa-solid fa-microchip"></i> <span data-i18n="prod.demo">مشاهده دمو</span></button>
       </div>
     </article>
@@ -2824,12 +2815,12 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
       <ul class="prod-feats">
         <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f1">حسگرهای دما و رطوبت با ثبت پیوسته در هر نقطه سالن</span></li>
         <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f2">منطق کنترل خودکار تهویه و گرمایش بر اساس سن گله</span></li>
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f3">هشدار لحظه‌ای انحرا� از بازه استاندارد هر سویه</span></li>
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f4">سناریوهای محیطی قابل تعری� و اجرای آزمایشی</span></li>
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f5">گزارش‌گیری دوره‌ای و هم‌راستایی با اهدا� عملکردی سویه</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f3">هشدار لحظه‌ای انحراف از بازه استاندارد هر سویه</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f4">سناریوهای محیطی قابل تعریف و اجرای آزمایشی</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f5">گزارش‌گیری دوره‌ای و هم‌راستایی با اهداف عملکردی سویه</span></li>
       </ul>
       <div class="prod-foot">
-        <span class="prod-status"><span class="dot"></span> <span data-i18n="prod.p2.status">�عال · پایش ۲۴ ساعته</span></span>
+        <span class="prod-status"><span class="dot"></span> <span data-i18n="prod.p2.status">فعال · پایش ۲۴ ساعته</span></span>
         <button class="prod-cta" data-goto="v-scn"><i class="fa-solid fa-sliders"></i> <span data-i18n="prod.demo">مشاهده دمو</span></button>
       </div>
     </article>
@@ -2839,26 +2830,26 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 
 <section class="view" id="v-about">
   <div class="card">
-    <h3><span class="ic">���</span><span data-i18n="about.uniT">دانشگاه تربیت مدرس — گروه علوم دامی</span></h3>
+    <h3><span class="ic">🏛️</span><span data-i18n="about.uniT">دانشگاه تربیت مدرس — گروه علوم دامی</span></h3>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:15px">
       <div style="width:64px;height:64px;border-radius:14px;display:grid;place-items:center;
         border:2px solid rgba(25,195,154,.38);border-radius:16px;box-shadow:0 0 16px rgba(25,195,154,.2)"><img src="logo_128.png" width="56" height="56" style="object-fit:contain;display:block" alt="آرین" data-alt-i18n="brand.name"></div>
       <div>
         <b style="font-size:17px" data-i18n="footer.brand">آرین v1.0.0</b><br>
-        <small class="dm" data-i18n="about.subTitle">شبیه‌ساز آکادمیک دستگاه پایش مصر� خوراک طیور گوشتی</small>
+        <small class="dm" data-i18n="about.subTitle">شبیه‌ساز آکادمیک دستگاه پایش مصرف خوراک طیور گوشتی</small>
       </div>
     </div>
     <div class="srcs">
-      <p data-i18n-html="about.history"><b>تاریخچه:</b> این پروژه از یک ایده ساده آغاز شد: چگونه می‌توان بدون صر� هزینه پرورش واقعی، الگوریتم پردازش داده دستگاه پایش مصر� خوراک را طراحی، تست و بهینه کرد؟ نسخه اول (Python) برای اعتبارسنجی مدل ریاضی ساخته شد؛ سپس موتور به JavaScript منتقل و رابط وب تعاملی اضا�ه گردید تا محققان بتوانند بدون نصب نرم‌ا�زار، سناریوهای مختل� را آزموده و توان آماری طرح خود را بسنجند.</p>
-      <p data-i18n-html="about.teamT"><b>تیم:</b> طراحی، برنامه‌نویسی و نگهداری توسط Arsalan Rezazadeh انجام شده است. راهنمایی علمی و بازبینی روش‌شناسی توسط گروه علوم دامی دانشگاه تربیت مدرس صورت گر�ته است.</p>
-      <p data-i18n-html="about.dataNote"><b>منابع داده:</b> جداول عملکردی Ross 308, Cobb 500, Arbor Acres Plus, Hubbard Efficiency Plus عیناً از اسناد رسمی شرکت‌های اصلاح‌نژادی استخراج و در �ایل strains.js تعبیه شده‌اند. ر�تار تغذیه‌ای بر اساس مقالات داوری‌شده Poultry Science و animal کالیبره شده است.</p>
-      <p data-i18n-html="about.future"><b>نقشه راه:</b> ا�زودن سویه‌های جدید (Indian River)، تحلیل کوواریانس با وزن شروع، خروجی PDF گزارش آماری، اتصال به سنسورهای IoT واقعی.</p>
+      <p data-i18n-html="about.history"><b>تاریخچه:</b> این پروژه از یک ایده ساده آغاز شد: چگونه می‌توان بدون صرف هزینه پرورش واقعی، الگوریتم پردازش داده دستگاه پایش مصرف خوراک را طراحی، تست و بهینه کرد؟ نسخه اول (Python) برای اعتبارسنجی مدل ریاضی ساخته شد؛ سپس موتور به JavaScript منتقل و رابط وب تعاملی اضافه گردید تا محققان بتوانند بدون نصب نرم‌افزار، سناریوهای مختلف را آزموده و توان آماری طرح خود را بسنجند.</p>
+      <p data-i18n-html="about.teamT"><b>تیم:</b> طراحی، برنامه‌نویسی و نگهداری توسط Arsalan Rezazadeh انجام شده است. راهنمایی علمی و بازبینی روش‌شناسی توسط گروه علوم دامی دانشگاه تربیت مدرس صورت گرفته است.</p>
+      <p data-i18n-html="about.dataNote"><b>منابع داده:</b> جداول عملکردی Ross 308, Cobb 500, Arbor Acres Plus, Hubbard Efficiency Plus عیناً از اسناد رسمی شرکت‌های اصلاح‌نژادی استخراج و در فایل strains.js تعبیه شده‌اند. رفتار تغذیه‌ای بر اساس مقالات داوری‌شده Poultry Science و animal کالیبره شده است.</p>
+      <p data-i18n-html="about.future"><b>نقشه راه:</b> افزودن سویه‌های جدید (Indian River)، تحلیل کوواریانس با وزن شروع، خروجی PDF گزارش آماری، اتصال به سنسورهای IoT واقعی.</p>
     </div>
 
     <div class="own" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">
       <a href="https://github.com/arsalan-codes" target="_blank" rel="noopener"
          style="display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--mut);font-size:12.5px">
-        �� <b>github.com/arsalan-codes</b></a>
+        🐙 <b>github.com/arsalan-codes</b></a>
       <a href="https://www.linkedin.com/in/arsalan-rezazadeh/" target="_blank" rel="noopener"
          style="display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--mut);font-size:12.5px">
         💼 <b>linkedin.com/in/arsalan-rezazadeh</b></a>
@@ -2881,7 +2872,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
     </div>
   </div>
   <div class="f-meta" data-i18n="foot.data">داده‌ها: Aviagen · Cobb-Vantress · Hubbard · Poultry Science · animal · Arch Anim Breed</div>
-  <div class="f-meta" data-i18n="foot.offline">اجرای کامل آ�لاین · seed تکرارپذیر = 308 · واحد نمونه آماری: پن</div>
+  <div class="f-meta" data-i18n="foot.offline">اجرای کامل آفلاین · seed تکرارپذیر = 308 · واحد نمونه آماری: پن</div>
   <div class="f-copy">© 2026 Arsalan Rezazadeh</div>
 </footer>
 
@@ -2889,25 +2880,25 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
 <div id="tip"></div>
 <div id="toast"></div>
 
-<script src="strains.js?v=1.8.60" defer></script>
-<script src="engine.js?v=1.8.60" defer></script>
-<script src="xlsx.js?v=1.8.60" defer></script>
-<script src="stats.js?v=1.8.60" defer></script>
-<script src="version.js?v=1.8.60" defer></script>
-  <script src="locales/fa.js?v=1.8.60" defer></script>
-<script src="locales/en.js?v=1.8.60" defer></script>
-<script src="i18n.js?v=1.8.60" defer></script>
-<script src="utils/formatters.js?v=1.8.60" defer></script>
-<script src="shamsi.js?v=1.8.60" defer></script>
-<script src="auth.js?v=1.8.60" defer></script>
-<script src="device-panel.js?v=1.8.60" defer></script>
-<script src="dialog.js?v=1.8.60" defer></script>
-<script src="router.js?v=1.8.60" defer></script>
-<script src="components/chart.js?v=1.8.60" defer></script>
-<script src="dd-select.js?v=1.8.60" defer></script>
-<script src="env-control.js?v=1.8.60" defer></script>
-<script src="services/export.js?v=1.8.60" defer></script>
-<script src="app.js?v=1.8.60" defer></script>
+<script src="strains.js?v=1.8.53" defer></script>
+<script src="engine.js?v=1.8.53" defer></script>
+<script src="xlsx.js?v=1.8.53" defer></script>
+<script src="stats.js?v=1.8.53" defer></script>
+<script src="version.js?v=1.8.53" defer></script>
+  <script src="locales/fa.js?v=1.8.53" defer></script>
+<script src="locales/en.js?v=1.8.53" defer></script>
+<script src="i18n.js?v=1.8.53" defer></script>
+<script src="utils/formatters.js?v=1.8.53" defer></script>
+<script src="shamsi.js?v=1.8.53" defer></script>
+<script src="auth.js?v=1.8.53" defer></script>
+<script src="device-panel.js?v=1.8.53" defer></script>
+<script src="dialog.js?v=1.8.53" defer></script>
+<script src="router.js?v=1.8.53" defer></script>
+<script src="components/chart.js?v=1.8.53" defer></script>
+<script src="dd-select.js?v=1.8.53" defer></script>
+<script src="env-control.js?v=1.8.53" defer></script>
+<script src="services/export.js?v=1.8.53" defer></script>
+<script src="app.js?v=1.8.53" defer></script>
 
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
@@ -2934,7 +2925,7 @@ weight_g,feed_bin_kg,feed_delta_g,temp_c,humidity,rssi
   <div class="mfoot">
     <span class="dm" id="ex-size"></span>
     <button class="btn ghost" id="ex-back">↩ <span data-i18n="ex.back">بازگشت</span></button>
-    <button class="btn blue" id="ex-go">⬇ <span data-i18n="ex.generate">تولید و دریا�ت</span></button>
+    <button class="btn blue" id="ex-go">⬇ <span data-i18n="ex.generate">تولید و دریافت</span></button>
   </div>
 </div>
 
