@@ -625,7 +625,9 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             ov["acc"] += end_inc
             if binkg is not None:
                 ov["bin_prev"] = binkg
-            feed = (ov["base"] or 0) + ov["acc"]
+            # feed rounded to 0.1g at write time so stored values stay
+            # clean decimals (display rounds again to 2); never alters logic.
+            feed = round((ov["base"] or 0) + ov["acc"], 1)
             pres = (ov["pbase"] or 0) + ov["tacc"]
             if ov.get("is_new"):
                 nv_old = new_visits[ov["new_idx"]]
@@ -780,7 +782,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             for ov in openv.values():
                 if ov.get("is_new") and ov.get("touched"):
                     nv = new_visits[ov["new_idx"]]
-                    nv.feed_intake_g = ov["acc"]
+                    nv.feed_intake_g = round(ov["acc"], 1)
                     nv.final_weight_g = ov["registered"]
                     nv.presence_s = ov["tacc"]
             # touches on adopted open visits (mirror per-step writes). Unit
@@ -790,9 +792,8 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 if not ov.get("is_new") and ov.get("touched"):
                     upd = {
                         "id": ov["vid"],
-                        "feed_intake_g": (ov["base"] or 0) + ov["acc"],
+                        "feed_intake_g": round((ov["base"] or 0) + ov["acc"], 1),
                         "final_weight_g": ov["registered"],
-                        "presence_s": (ov["pbase"] or 0) + ov["tacc"],
                         "temp_c": None, "humidity": None}
                     if ov.get("db_unit") is None:
                         upd["unit"] = _lane_unit

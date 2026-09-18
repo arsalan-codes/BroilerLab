@@ -287,6 +287,12 @@
     if (d.visit_id != null) {
       try { row.setAttribute("data-visit-id", d.visit_id); } catch (e) {}
     }
+    try {
+      // open visits tick live; closed ones freeze at their final value
+      row.setAttribute("data-eopen", d.is_visit_end ? "" : "1");
+      row.setAttribute("data-eval", (d.elapsed_s != null && !isNaN(+d.elapsed_s)) ? +d.elapsed_s : 0);
+      row.setAttribute("data-et0", Date.now());
+    } catch (e) {}
     row.innerHTML = regRowHtml({
       feed: feed, w: w, bin: d.bin_weight_g, elap: d.elapsed_s,
       dtJoin: regDateJoin(d.timestamp || d.registered_at || ""),
@@ -331,6 +337,11 @@
           if (r.id != null) {
             try { row.setAttribute("data-visit-id", r.id); } catch (e) {}
           }
+          try {
+            row.setAttribute("data-eopen", r.visit_end ? "" : "1");
+            row.setAttribute("data-eval", (r.elapsed_s != null && !isNaN(+r.elapsed_s)) ? +r.elapsed_s : 0);
+            row.setAttribute("data-et0", Date.now());
+          } catch (e) {}
           var w = r.initial_weight_g != null ? r.initial_weight_g : r.final_weight_g;
           row.innerHTML = regRowHtml({
             feed: r.feed_intake_g, w: w, bin: r.bin_weight_g,
@@ -518,7 +529,28 @@
   }
   function ukTickStart() {
     ukTickStop();
-    ukTick = setInterval(renderUkOnline, 1000);
+    ukTick = setInterval(function () {
+      renderUkOnline();
+      tickElapsed();
+    }, 1000);
+  }
+  // Live-ticking elapsed for still-open visits: each row carries its
+  // server-rendered base seconds + render time; the ticker adds wall time
+  // on top so open rows visibly advance between polls. Closed rows freeze.
+  function tickElapsed() {
+    if (document.hidden) return;
+    var rows;
+    try { rows = document.querySelectorAll('.reg-row[data-eopen="1"]'); }
+    catch (e) { return; }
+    var now = Date.now();
+    for (var i = 0; i < rows.length; i++) {
+      var cell = rows[i].querySelector('.reg-cell--elapsed');
+      if (!cell || !cell.firstChild) continue;
+      var base = parseFloat(rows[i].getAttribute("data-eval") || "0");
+      var t0 = parseInt(rows[i].getAttribute("data-et0") || "0", 10);
+      if (!t0 || isNaN(base)) continue;
+      cell.firstChild.nodeValue = lnum(base + Math.max(0, (now - t0) / 1000), 2);
+    }
   }
   function ukTickStop() {
     if (ukTick) { clearInterval(ukTick); ukTick = null; }
@@ -613,7 +645,7 @@
     // returns complete=false while rows remain — repeat until done so big
     // backlogs never hit the serverless time limit (was HTTP 504).
     var total = 0, guard = 0, insecure = false, sawReset = false,
-        sawStalled = null, events = 0;
+        sawStalled = null, events = 0, idleChunks = 0;
     ukSyncing = true;
     setUkStatus(tr("dev.syncing", "در حال دریافت..."));
     function oneChunk() {
@@ -625,8 +657,14 @@
         if (r && r.reset) sawReset = true;
         if (r && r.stalled) sawStalled = r.stalled_reason || true;
         var rem = (r && r.remaining) || 0;
+        // zero-progress backstop: the cursor always advances past processed
+        // rows, so repeated empty chunks mean nothing left to do — stop
+        // instead of spinning (auto-poll picks up genuinely new rows later).
+        if (((r && r.inserted) || 0) === 0) idleChunks++; else idleChunks = 0;
         if (total > 0 || rem > 0) setUkStatus(tr("dev.syncing", "در حال دریافت...") + " (" + lnum(total) + (rem > 0 ? " · +" + lnum(rem) : "") + ")");
-        if (r && r.complete === false && ((r.inserted || 0) > 0 || rem > 0)) { oneChunk(); return; }
+        // Continue while ANY work remains — remaining>0 alone (even with
+        // complete=true) means rows were fetched but not yet written.
+        if (idleChunks < 3 && (((r && r.inserted) || 0) > 0 || rem > 0)) { oneChunk(); return; }
         finish(r);
       }).catch(function (e) { finish(null, e); });
     }

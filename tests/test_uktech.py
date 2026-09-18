@@ -210,6 +210,45 @@ def test_tls_auto_fallback_on_self_signed(monkeypatch):
         raise AssertionError("strict mode must not downgrade")
 
 
+def test_backlog_reports_remaining_with_complete(tmp_path, monkeypatch):
+    """A fetch larger than one batch reports remaining>0 even with
+    complete=true, so the frontend loop keeps draining instead of stopping
+    early (the manual-sync stall)."""
+    db = tmp_path / "ukbig.db"
+    monkeypatch.setenv("BROILER_DATABASE_URL", f"sqlite:///{db.as_posix()}")
+    import config
+    import models
+    import processor
+    import importlib
+    importlib.reload(config)
+    importlib.reload(models)
+    importlib.reload(uktech)
+    importlib.reload(processor)
+    models.Base.metadata.create_all(models.engine)
+    from models import Cycle, SessionLocal
+    big = [dict(REC, id=2000 + i,
+                created_at=f"2026-09-18 12:{i // 60:02d}:{i % 60:02d}")
+           for i in range(120)]
+    monkeypatch.setattr(uktech, "fetch_records", lambda *a, **k: (list(big), False))
+    with SessionLocal() as s:
+        c = Cycle(cycle_code="UKB", label="big", strain="ross308", bird_count=1)
+        s.add(c)
+        s.commit()
+        cid = c.id
+    try:
+        r = uktech.sync_serial_to_cycle(cid, serial="ESP800", batch=50)
+        assert r["complete"] is False  # backlog remains: keep draining
+        assert r["remaining"] == 120 - 50, r
+        assert r["inserted"] == 100, r  # 50 recs x 2 units
+        r2 = uktech.sync_serial_to_cycle(cid, serial="ESP800", batch=50)
+        assert r2["inserted"] == 100, r2
+        r3 = uktech.sync_serial_to_cycle(cid, serial="ESP800", batch=50)
+        assert r3["inserted"] == 40 and r3["remaining"] == 0, r3
+        assert r3["complete"] is True  # fully caught up only now
+    finally:
+        processor._processors.pop(cid, None)
+
+
 def test_sync_is_idempotent_sqlite(tmp_path, monkeypatch):
     """Two syncs of the same stubbed page insert once (external_id dedupe).
 

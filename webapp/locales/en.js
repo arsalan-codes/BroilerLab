@@ -766,6 +766,7 @@ window.I18N_EN={
 "dev.syncNoToken": "Device API token is not set on the server.",
 "dev.syncTLS": "Device host TLS certificate error.",
 "dev.syncReset": "Device source was reset — synced from scratch.",
+"dev.syncStalled": "Sync is stalled.",
 "dev.syncEvents": "{n} weighing events",
 "dev.sess.EMPTY": "empty",
 "dev.sess.DETECTING": "detecting",
