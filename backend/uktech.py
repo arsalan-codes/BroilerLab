@@ -52,6 +52,14 @@ class UktechError(Exception):
     """Upstream unreachable, misconfigured, or target cycle missing."""
 
 
+if not UKTECH_TOKEN:
+    # Visible in Vercel Runtime Logs on every cold start — the #1 reason
+    # /api/uktech/sync 400s is a missing env var, and this makes it obvious.
+    logging.getLogger(__name__).warning(
+        "UKTECH_API_TOKEN/BROILER_UKTECH_TOKEN is not set — "
+        "/api/uktech/sync will 400 until it is configured")
+
+
 def _tls_mode() -> str:
     m = (UKTECH_VERIFY_SSL or "auto").strip().lower()
     return m if m in ("true", "false", "auto") else "auto"

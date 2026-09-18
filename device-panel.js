@@ -362,6 +362,11 @@
   function loadUkStatus() {
     var q = selectedCycle ? "?cycle_id=" + encodeURIComponent(selectedCycle) : "";
     api("/api/uktech/status" + q).then(function (s) {
+      // proactive hint: token missing server-side (saves a failed sync click)
+      if (s && s.configured === false) {
+        setUkStatus(tr("dev.syncNoToken", "توکن API دستگاه روی سرور تنظیم نشده است."));
+        return;
+      }
       if (s && s.updated_at) {
         var t = fmtDT(s.updated_at);
         var last = s.last_id || 0;
