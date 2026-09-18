@@ -558,14 +558,19 @@
       var n = (r && r.inserted) || 0;
       ukFails = 0;
       ukLastOk = Date.now();
-      devLog("[device] poll ok", "inserted=" + n, "events=" + ((r && r.events) || 0));
-      if (n > 0) {
+      devLog("[device] poll ok", "inserted=" + n, "events=" + ((r && r.events) || 0),
+             "reset=" + !!(r && r.reset), "stalled=" + ((r && r.stalled_reason) || "-"));
+      if (r && r.stalled) {
+        // cursor ahead of upstream without corroborating evidence: show the
+        // reason instead of freezing silently like before.
+        setUkStatus(tr("dev.syncStalled", "همگام‌سازی متوقف مانده است.") + " " + (r.stalled_reason || ""));
+      } else if (n > 0) {
         if (!silent) toast(tr("dev.syncDone", "همگام‌سازی انجام شد: {n} رکورد جدید").replace("{n}", lnum(n)));
         loadStats(selectedCycle); loadRegistrations(selectedCycle);
       } else if (!silent) {
         toast(tr("dev.syncNone", "رکورد جدیدی نبود."));
       }
-      loadUkStatus();
+      if (!(r && r.stalled)) loadUkStatus();
       if (r && r.tls_insecure) {
         var st = $("uk-sync-status");
         var cur = st ? st.textContent : "";
@@ -607,7 +612,8 @@
     // Chunked sync loop: each call writes one batch (server default 60) and
     // returns complete=false while rows remain — repeat until done so big
     // backlogs never hit the serverless time limit (was HTTP 504).
-    var total = 0, guard = 0, insecure = false, sawReset = false, events = 0;
+    var total = 0, guard = 0, insecure = false, sawReset = false,
+        sawStalled = null, events = 0;
     ukSyncing = true;
     setUkStatus(tr("dev.syncing", "در حال دریافت..."));
     function oneChunk() {
@@ -617,6 +623,7 @@
         events += (r && r.events) || 0;
         if (r && r.tls_insecure) insecure = true;
         if (r && r.reset) sawReset = true;
+        if (r && r.stalled) sawStalled = r.stalled_reason || true;
         var rem = (r && r.remaining) || 0;
         if (total > 0 || rem > 0) setUkStatus(tr("dev.syncing", "در حال دریافت...") + " (" + lnum(total) + (rem > 0 ? " · +" + lnum(rem) : "") + ")");
         if (r && r.complete === false && ((r.inserted || 0) > 0 || rem > 0)) { oneChunk(); return; }
@@ -635,11 +642,15 @@
         if (events > 0) doneMsg += " · " + tr("dev.syncEvents", "{n} رویداد توزین").replace("{n}", lnum(events));
         toast(doneMsg);
         if (sawReset) toast(tr("dev.syncReset", "منبع دستگاه ریست شده بود — همگام‌سازی از اول شروع شد."));
+        if (sawStalled) toast(tr("dev.syncStalled", "همگام‌سازی متوقف مانده است.") + " " + sawStalled);
+      } else if (sawStalled) {
+        toast(tr("dev.syncStalled", "همگام‌سازی متوقف مانده است.") + " " + sawStalled);
       } else {
         toast(tr("dev.syncNone", "رکورد جدیدی نبود."));
       }
       loadStats(selectedCycle); loadRegistrations(selectedCycle); loadUkStatus();
-      if (insecure) setUkStatus(($("uk-sync-status") ? $("uk-sync-status").textContent + " " : "") + tr("dev.syncInsecure", "⚠ اتصال بدون تأیید گواهی (self-signed)"));
+      if (sawStalled) setUkStatus(tr("dev.syncStalled", "همگام‌سازی متوقف مانده است.") + " " + sawStalled);
+      else if (insecure) setUkStatus(($("uk-sync-status") ? $("uk-sync-status").textContent + " " : "") + tr("dev.syncInsecure", "⚠ اتصال بدون تأیید گواهی (self-signed)"));
       ukSyncing = false; if (btn) btn.disabled = false;
     }
     oneChunk();

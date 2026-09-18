@@ -766,6 +766,7 @@ window.I18N_FA={
 "dev.syncNoToken": "توکن API دستگاه روی سرور تنظیم نشده است.",
 "dev.syncTLS": "خطای گواهی TLS هاست دستگاه.",
 "dev.syncReset": "منبع دستگاه ریست شده بود — همگام‌سازی از اول شروع شد.",
+"dev.syncStalled": "همگام‌سازی متوقف مانده است.",
 "dev.syncEvents": "{n} رویداد توزین",
 "dev.sess.EMPTY": "خالی",
 "dev.sess.DETECTING": "در حال تشخیص",

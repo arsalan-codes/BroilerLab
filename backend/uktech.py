@@ -402,67 +402,93 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
     # If the device DB was wiped (ids restart), our cursor points past all
     # upstream data and every previously synced id would collide with NEW
     # rows under the same external_id. Mirror the source of truth: drop this
-    # cycle's stale rows for the serial and start over. Conservative rule —
-    # only when we provably saw ALL upstream rows (exhausted fetch with a
-    # consistent total_records) and every one of them is older than cursor.
+    # cycle's stale rows for the serial and start over.
+    #
+    # Robustness notes (a frozen table with a cursor ahead of upstream is
+    # otherwise silent forever, so this rule favors recovery while refusing
+    # to wipe on ambiguous evidence):
+    #  - rewind must exceed RESET_MARGIN (50): minor prunes/overlaps stay
+    #    silent instead of churning a full re-ingest;
+    #  - the meta must corroborate (upstream_max <= total < cursor): a single
+    #    stale/glitch row carrying a big total never triggers a wipe;
+    #  - anything else cursor-ahead-shaped is reported as `stalled` with a
+    #    reason instead of wiping (operator can see it in the UI status).
+    RESET_MARGIN = 50
     did_reset = False
+    stalled = False
+    stalled_reason = ""
+    upstream_max = max(seen_ids) if seen_ids else None
     try:
         total_up = (_LAST_META or {}).get("total_records")
         total_up = int(total_up) if total_up is not None else None
     except (TypeError, ValueError):
         total_up = None
-    if (last_id > 0 and exhausted and total_up is not None
-            and total_up == len(seen_ids) and seen_ids
-            and max(seen_ids) < last_id):
-        did_reset = True
-        last_id = 0
-        with SessionLocal() as s:
-            prefix = f"{serial}:"
-            s.query(DeviceLog).filter(
-                DeviceLog.cycle_id == cycle_id,
-                DeviceLog.external_id.like(prefix + "%")).delete(
-                    synchronize_session=False)
-            # drop visits left with zero logs in this cycle (they only
-            # aggregated the wiped generation); visits still holding other
-            # rows (e.g. manual ingest) are kept.
-            alive = {r[0] for r in
-                     s.query(DeviceLog.visit_id)
-                     .filter(DeviceLog.cycle_id == cycle_id,
-                             DeviceLog.visit_id.isnot(None)).all()}
-            orphans = s.query(Visit).filter(Visit.cycle_id == cycle_id)
-            if alive:
-                orphans = orphans.filter(~Visit.id.in_(alive))
-            orphans.delete(synchronize_session=False)
-            # sessions reference the wiped generation: drop them too, or the
-            # old WAITING states would suppress the fresh rows below.
-            s.query(WeighingSession).filter(
-                WeighingSession.serial == serial,
-                WeighingSession.cycle_id == cycle_id).delete(
-                    synchronize_session=False)
-            s.commit()
-        # re-collect: everything upstream is new now. The page bodies were
-        # already downloaded above but filtered by the old cursor; re-fetch
-        # (1 page in the reset case — total is small by construction).
-        fresh = []
-        offset = 0
-        complete = True
-        for _ in range(max_pages):
-            records, has_more = fetch_records(serial, UKTECH_TOKEN,
-                                              page_size, offset)
-            if not records:
-                break
-            for rec in records:
-                try:
-                    rid = int(rec.get("id"))
-                except (TypeError, ValueError):
-                    continue
-                fresh.append((rid, rec))
-            offset += len(records)
-            if not has_more:
-                break
-        else:
-            complete = False
-        fresh.sort(key=lambda t: t[0])
+    if (last_id > 0 and not fresh and upstream_max is not None
+            and upstream_max < last_id):
+        gap = last_id - upstream_max
+        meta_ok = (total_up is not None and upstream_max <= total_up
+                   and total_up < last_id)
+        if gap > RESET_MARGIN and meta_ok:
+            did_reset = True
+            last_id = 0
+            with SessionLocal() as s:
+                prefix = f"{serial}:"
+                s.query(DeviceLog).filter(
+                    DeviceLog.cycle_id == cycle_id,
+                    DeviceLog.external_id.like(prefix + "%")).delete(
+                        synchronize_session=False)
+                # drop visits left with zero logs in this cycle (they only
+                # aggregated the wiped generation); visits still holding other
+                # rows (e.g. manual ingest) are kept.
+                alive = {r[0] for r in
+                         s.query(DeviceLog.visit_id)
+                         .filter(DeviceLog.cycle_id == cycle_id,
+                                 DeviceLog.visit_id.isnot(None)).all()}
+                orphans = s.query(Visit).filter(Visit.cycle_id == cycle_id)
+                if alive:
+                    orphans = orphans.filter(~Visit.id.in_(alive))
+                orphans.delete(synchronize_session=False)
+                # sessions reference the wiped generation: drop them too, or the
+                # old WAITING states would suppress the fresh rows below.
+                s.query(WeighingSession).filter(
+                    WeighingSession.serial == serial,
+                    WeighingSession.cycle_id == cycle_id).delete(
+                        synchronize_session=False)
+                s.commit()
+            # re-collect: everything upstream is new now. The page bodies were
+            # already downloaded above but filtered by the old cursor; re-fetch
+            # (1 page in the reset case — total is small by construction).
+            fresh = []
+            offset = 0
+            complete = True
+            for _ in range(max_pages):
+                records, has_more = fetch_records(serial, UKTECH_TOKEN,
+                                                  page_size, offset)
+                if not records:
+                    break
+                for rec in records:
+                    try:
+                        rid = int(rec.get("id"))
+                    except (TypeError, ValueError):
+                        continue
+                    fresh.append((rid, rec))
+                offset += len(records)
+                if not has_more:
+                    break
+            else:
+                complete = False
+            fresh.sort(key=lambda t: t[0])
+        if not did_reset and gap > RESET_MARGIN:
+            # Big rewind but the evidence does not corroborate a wipe
+            # (inconsistent/stale meta): refuse to delete, but say so loudly
+            # instead of freezing silently like before.
+            stalled = True
+            stalled_reason = (
+                f"cursor {last_id} ahead of upstream max {upstream_max} "
+                f"(total_records={total_up})")
+            logging.getLogger(__name__).warning(
+                "uktech sync stalled for cycle %s serial %s: %s",
+                cycle_id, serial, stalled_reason)
 
     # Chunk: write only the first `batch` rows this call so a serverless
     # invocation finishes well inside its time limit; the cursor below lands
@@ -879,6 +905,8 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             row.note = f"cycle {cycle_id}: +{inserted}"
             if did_reset:
                 row.note += " (upstream reset)"
+            elif stalled:
+                row.note += f" (STALLED: {stalled_reason})"
         s.commit()
 
     chunk_complete = complete and remaining <= 0
@@ -886,4 +914,5 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             "inserted": inserted, "skipped": skipped, "last_id": max_seen,
             "complete": chunk_complete, "remaining": max(0, remaining),
             "reset": did_reset, "events": events_count,
+            "stalled": stalled, "stalled_reason": stalled_reason,
             "tls_insecure": _TLS_FALLBACK_USED}

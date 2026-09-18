@@ -452,3 +452,90 @@ def test_upstream_reset_restarts_cleanly(tmp_path, monkeypatch):
             assert uktech.get_cursor("ESP800", cid) == 2
     finally:
         processor._processors.pop(cid, None)
+
+
+def _reset_harness(tmp_path, monkeypatch):
+    """Scratch DB + one cycle, returns (cid, helpers). Caller drives syncs."""
+    db = tmp_path / "ukstall.db"
+    monkeypatch.setenv("BROILER_DATABASE_URL", f"sqlite:///{db.as_posix()}")
+    import config
+    import models
+    import processor
+    import importlib
+    importlib.reload(config)
+    importlib.reload(models)
+    importlib.reload(uktech)
+    importlib.reload(processor)
+    models.Base.metadata.create_all(models.engine)
+    from models import Cycle, DeviceLog, SessionLocal, Visit
+    with SessionLocal() as s:
+        c = Cycle(cycle_code="UKS", label="stall test", strain="ross308",
+                  bird_count=1)
+        s.add(c)
+        s.commit()
+        cid = c.id
+    return cid, (Cycle, DeviceLog, SessionLocal, Visit)
+
+
+def test_stalled_reports_instead_of_wiping(tmp_path, monkeypatch):
+    """Cursor ahead of upstream but meta inconsistent (glitch row carrying a
+    huge total): must NOT wipe — report stalled with the reason instead."""
+    cid, (Cycle, DeviceLog, SessionLocal, Visit) = _reset_harness(
+        tmp_path, monkeypatch)
+    try:
+        old = [dict(REC, id=1000 + i,
+                    created_at=f"2026-09-10 10:0{i}:00") for i in range(3)]
+        monkeypatch.setattr(uktech, "fetch_records",
+                            lambda *a, **k: (list(old), False))
+        r1 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert uktech.get_cursor("ESP800", cid) == 1002
+        # glitch: one stale row, meta claims the old big total
+        new = [dict(REC, id=5, created_at="2026-09-18 12:00:00")]
+
+        def fetch_glitch(*a, **k):
+            uktech._LAST_META = {"total_records": 1002}
+            return list(new), False
+        monkeypatch.setattr(uktech, "fetch_records", fetch_glitch)
+        r2 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r2["reset"] is False, r2
+        assert r2["stalled"] is True, r2
+        assert "1002" in r2["stalled_reason"] and "5" in r2["stalled_reason"]
+        with SessionLocal() as s:
+            # nothing deleted: old rows intact, cursor untouched
+            assert s.query(DeviceLog).filter(
+                DeviceLog.cycle_id == cid).count() == 6
+            assert uktech.get_cursor("ESP800", cid) == 1002
+    finally:
+        import processor
+        processor._processors.pop(cid, None)
+
+
+def test_small_rewind_stays_silent(tmp_path, monkeypatch):
+    """A minor prune (gap within margin) is steady-state: no wipe, no alarm."""
+    cid, (Cycle, DeviceLog, SessionLocal, Visit) = _reset_harness(
+        tmp_path, monkeypatch)
+    try:
+        old = [dict(REC, id=1000 + i,
+                    created_at=f"2026-09-10 10:0{i}:00") for i in range(3)]
+        monkeypatch.setattr(uktech, "fetch_records",
+                            lambda *a, **k: (list(old), False))
+        uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert uktech.get_cursor("ESP800", cid) == 1002
+        # upstream pruned a few rows (max 990 < 1002, gap 12 <= margin)
+        pruned = [dict(REC, id=900 + i,
+                       created_at="2026-09-18 12:00:00") for i in range(91)]
+
+        def fetch_pruned(*a, **k):
+            uktech._LAST_META = {"total_records": 91}
+            return list(pruned), False
+        monkeypatch.setattr(uktech, "fetch_records", fetch_pruned)
+        r = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r["reset"] is False and r["stalled"] is False, r
+        assert r["inserted"] == 0
+        with SessionLocal() as s:
+            assert s.query(DeviceLog).filter(
+                DeviceLog.cycle_id == cid).count() == 6
+            assert uktech.get_cursor("ESP800", cid) == 1002
+    finally:
+        import processor
+        processor._processors.pop(cid, None)
