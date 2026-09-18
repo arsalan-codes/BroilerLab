@@ -77,7 +77,7 @@ UKTECH_API_BASE = os.getenv("UKTECH_API_BASE", "https://uktech.ir/Login/api_weig
 UKTECH_SERIAL = os.getenv("UKTECH_SERIAL", "ESP800")
 UKTECH_TOKEN = os.getenv("UKTECH_API_TOKEN") or os.getenv("BROILER_UKTECH_TOKEN") or ""
 UKTECH_TIMEOUT_S = int(os.getenv("UKTECH_TIMEOUT_S", "15"))
-UKTECH_PAGE_SIZE = int(os.getenv("UKTECH_PAGE_SIZE", "200"))
+UKTECH_PAGE_SIZE = int(os.getenv("UKTECH_PAGE_SIZE", "500"))
 UKTECH_MAX_PAGES = int(os.getenv("UKTECH_MAX_PAGES", "20"))
 # TLS verification for the uktech host: "true" (strict) / "false" (skip) /
 # "auto" (default: try strict, fall back to unverified ONCE with a loud

@@ -87,6 +87,9 @@ class CycleProcessor:
         humidity = _to_float(event.get("humidity"))
         rssi = _to_float(event.get("rssi"))
         flock_id = (event.get("flock_id") or "").strip() or None
+        # Optional idempotency tag (uktech sync sets it) — stored at insert
+        # so callers don't need a second UPDATE roundtrip per row.
+        ext_id = (event.get("external_id") or "").strip() or None
 
         # If weight_g missing but raw present, apply EMA smoothing.
         if weight_g is None and raw is not None:
@@ -149,6 +152,7 @@ class CycleProcessor:
                 temp_c=temp_c, humidity=humidity, rssi=rssi,
                 visit_id=ctx["visit_id"] if ctx else closed_id,
                 is_visit_start=is_start, is_visit_end=is_end,
+                external_id=ext_id,
             )
             s.add(log)
             s.commit()

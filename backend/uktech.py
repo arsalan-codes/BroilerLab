@@ -69,6 +69,9 @@ def _tls_mode() -> str:
 # Set when auto mode downgrades to unverified TLS (surfaced per-sync so the
 # admin knows the channel was not authenticated).
 _TLS_FALLBACK_USED = False
+# Remembered per process: once the host proves self-signed, later calls skip
+# the doomed strict attempt (halves fetch latency on every chunk).
+_TLS_KNOWN_SELF_SIGNED = False
 
 
 def state_key(serial: str, cycle_id: int | None = None) -> str:
@@ -187,8 +190,14 @@ def fetch_records(serial: str, token: str, limit: int = 100, offset: int = 0,
         "serial": serial, "limit": limit, "offset": offset, "ttoken": token,
     })
     url = f"{base}?{qs}"
+    global _TLS_FALLBACK_USED, _TLS_KNOWN_SELF_SIGNED
     mode = _tls_mode()
     timeout = timeout or UKTECH_TIMEOUT_S
+    if _TLS_KNOWN_SELF_SIGNED and mode == "auto":
+        # Host already proved self-signed in this process: skip straight to
+        # unverified (the summary still flags tls_insecure for this call).
+        _TLS_FALLBACK_USED = True
+        return _fetch_once(url, timeout, verify=False)
     if mode == "false":
         if not globals().get("_warned_insecure"):
             globals()["_warned_insecure"] = True
@@ -199,7 +208,7 @@ def fetch_records(serial: str, token: str, limit: int = 100, offset: int = 0,
         return _fetch_once(url, timeout, verify=True)
     except UktechError as e:
         if mode == "auto" and _is_cert_failure(e):
-            global _TLS_FALLBACK_USED
+            _TLS_KNOWN_SELF_SIGNED = True
             _TLS_FALLBACK_USED = True
             logging.getLogger(__name__).warning(
                 "uktech TLS verify failed (%s) — retrying UNVERIFIED "
@@ -347,11 +356,8 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 except Exception:
                     age_day = None
             event, _ext, _ts = record_to_event(rec, age_day, serial)
+            event["external_id"] = ext  # stored at insert, no extra UPDATE
             log_d = proc.ingest(event)
-            with SessionLocal() as s:
-                s.query(DeviceLog).filter(DeviceLog.id == log_d["id"]).update(
-                    {"external_id": ext})
-                s.commit()
             try:
                 hub.publish(log_d)  # live UI update; never breaks the sync
             except Exception:
