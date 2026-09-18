@@ -95,6 +95,9 @@ class Visit(Base):
     initial_weight_g = Column(Float, nullable=True)
     final_weight_g = Column(Float, nullable=True)
     feed_intake_g = Column(Float, nullable=True)
+    # Device-reported presence seconds, accumulated by the hardware until the
+    # bird exits (uktech total_seconds). Set on visit close; NULL while open.
+    presence_s = Column(Float, nullable=True)
     sensor_id = Column(String(32), nullable=True)
     rssi = Column(Float, nullable=True)
     read_ok = Column(Boolean, default=True)
@@ -252,6 +255,10 @@ def init_db():
             if "token_version" not in user_cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0"))
                 print("[migrate] added users.token_version")
+            visit_cols = {c["name"] for c in insp.get_columns("visits")}
+            if "presence_s" not in visit_cols:
+                conn.execute(text("ALTER TABLE visits ADD COLUMN presence_s FLOAT"))
+                print("[migrate] added visits.presence_s")
             # scope cycle_code uniqueness per owner (drop legacy global index)
             idx_names = {i["name"] for i in insp.get_indexes("cycles")}
             try:

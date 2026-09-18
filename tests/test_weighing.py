@@ -221,12 +221,14 @@ def test_sync_registers_one_visit_for_acceptance_sequence(tmp_path, monkeypatch)
         cid = c.id
     try:
         r = uktech.sync_serial_to_cycle(cid, serial="ESP800")
-        assert r["inserted"] == len(seq) and r["events"] == 1, r
+        # each record fans out to 2 unit lanes (u2 is an empty zero lane);
+        # the u1 lane yields exactly ONE weighing event.
+        assert r["inserted"] == 2 * len(seq) and r["events"] == 1, r
         assert r["complete"] is True
         with SessionLocal() as s:
-            # raw tier: every record stored (debugging/monitoring intact)
+            # raw tier: every unit row stored (debugging/monitoring intact)
             assert s.query(DeviceLog).filter(
-                DeviceLog.cycle_id == cid).count() == len(seq)
+                DeviceLog.cycle_id == cid).count() == 2 * len(seq)
             # valid tier: exactly ONE visit, closed, ≈219.35
             visits = s.query(Visit).filter(Visit.cycle_id == cid).all()
             assert len(visits) == 1, [(v.bird_id, v.initial_weight_g) for v in visits]
@@ -239,10 +241,13 @@ def test_sync_registers_one_visit_for_acceptance_sequence(tmp_path, monkeypatch)
             # raw data, never a table row of its own.
             assert s.query(DeviceLog).filter(
                 DeviceLog.cycle_id == cid,
-                DeviceLog.visit_id.is_(None)).count() == len(seq) - 2
-            # session persisted EMPTY (re-armed for the next weighing)
-            sess = s.query(WeighingSession).all()
-            assert len(sess) == 1 and sess[0].state == weighing.EMPTY
+                DeviceLog.visit_id.is_(None)).count() == 2 * len(seq) - 2
+            # sessions persisted (u1 bird lane + u2 empty lane); the u1
+            # lane re-armed to EMPTY for the next weighing
+            sess = {x.key: x for x in s.query(WeighingSession).all()}
+            assert len(sess) == 2
+            lane1 = [x for x in sess.values() if x.rfid == "B1"]
+            assert len(lane1) == 1 and lane1[0].state == weighing.EMPTY
     finally:
         processor._processors.pop(cid, None)
 

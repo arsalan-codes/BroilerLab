@@ -457,6 +457,7 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
                         "final_weight_g": v.final_weight_g,
                         "feed_intake_g": round(v.feed_intake_g or 0, 1),
                         "elapsed_s": round(elapsed, 1),
+                        "presence_s": v.presence_s,
                         "registered_at": _iso(v.visit_start), "visit_end": _iso(v.visit_end),
                         "age_day": v.age_day, "sensor_id": v.sensor_id,
                         "rssi": v.rssi, "read_ok": v.read_ok})
@@ -624,9 +625,20 @@ def uktech_sessions(cycle_id: int,
                         WeighingSession.serial == ser)
                 .order_by(WeighingSession.updated_at.desc())
                 .limit(200).all())
-        return [{"device": r.device_id, "rfid": r.rfid, "state": r.state,
-                 "registered": r.registered,
-                 "updated_at": _iso(r.updated_at)} for r in rows]
+        out = []
+        for r in rows:
+            unit = 1
+            try:
+                # key: "<serial>|<cycle>|<dev>#u<unit>|<rfid>"
+                devpart = (r.key or "").rsplit("|", 2)[-2]
+                if "#u" in devpart:
+                    unit = int(devpart.rsplit("#u", 1)[1])
+            except (TypeError, ValueError, IndexError):
+                pass
+            out.append({"device": r.device_id, "unit": unit, "rfid": r.rfid,
+                        "state": r.state, "registered": r.registered,
+                        "updated_at": _iso(r.updated_at)})
+        return out
 def _ws_auth_or_close(ws: WebSocket):
     """Browsers cannot set headers on a WS handshake, so the JWT travels as
     ?token=. Returns the authenticated User or None (caller must close)."""
