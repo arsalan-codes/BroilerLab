@@ -118,20 +118,30 @@ def test_intake_single_rule_with_unit_fix():
         "start rows must seed the bin baseline"
 
 
-def test_frontend_renders_seven_columns():
+def test_frontend_renders_nine_columns():
+    # WHY renamed: the live core adds "Unit" + "Bird Position" columns
+    # (inside/outside badge, spec deliverable) to both per-unit tables.
     html = (WEBAPP / "index.html").read_text(encoding="utf-8")
     heads = re.findall(r'<div class="reg-thead">(.*?)</div>', html, re.S)
     assert len(heads) == 2, f"two per-unit tables expected, got {len(heads)}"
     for head in heads:
         cells = re.findall(r"reg-cell--(\w+)", head)
-        assert cells == ["feed", "w", "bin", "elapsed", "dt", "tag", "sensor"], \
-            f"thead must be feed/weight/bin/elapsed/datetime/bird/device, got {cells}"
+        assert cells == ["feed", "w", "bin", "elapsed", "dt", "tag",
+                         "sensor", "unit", "pos"], \
+            f"thead must end with unit/position columns, got {cells}"
     assert 'id="reg-body-u1"' in html and 'id="reg-body-u2"' in html, \
         "per-unit table bodies missing"
+    assert 'id="cy-source"' in html, "data-source selector missing"
     js = (WEBAPP / "device-panel.js").read_text(encoding="utf-8")
     assert "visit_feed_g" in js and "elapsed_s" in js and "feed_intake_g" in js, \
         "device-panel must render the new live + history fields"
     assert "bin_weight_g" in js, "device-panel must render the hopper column"
+    assert "bird_position" in js and "regPosHtml" in js, \
+        "device-panel must render the position badge"
+    assert "tickElapsed" not in js, \
+        "elapsed must come from the latest record, never ticked locally"
+    assert "cycleSource" in js and "/source" in js, \
+        "device-panel must switch API poll vs direct refresh per cycle"
 
 
 def test_frontend_patches_rows_from_change_analysis():
@@ -148,7 +158,11 @@ def test_locales_have_device_headers():
                                         ("en.js", "Feed consumed", "Elapsed", "Date & time", "Hopper weight")):
         src = (ROOT / "webapp" / "locales" / loc).read_text(encoding="utf-8")
         for key in ("dev.reg.feed", "dev.reg.elapsed", "dev.reg.datetime", "dev.reg.sec",
-                    "dev.reg.bin", "dev.unit1", "dev.unit2",
+                    "dev.reg.bin", "dev.reg.unit", "dev.reg.position",
+                    "dev.pos.inside", "dev.pos.outside",
+                    "dev.source", "dev.srcApi", "dev.srcDirect",
+                    "dev.srcDirectNote", "dev.srcSwitched",
+                    "dev.unit1", "dev.unit2",
                     "dev.online", "dev.stale", "dev.offline", "dev.lastFetch"):
             assert key in src, f"{loc} missing {key}"
         assert feed in src and elapsed in src and dt in src and hop in src, f"{loc} header text wrong"

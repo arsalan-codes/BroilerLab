@@ -106,6 +106,24 @@ DEVICE_MAX_CLOCK_SKEW_S = int(os.getenv("DEVICE_MAX_CLOCK_SKEW_S", "300"))
 DEVICE_MAX_BATCH = int(os.getenv("DEVICE_MAX_BATCH", "50"))
 DEVICE_KEY_PREFIX = "BLD_"
 
+# ---- Per-unit live core (process_unit_sample) ----
+# Every API record carries TWO independent weighing units. Field mapping
+# (owner-confirmed): unit 1 = rfid1 / bird weight_2 / bin weight_1 /
+# status1 / cal_2 (bird) / cal_1 (bin); unit 2 mirrors on rfid2 /
+# weight_4 / weight_3 / status2 / cal_4 / cal_3. total_weight is always
+# the exact sum (profiled over 145 rows) and is ignored for logic.
+# total_seconds has read 0.0 in every row ever observed: elapsed runs on
+# the counter when it moves, falling back to record-timestamp spans.
+UKTECH_EMPTY_THRESHOLD_G = float(os.getenv("UKTECH_EMPTY_THRESHOLD_G", "15"))
+UKTECH_EMPTY_DEBOUNCE = int(os.getenv("UKTECH_EMPTY_DEBOUNCE", "2") or 2)
+UKTECH_FEED_NOISE_G = float(os.getenv("UKTECH_FEED_NOISE_G", "0.5"))
+UKTECH_REFILL_JUMP_G = float(os.getenv("UKTECH_REFILL_JUMP_G", "50"))
+# Tag swap with continuous weight: "keep-open" (reader flapping observed:
+# 7 swaps in 20 records at constant weight) or "close-open".
+UKTECH_RFID_SWAP_POLICY = os.getenv("UKTECH_RFID_SWAP_POLICY", "keep-open").strip().lower()
+UKTECH_PAGES_PER_TICK = int(os.getenv("UKTECH_PAGES_PER_TICK", "4") or 4)
+UKTECH_PRESENCE_TOL_S = float(os.getenv("UKTECH_PRESENCE_TOL_S", "30"))
+
 # ---- Auth / JWT ----
 # Explicit secret (production must set BROILER_JWT_SECRET — lifespan refuses to
 # boot with an ephemeral key when BROILER_REQUIRE_JWT_SECRET=1 or on Vercel).

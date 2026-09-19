@@ -74,6 +74,9 @@ class Cycle(Base):
     notes = Column(String(500), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow)
     active = Column(Boolean, default=True)
+    # Active ingestion source for this cycle: "api" (uktech poll) or
+    # "direct" (device-key pushes). Exactly one is enforced (409).
+    ingest_source = Column(String(8), nullable=False, default="api")
 
     owner = relationship("User", back_populates="cycles")
     visits = relationship("Visit", back_populates="cycle", cascade="all, delete-orphan")
@@ -108,6 +111,21 @@ class Visit(Base):
     co_feed = Column(Boolean, default=False)
     temp_c = Column(Float, nullable=True)
     humidity = Column(Float, nullable=True)
+    # Per-unit live core (unit_core.process_unit_sample) state, persisted so
+    # visits survive restarts: live badge + in-place updates every record.
+    bird_position = Column(String(8), nullable=False, default="inside")
+    last_tag = Column(String(32), nullable=True)
+    elapsed_s = Column(Float, nullable=True)
+    presence_acc = Column(Float, nullable=True)
+    counter_last = Column(Float, nullable=True)
+    counter_live = Column(Boolean, nullable=False, default=False)
+    bin_baseline = Column(Float, nullable=True)
+    bin_calib = Column(Float, nullable=True)
+    empty_streak = Column(Integer, nullable=False, default=0)
+    empty_since = Column(DateTime(timezone=True), nullable=True)
+    initial_confirmed_g = Column(Float, nullable=True)
+    close_reason = Column(String(16), nullable=True)
+    stale = Column(Boolean, nullable=False, default=False)
     cycle = relationship("Cycle", back_populates="visits")
 
 
@@ -200,6 +218,24 @@ class EnvSample(Base):
     __table_args__ = (
         Index("ix_env_house_ts", "house_id", "ts"),
     )
+
+
+class UnitState(Base):
+    """Previous-record triple per (cycle, device, unit) for the live core's
+    consecutive-pair rule (elapsed/presence accrue only across VALID-prev
+    pairs). Updated on EVERY record, independent of visits, so chunk
+    boundaries and restarts never break the pair chain."""
+    __tablename__ = "unit_states"
+    cycle_id = Column(Integer, ForeignKey("cycles.id", ondelete="CASCADE"),
+                      primary_key=True)
+    device_id = Column(String(32), primary_key=True)
+    unit = Column(Integer, primary_key=True)
+    prev_ts = Column(DateTime(timezone=True), nullable=True)
+    prev_valid = Column(Boolean, nullable=True)
+    # Whether that record actually held the bird (closing-span presence
+    # needs it across chunk boundaries, not just within one call).
+    prev_bird = Column(Boolean, nullable=True)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow)
 
 
 class SyncState(Base):
@@ -362,6 +398,37 @@ def init_db():
             if "devices" not in names:
                 Device.__table__.create(conn)
                 print("[migrate] created devices")
+            if "unit_states" not in names:
+                UnitState.__table__.create(conn)
+                print("[migrate] created unit_states")
+            else:
+                _ucols = [c["name"] for c in inspect(conn).get_columns("unit_states")]
+                if "prev_bird" not in _ucols:
+                    conn.execute(text("ALTER TABLE unit_states ADD COLUMN prev_bird BOOLEAN"))
+                    print("[migrate] added unit_states.prev_bird")
+            # 013 columns on long-lived dev DBs (additive, idempotent)
+            for _tbl, _col, _ddl in (
+                    ("visits", "bird_position", "VARCHAR(8) NOT NULL DEFAULT 'inside'"),
+                    ("visits", "last_tag", "VARCHAR(32)"),
+                    ("visits", "elapsed_s", "FLOAT"),
+                    ("visits", "presence_acc", "FLOAT"),
+                    ("visits", "counter_last", "FLOAT"),
+                    ("visits", "counter_live", "BOOLEAN NOT NULL DEFAULT 0"),
+                    ("visits", "bin_baseline", "FLOAT"),
+                    ("visits", "bin_calib", "FLOAT"),
+                    ("visits", "empty_streak", "INTEGER NOT NULL DEFAULT 0"),
+                    ("visits", "empty_since", "TIMESTAMP"),
+                    ("visits", "initial_confirmed_g", "FLOAT"),
+                    ("visits", "close_reason", "VARCHAR(16)"),
+                    ("visits", "stale", "BOOLEAN NOT NULL DEFAULT 0"),
+                    ("cycles", "ingest_source", "VARCHAR(8) NOT NULL DEFAULT 'api'")):
+                try:
+                    _have = [c["name"] for c in inspect(conn).get_columns(_tbl)]
+                    if _col not in _have:
+                        conn.execute(text(f"ALTER TABLE {_tbl} ADD COLUMN {_col} {_ddl}"))
+                        print(f"[migrate] added {_tbl}.{_col}")
+                except Exception as _e:
+                    print(f"[migrate] {_tbl}.{_col} skipped: {_e}")
     except Exception as e:
         print(f"[migrate] uktech columns check failed: {e}")
 

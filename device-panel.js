@@ -104,6 +104,7 @@
           loadStats(c.id);
           loadRegistrations(c.id);
           loadUkStatus();
+          loadCycleSource();
           startUkLive();
         });
         box.appendChild(el);
@@ -126,7 +127,7 @@
       $("cy-code").value = ""; $("cy-label").value = "";
       selectedCycle = c.id;
       loadCycles(); loadStats(c.id);
-      clearRegs(); loadRegistrations(c.id); startUkLive();
+      clearRegs(); loadRegistrations(c.id); loadCycleSource(); startUkLive();
       toast(window.tr?window.tr("dev.created").replace("{code}",c.cycle_code):"دوره " + c.cycle_code + " ایجاد شد");
     }).catch(function (e) { toast((window.tr?window.tr("dev.backendError"):"خطا: ") + e.message); });
   }
@@ -232,16 +233,30 @@
     var u = parseInt(d && d.unit, 10);
     return u === 2 ? 2 : 1;
   }
+  function regPosHtml(o) {
+    // Bird-position badge: inside (live) / outside (finalized), with pause
+    // (latest row INVALID) and stale (device offline) markers. The elapsed
+    // value shown is always the latest record's — never ticked locally.
+    if (!o.pos) return '<span class="reg-cell reg-cell--pos">—</span>';
+    var inside = o.pos === "inside";
+    var label = inside ? tr("dev.pos.inside", "داخل دستگاه") : tr("dev.pos.outside", "خارج از دستگاه");
+    var extra = (o.paused ? " ⏸" : "") + (o.stale ? " ⌛" : "");
+    return '<span class="reg-cell reg-cell--pos"><span class="reg-pos ' +
+      (inside ? "in" : "out") + '">' + esc(label + extra) + "</span></span>";
+  }
   function regRowHtml(o) {
-    // o: {feed, w, bin, elap, dtJoin, bird, sensor} — weights via the
-    // shared 2-decimal formatter (display only, stored values untouched).
+    // o: {feed, w, bin, elap, dtJoin, bird, sensor, unit, pos, paused,
+    // stale} — weights via the shared 2-decimal formatter (display only,
+    // stored values untouched). w is the LIVE weight (final first).
     return '<span class="reg-cell reg-cell--feed">' + formatWeight(o.feed) + '<span class="reg-unit">g</span></span>' +
       '<span class="reg-cell reg-cell--w">' + formatWeight(o.w) + '<span class="reg-unit">g</span></span>' +
       '<span class="reg-cell reg-cell--bin">' + formatWeight(o.bin) + '<span class="reg-unit">g</span></span>' +
       '<span class="reg-cell reg-cell--elapsed">' + (o.elap != null ? lnum(o.elap, 2) : "—") + '<span class="reg-unit">' + tr("dev.reg.sec", "s") + '</span></span>' +
       '<span class="reg-cell reg-cell--dt">' + esc(o.dtJoin) + '</span>' +
       '<span class="reg-cell reg-cell--tag">' + esc(o.bird || "—") + '</span>' +
-      '<span class="reg-cell reg-cell--sensor">' + esc(o.sensor || "—") + '</span>';
+      '<span class="reg-cell reg-cell--sensor">' + esc(o.sensor || "—") + '</span>' +
+      '<span class="reg-cell reg-cell--unit">' + esc(o.unit != null ? String(o.unit) : "—") + "</span>" +
+      regPosHtml(o);
   }
   function regSkeletonHtml() {
     return '<div class="reg-skel"></div><div class="reg-skel"></div><div class="reg-skel"></div>';
@@ -280,23 +295,20 @@
     try {
       if (body.querySelector('[data-visit-id="' + d.visit_id + '"]')) return;
     } catch (e) {}
-    var w = d.initial_weight_g != null ? d.initial_weight_g : d.weight_g;
+    var w = d.final_weight_g != null ? d.final_weight_g
+      : (d.initial_weight_g != null ? d.initial_weight_g : d.weight_g);
     var feed = d.visit_feed_g != null ? d.visit_feed_g : d.feed_intake_g;
     var row = document.createElement("div");
     row.className = "reg-row new";
     if (d.visit_id != null) {
       try { row.setAttribute("data-visit-id", d.visit_id); } catch (e) {}
     }
-    try {
-      // open visits tick live; closed ones freeze at their final value
-      row.setAttribute("data-eopen", d.is_visit_end ? "" : "1");
-      row.setAttribute("data-eval", (d.elapsed_s != null && !isNaN(+d.elapsed_s)) ? +d.elapsed_s : 0);
-      row.setAttribute("data-et0", Date.now());
-    } catch (e) {}
     row.innerHTML = regRowHtml({
       feed: feed, w: w, bin: d.bin_weight_g, elap: d.elapsed_s,
       dtJoin: regDateJoin(d.timestamp || d.registered_at || ""),
-      bird: d.bird_id, sensor: d.sensor_id
+      bird: d.bird_id, sensor: d.sensor_id, unit: d.unit,
+      pos: d.bird_position || (d.is_visit_end ? "outside" : "inside"),
+      paused: !!d.paused, stale: !!d.stale
     });
     body.insertBefore(row, body.firstChild);
     while (body.childNodes.length > regMax) body.removeChild(body.lastChild);
@@ -307,20 +319,17 @@
   function fillRegRow(row, r) {
     // single mapping from a registrations-shaped object onto a row —
     // shared by full reloads and smart change patches so both render
-    // identical cells (feed/weight/hopper/elapsed/datetime/bird/device).
+    // identical cells. w is the LIVE weight (final first, entry fallback);
+    // elapsed is the latest record's value, never ticked locally.
     if (r.id != null) {
       try { row.setAttribute("data-visit-id", r.id); } catch (e) {}
     }
-    try {
-      row.setAttribute("data-eopen", r.visit_end ? "" : "1");
-      row.setAttribute("data-eval", (r.elapsed_s != null && !isNaN(+r.elapsed_s)) ? +r.elapsed_s : 0);
-      row.setAttribute("data-et0", Date.now());
-    } catch (e) {}
-    var w = r.initial_weight_g != null ? r.initial_weight_g : r.final_weight_g;
+    var w = r.final_weight_g != null ? r.final_weight_g : r.initial_weight_g;
     row.innerHTML = regRowHtml({
       feed: r.feed_intake_g, w: w, bin: r.bin_weight_g,
       elap: r.elapsed_s, dtJoin: regDateJoin(r.registered_at || ""),
-      bird: r.bird_id, sensor: r.sensor_id
+      bird: r.bird_id, sensor: r.sensor_id, unit: r.unit,
+      pos: r.bird_position || null, paused: !!r.paused, stale: !!r.stale
     });
   }
   function patchRegChanges(changes) {
@@ -568,29 +577,13 @@
     if (ukLiveTimer) { clearTimeout(ukLiveTimer); ukLiveTimer = null; }
   }
   function ukTickStart() {
+    // No local ticking of elapsed: the cell always shows the latest
+    // record's value (device counter / fallback). The 1s tick only keeps
+    // the online indicator fresh.
     ukTickStop();
     ukTick = setInterval(function () {
       renderUkOnline();
-      tickElapsed();
     }, 1000);
-  }
-  // Live-ticking elapsed for still-open visits: each row carries its
-  // server-rendered base seconds + render time; the ticker adds wall time
-  // on top so open rows visibly advance between polls. Closed rows freeze.
-  function tickElapsed() {
-    if (document.hidden) return;
-    var rows;
-    try { rows = document.querySelectorAll('.reg-row[data-eopen="1"]'); }
-    catch (e) { return; }
-    var now = Date.now();
-    for (var i = 0; i < rows.length; i++) {
-      var cell = rows[i].querySelector('.reg-cell--elapsed');
-      if (!cell || !cell.firstChild) continue;
-      var base = parseFloat(rows[i].getAttribute("data-eval") || "0");
-      var t0 = parseInt(rows[i].getAttribute("data-et0") || "0", 10);
-      if (!t0 || isNaN(base)) continue;
-      cell.firstChild.nodeValue = lnum(base + Math.max(0, (now - t0) / 1000), 2);
-    }
   }
   function ukTickStop() {
     if (ukTick) { clearInterval(ukTick); ukTick = null; }
@@ -615,8 +608,57 @@
     renderUkOnline();
     loadUkStatus();
   }
+  // ---------- data-source selector (API poll vs direct ESP pushes) ----
+  // Exactly one source is active per cycle (server 409s the other one).
+  // On "direct" the 3s tick refreshes the table straight from the DB so
+  // pushes surface within one cycle — no sync POST is ever sent.
+  var cycleSource = "api";
+  function loadCycleSource() {
+    var sel = $("cy-source");
+    if (!selectedCycle) return;
+    api("/api/cycles/" + selectedCycle + "/source").then(function (r) {
+      cycleSource = (r && r.source) || "api";
+      if (sel) {
+        sel.value = cycleSource;
+        var o0 = sel.options[0], o1 = sel.options[1];
+        if (o0) o0.textContent = tr("dev.srcApi", "API (پول توزین)");
+        if (o1) o1.textContent = tr("dev.srcDirect", "ESP32 مستقیم");
+      }
+      renderSourceNote();
+    }).catch(function () {});
+  }
+  function renderSourceNote() {
+    var note = $("cy-source-note"), btn = $("uk-sync");
+    var direct = cycleSource === "direct";
+    if (note) note.textContent = direct ? tr("dev.srcDirectNote", "پول API خاموش است — داده از ESP32 مستقیم می‌آید و جدول هر ۳ ثانیه تازه می‌شود.") : "";
+    if (btn) btn.disabled = !!direct;
+  }
+  function srcInit() {
+    var sel = $("cy-source");
+    if (!sel) return;
+    sel.addEventListener("change", function () {
+      if (!selectedCycle) { sel.value = cycleSource; return; }
+      var want = sel.value;
+      api("/api/cycles/" + selectedCycle + "/source", { method: "PATCH", body: JSON.stringify({ source: want }) })
+        .then(function (r) {
+          cycleSource = (r && r.source) || want;
+          sel.value = cycleSource;
+          renderSourceNote();
+          startUkLive();
+          toast(tr("dev.srcSwitched", "منبع داده عوض شد."));
+        })
+        .catch(function (e) { sel.value = cycleSource; toast(String((e && e.message) || e)); });
+    });
+    loadCycleSource();
+  }
   function autoSyncUktech(silent) {
     if (!selectedCycle) return;
+    if (cycleSource === "direct") {
+      loadStats(selectedCycle); loadRegistrations(selectedCycle);
+      ukLastOk = Date.now(); renderUkOnline();
+      if (ukWantLive && ukLiveTimer === null) ukSchedule(UK_POLL_MS);
+      return;
+    }
     if (ukSyncing) { if (ukWantLive) ukSchedule(UK_POLL_MS); return; }
     ukSyncing = true;
     showUkRefresh(true);
@@ -687,6 +729,7 @@
   }
   function syncUktech() {
     if (!selectedCycle) { toast(tr("dev.syncNeedCycle", "اول یک دوره را انتخاب کنید.")); return; }
+    if (cycleSource === "direct") { toast(tr("dev.srcDirectNote", "پول API خاموش است — داده از ESP32 مستقیم می‌آید و جدول هر ۳ ثانیه تازه می‌شود.")); return; }
     var btn = $("uk-sync");
     if (btn) btn.disabled = true;
     // Chunked sync loop: each call writes one batch (server default 60) and
@@ -829,6 +872,7 @@
     var curP=document.querySelector("section.view.on"); var onPub=curP && (curP.id==="v-landing" || curP.id==="v-about");
     if(authed2 || !onPub) loadCycles();
     espInit();
+    srcInit();
     connectWS();
     // pause live when tab hidden, resume on visible
     document.addEventListener("visibilitychange", function () {

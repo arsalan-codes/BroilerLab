@@ -373,7 +373,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 .reg-table{border:1px solid var(--line);border-radius:11px;overflow:hidden}
 .reg-thead{
   display:grid;
-  grid-template-columns:1fr 1fr 1fr .8fr 1.4fr 1fr .7fr;
+  grid-template-columns:1fr 1fr 1fr .8fr 1.4fr 1fr .7fr .6fr .9fr;
   gap:0;background:var(--bg2);border-bottom:1px solid var(--line)
 }
 .reg-unit-title{font-size:11px;font-weight:800;color:var(--fg);margin:14px 2px 8px;display:flex;align-items:center;gap:7px}
@@ -385,7 +385,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 }
 .reg-body{max-height:340px;overflow-y:auto}
 .reg-row{
-  display:grid;grid-template-columns:1fr 1fr 1fr .8fr 1.4fr 1fr .7fr;
+  display:grid;grid-template-columns:1fr 1fr 1fr .8fr 1.4fr 1fr .7fr .6fr .9fr;
   align-items:center;border-bottom:1px solid rgba(31,42,61,.45);
   font-size:12px;color:var(--fg);transition:background .2s,opacity .3s;
   animation:regIn .25s ease-out
@@ -416,9 +416,13 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 .reg-empty .fa{display:block;font-size:20px;margin-bottom:8px;opacity:.5}
 /* responsive: collapse to horizontal scroll on narrow screens */
 @media(max-width:720px){
-  .reg-thead,.reg-row{grid-template-columns:1fr 1fr 1fr 1.2fr 1fr;min-width:500px;font-size:11px}
-  .reg-cell--elapsed,.reg-cell--sensor{display:none}
+  .reg-thead,.reg-row{grid-template-columns:1fr 1fr 1fr 1.2fr .8fr 1fr;min-width:520px;font-size:11px}
+  .reg-cell--elapsed,.reg-cell--sensor,.reg-cell--unit{display:none}
 }
+.reg-cell--unit{color:var(--dim);font-variant-numeric:tabular-nums}
+.reg-pos{display:inline-block;padding:2px 9px;border-radius:99px;font-size:10.5px;font-weight:750;white-space:nowrap}
+.reg-pos.in{background:rgba(25,195,154,.14);color:#19c39a}
+.reg-pos.out{background:rgba(148,163,184,.14);color:var(--mut)}
 .langseg button{height:32px;padding:0 13px;display:inline-flex;align-items:center}
 .hctl .pill{height:26px}
 .hctl .vbadge{align-self:center;display:inline-flex;align-items:center}
@@ -2475,6 +2479,12 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
         <span id="uk-online" class="uk-online off" aria-live="polite"></span>
         <span id="uk-lastfetch" class="cy-meta"></span>
         <span id="uk-refresh" class="uk-refresh" style="display:none" aria-hidden="true"></span>
+        <label class="cy-meta" for="cy-source" data-i18n="dev.source">منبع داده:</label>
+        <select id="cy-source" dir="rtl" style="background:var(--bg2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px">
+          <option value="api">API</option>
+          <option value="direct">ESP32</option>
+        </select>
+        <span id="cy-source-note" class="cy-meta" aria-live="polite"></span>
       </div>
     </div>
 
@@ -2532,6 +2542,8 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
         <span class="reg-cell reg-cell--dt" data-i18n="dev.reg.datetime">تاریخ و ساعت</span>
         <span class="reg-cell reg-cell--tag" data-i18n="dev.reg.tag">شناسه مرغ</span>
         <span class="reg-cell reg-cell--sensor" data-i18n="dev.reg.sensor">شناسه دستگاه</span>
+        <span class="reg-cell reg-cell--unit" data-i18n="dev.reg.unit">یونیت</span>
+        <span class="reg-cell reg-cell--pos" data-i18n="dev.reg.position">موقعیت پرنده</span>
       </div>
       <div id="reg-body-u1" class="reg-body"></div>
     </div>
@@ -2545,6 +2557,8 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
         <span class="reg-cell reg-cell--dt" data-i18n="dev.reg.datetime">تاریخ و ساعت</span>
         <span class="reg-cell reg-cell--tag" data-i18n="dev.reg.tag">شناسه مرغ</span>
         <span class="reg-cell reg-cell--sensor" data-i18n="dev.reg.sensor">شناسه دستگاه</span>
+        <span class="reg-cell reg-cell--unit" data-i18n="dev.reg.unit">یونیت</span>
+        <span class="reg-cell reg-cell--pos" data-i18n="dev.reg.position">موقعیت پرنده</span>
       </div>
       <div id="reg-body-u2" class="reg-body"></div>
     </div>

@@ -109,6 +109,16 @@ E2E = textwrap.dedent('''
     ca = c.post("/api/cycles", headers=ha, json={"cycle_code": "DA", "label": "a", "strain": "ross308"}).json()["id"]
     cb = c.post("/api/cycles", headers=hb, json={"cycle_code": "DB", "label": "b", "strain": "ross308"}).json()["id"]
 
+    # source selector: default api, exactly one active (409 both ways)
+    assert c.get(f"/api/cycles/{ca}/source", headers=ha).json() == {"cycle_id": ca, "source": "api"}
+    assert c.patch(f"/api/cycles/{ca}/source", headers=ha, json={"source": "bogus"}).status_code == 400
+    assert c.patch(f"/api/cycles/{ca}/source", headers=hb, json={"source": "direct"}).status_code == 404
+    r = c.patch(f"/api/cycles/{ca}/source", headers=ha, json={"source": "direct"})
+    assert r.json() == {"cycle_id": ca, "source": "direct"}, r.text
+    r = c.post("/api/uktech/sync", headers=ha, json={"cycle_id": ca})
+    assert r.status_code == 409, r.text  # API polling disabled on direct
+    dvb = c.post("/api/devices", headers=hb, json={"device_id": "esp32-b", "cycle_id": cb}).json()
+
     # create: raw key once, never the hash
     dv = c.post("/api/devices", headers=ha, json={"device_id": "esp32-a", "name": "A", "cycle_id": ca}).json()
     assert dv["device_id"] == "esp32-a" and dv["cycle_id"] == ca, dv
@@ -170,12 +180,16 @@ E2E = textwrap.dedent('''
     must400(ev("bad event!"), "invalid_event_id")
     must400(ev("e3", cycle_id=cb), "device_cycle_forbidden")  # tenant escape
     must400(ev("e3", user_id=999), "device_cycle_forbidden")
+    # device pushes on an api-source cycle are rejected (switch to direct)
+    rb = c.post("/api/device/ingest", headers={"X-Device-Key": dvb["api_key"]}, json=ev("cb1"))
+    assert rb.status_code == 409 and rb.json()["error"] == "device_source_inactive", rb.text
     raw_h = dict(dh); raw_h["Content-Type"] = "application/json"
     r = c.post("/api/device/ingest", headers=raw_h, content=b"not json")
     assert r.status_code == 400 and r.json()["success"] is False, (r.status_code, r.text)
 
-    # isolation: B sees nothing, touches nothing
-    assert c.get("/api/devices", headers=hb).json() == []
+    # isolation: B sees only its own device, touches nothing of A's
+    blist = c.get("/api/devices", headers=hb).json()
+    assert [d["device_id"] for d in blist] == ["esp32-b"], blist
     assert c.get("/api/devices/esp32-a", headers=hb).status_code == 404
     assert c.patch("/api/devices/esp32-a/status", headers=hb, json={"active": False}).status_code == 404
     assert c.post("/api/devices/esp32-a/rotate-key", headers=hb).status_code == 404

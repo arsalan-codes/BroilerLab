@@ -234,43 +234,52 @@ def test_sync_registers_one_visit_for_acceptance_sequence(tmp_path, monkeypatch)
         cid = c.id
     try:
         r = uktech.sync_serial_to_cycle(cid, serial="ESP800")
-        # each record fans out to 2 unit lanes (u2 is an empty zero lane);
-        # the u1 lane yields exactly ONE weighing event.
-        assert r["inserted"] == 2 * len(seq) and r["events"] == 1, r
+        # each record fans out to 2 unit lanes (u2 is an empty zero lane).
+        # WHY changed (live core, no session gate): events count surfacing
+        # transitions (1 open + 1 close), not REGISTERs; the visit opens on
+        # the first touch and live-tracks every record, including the
+        # unloading slope (120/45 are above the 15g empty threshold, so the
+        # row shows them before the visit closes at 12/6.77).
+        assert r["inserted"] == 2 * len(seq) and r["events"] == 2, r
         assert r["complete"] is True
         with SessionLocal() as s:
             # raw tier: every unit row stored (debugging/monitoring intact)
             assert s.query(DeviceLog).filter(
                 DeviceLog.cycle_id == cid).count() == 2 * len(seq)
-            # valid tier: exactly ONE visit, closed, ≈219.35
+            # valid tier: exactly ONE visit, closed, opened on first touch
             visits = s.query(Visit).filter(Visit.cycle_id == cid).all()
             assert len(visits) == 1, [(v.bird_id, v.initial_weight_g) for v in visits]
             v = visits[0]
             assert v.bird_id == "B1"
-            assert abs(v.initial_weight_g - 219.35) <= 2.0
+            assert v.initial_weight_g == 218.5  # entry weight, no delay
+            assert v.initial_confirmed_g == 219.1  # annotation, never a gate
             assert v.visit_end is not None
-            # visit linkage: the register row (is_start) opens the visit,
-            # every later row of the lane links to it — stable reads AND
-            # unloading residuals (120/45/12/6.77/3.2) — so per-visit reads
-            # (hopper level, log chain) see the full span, and the closing
-            # zero row (is_end) ends it. Pre-detect noise + the empty lane
-            # stay visitless; residuals never open table rows of their own
-            # (exactly one visit above).
+            assert v.bird_position == "outside" and v.close_reason == "exit"
+            # visit linkage: the entry row (is_start) opens the visit and
+            # every later row of the lane links to it until the debounced
+            # close (is_end) — 9 attached rows, one table row total.
             logs = s.query(DeviceLog).filter(
                 DeviceLog.cycle_id == cid).order_by(DeviceLog.id).all()
             attached = [l for l in logs if l.visit_id is not None]
-            assert len(attached) == 10, [l.external_id for l in attached]
+            assert len(attached) == 9, [l.external_id for l in attached]
             assert sum(1 for l in attached if l.is_visit_start) == 1
             assert sum(1 for l in attached if l.is_visit_end) == 1
             assert s.query(DeviceLog).filter(
                 DeviceLog.cycle_id == cid,
-                DeviceLog.visit_id.is_(None)).count() == 2 * len(seq) - 10
-            # sessions persisted (u1 bird lane + u2 empty lane); the u1
-            # lane re-armed to EMPTY for the next weighing
-            sess = {x.key: x for x in s.query(WeighingSession).all()}
-            assert len(sess) == 2
-            lane1 = [x for x in sess.values() if x.rfid == "B1"]
-            assert len(lane1) == 1 and lane1[0].state == weighing.EMPTY
+                DeviceLog.visit_id.is_(None)).count() == 2 * len(seq) - 9
+            # pair clocks persisted per (device, unit) lane (u1 bird lane +
+            # u2 empty lane) so the consecutive-pair rule survives chunk
+            # boundaries and restarts. WHY changed: the weighing-session
+            # table is retired from the sync path (the live core needs no
+            # DETECTING/STABLE states); weighing.py itself + its pure
+            # machine tests stay as the documented annotation reference.
+            from models import UnitState
+            ust = s.query(UnitState).filter(
+                UnitState.cycle_id == cid).all()
+            assert len(ust) == 2, [(u.device_id, u.unit) for u in ust]
+            assert {(u.device_id, u.unit) for u in ust} == {
+                ("ESP32-S3-001", 1), ("ESP32-S3-001", 2)}
+            assert all(u.prev_ts is not None for u in ust)
     finally:
         processor._processors.pop(cid, None)
 
@@ -303,7 +312,9 @@ def test_sync_second_weighing_registers_again(tmp_path, monkeypatch):
         cid = c.id
     try:
         r = uktech.sync_serial_to_cycle(cid, serial="ESP800")
-        assert r["events"] == 2, r
+        # WHY changed (live core): events count opens AND closes (2 + 2),
+        # not just session REGISTERs.
+        assert r["events"] == 4, r
         with SessionLocal() as s:
             visits = s.query(Visit).filter(Visit.cycle_id == cid).all()
             assert len(visits) == 2

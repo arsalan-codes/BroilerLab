@@ -22,8 +22,9 @@ from config import (
     DEVICE_ONLINE_SECONDS, DEVICE_MAX_CLOCK_SKEW_S, DEVICE_MAX_BATCH,
     DEVICE_KEY_PREFIX,
 )
-from models import init_db, SessionLocal, Cycle, Visit, DeviceLog, User, EnvSample, Device
-from processor import get_processor
+from models import init_db, SessionLocal, Cycle, Visit, DeviceLog, User, EnvSample, Device, UnitState
+from processor import get_processor, _log_to_dict
+import unit_core as _unitcore
 import hub
 import auth as authmod
 import device_auth as devauth
@@ -460,15 +461,22 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
         # column first, else the external_id suffix (:u1/:u2), else lane 1
         # for legacy rows.
         vids = [v.id for v in rows]
-        binmap, unitmap = {}, {}
+        binmap, unitmap, pausemap = {}, {}, {}
         if vids:
-            for vid, fb, ext in (s.query(DeviceLog.visit_id,
-                                        DeviceLog.feed_bin_kg,
-                                        DeviceLog.external_id)
-                                 .filter(DeviceLog.visit_id.in_(vids))
-                                 .order_by(DeviceLog.id.desc()).all()):
+            for vid, fb, ext, fst in (s.query(DeviceLog.visit_id,
+                                             DeviceLog.feed_bin_kg,
+                                             DeviceLog.external_id,
+                                             DeviceLog.status)
+                                      .filter(DeviceLog.visit_id.in_(vids))
+                                      .order_by(DeviceLog.id.desc()).all()):
                 if fb is not None:
                     binmap.setdefault(vid, fb)
+                # paused indicator: the visit's LATEST row carries an
+                # explicit non-VALID flag while the visit is still open
+                # (missing/legacy flags count as valid, as everywhere).
+                if vid not in pausemap:
+                    pausemap[vid] = bool(fst and str(fst).strip()
+                                         and str(fst).strip().upper() != "VALID")
                 if ext and ext.endswith(":u2"):
                     unitmap[vid] = 2
                 elif ext:
@@ -476,10 +484,16 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
         now = datetime.now(timezone.utc)
         out = []
         for v in rows:
-            # Displayed elapsed = validated-accumulated presence when known
-            # (uktech sync writes it); wall-clock duration otherwise (legacy
-            # rows and HTTP-ingest visits without presence tracking).
-            if v.presence_s is not None:
+            # Displayed elapsed = the live core's effective clock (device
+            # counter / fallback) when known; the informational presence
+            # cross-check next; wall-clock duration otherwise (legacy rows
+            # predating both).
+            if v.elapsed_s is not None:
+                try:
+                    elapsed = max(0.0, float(v.elapsed_s))
+                except (TypeError, ValueError):
+                    elapsed = 0.0
+            elif v.presence_s is not None:
                 try:
                     elapsed = max(0.0, float(v.presence_s))
                 except (TypeError, ValueError):
@@ -501,6 +515,10 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
                         "elapsed_s": round(elapsed, 1),
                         "presence_s": v.presence_s,
                         "unit": v.unit if v.unit in (1, 2) else unitmap.get(v.id, 1),
+                        "bird_position": v.bird_position or "inside",
+                        "stale": bool(v.stale),
+                        "paused": bool(pausemap.get(v.id))
+                        and v.visit_end is None,
                         "bin_weight_g": round(binkg * 1000.0, 2)
                         if binkg is not None else None,
                         "registered_at": _iso(v.visit_start), "visit_end": _iso(v.visit_end),
@@ -625,7 +643,11 @@ def uktech_sync(payload: UktechSyncIn, current: User = Depends(authmod.get_curre
     if not payload.cycle_id:
         raise HTTPException(400, "cycle_id is required")
     with SessionLocal() as s:
-        _require_owner_cycle(s, payload.cycle_id, current)
+        cyc = _require_owner_cycle(s, payload.cycle_id, current)
+        if (cyc.ingest_source or "api") != "api":
+            raise HTTPException(
+                409, "cycle ingest source is 'direct': API polling is "
+                     "disabled for this cycle (switch it back to 'api' to poll)")
     import uktech
     try:
         # Standard: fetch all new records, chunked per call (batch) so each
@@ -788,8 +810,17 @@ def _device_cycle_or_err(dev: Device):
         cyc = s.get(Cycle, dev.cycle_id)
         if cyc is None:
             return None, _dev_err("device_cycle_missing", 403)
-        code = cyc.cycle_code
-        return {"id": cyc.id, "code": code}, None
+        return {"id": cyc.id, "code": cyc.cycle_code,
+                "source": getattr(cyc, "ingest_source", None) or "api",
+                "start": cyc.start_date}, None
+
+
+def _device_source_or_err(cyc: dict):
+    """Exactly one source is active per cycle: device pushes require the
+    cycle switched to 'direct' (409 otherwise, with a clear code)."""
+    if (cyc.get("source") or "api") != "direct":
+        return _dev_err("device_source_inactive", 409)
+    return None
 
 
 def _device_ts(value, now):
@@ -836,9 +867,21 @@ def _touch_device(dev_id: int, request: Request, payload: dict,
         pass  # telemetry must never break ingestion
 
 
-def _ingest_one(dev: Device, cyc_code: str, proc, ev: dict, now: datetime):
-    """Validate + ingest ONE device event. Returns (kind, body) where kind
-    is accepted/duplicate/error and body is the per-event result dict."""
+def _dev_num(v):
+    try:
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
+        f = float(v)
+        return f if f == f and abs(f) != float("inf") else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _ingest_one(dev: Device, cyc: dict, ev: dict, now: datetime):
+    """Validate + ingest ONE device event through the shared live core
+    (same process_unit_sample as the API poller — single core, two
+    sources). Returns (kind, body) where kind is accepted/duplicate/error
+    and body is the per-event result dict."""
     if not isinstance(ev, dict):
         return "error", {"event_id": None, "accepted": False,
                          "error": "invalid_payload"}
@@ -869,17 +912,160 @@ def _ingest_one(dev: Device, cyc_code: str, proc, ev: dict, now: datetime):
         if hit:
             return "duplicate", {"event_id": eid, "accepted": False,
                                  "duplicate": True}
-    data = dict(ev)
-    data.pop("event_id", None)
-    data.pop("firmware", None)
-    data["timestamp"] = ts.isoformat()
-    data["external_id"] = ext
-    _sen = data.get("sensor_id")
-    if not (str(_sen).strip() if _sen is not None else ""):
-        data["sensor_id"] = dev.device_id
-    data["cycle"] = cyc_code
+    import uktech as _uk
+    sensor = ev.get("sensor_id")
+    sensor = (str(sensor).strip() if sensor is not None else "") or dev.device_id
     try:
-        log_d = proc.ingest(data)
+        unit = int(ev.get("unit") or 1)
+    except (TypeError, ValueError):
+        unit = 1
+    unit = unit if unit in (1, 2) else 1
+    raw = _dev_num(ev.get("raw_weight_g"))
+    bird = _dev_num(ev.get("weight_g"))
+    if bird is None:
+        bird = raw
+    binkg = _dev_num(ev.get("feed_bin_kg"))
+    bin_g = binkg * 1000.0 if binkg is not None else None
+    _st = ev.get("status")
+    valid = True if _st is None or not str(_st).strip() \
+        else str(_st).strip().upper() == "VALID"
+    _ds = ev.get("device_status")
+    stale = bool(_ds and str(_ds).strip()) and \
+        str(_ds).strip().upper() != "ONLINE"
+    rfid = ev.get("bird_id")
+    rfid = (str(rfid).strip() if rfid is not None else "") or None
+    flock = ev.get("flock_id")
+    flock = (str(flock).strip() if flock is not None else "") or None
+    age_day = None
+    try:
+        if cyc.get("start") is not None:
+            age_day = max(0, (ts.date() - cyc["start"].date()).days)
+    except Exception:
+        age_day = None
+    sample = {"unit": unit, "ts": ts.timestamp(), "rfid": rfid,
+              "bird": bird, "bin": bin_g, "valid": valid,
+              "bird_cal": _dev_num(ev.get("bird_calibration")),
+              "bin_cal": _dev_num(ev.get("bin_calibration")),
+              "stale": stale,
+              "counter": _dev_num(ev.get("total_seconds")) or 0.0,
+              "record_id": eid,
+              "status_raw": _st if isinstance(_st, str) else None}
+    try:
+        with SessionLocal() as s:
+            orow = (s.query(Visit)
+                    .filter(Visit.cycle_id == dev.cycle_id,
+                            Visit.visit_end.is_(None),
+                            Visit.sensor_id == sensor,
+                            Visit.unit == unit)
+                    .order_by(Visit.visit_start.desc()).first())
+            vstate = _uk._visit_to_state(orow) if orow is not None else None
+            urow = s.get(UnitState, (dev.cycle_id, sensor, unit))
+            uprev = None
+            if urow is not None and urow.prev_ts is not None:
+                try:
+                    _pts = urow.prev_ts
+                    _pts = _pts.replace(tzinfo=timezone.utc) \
+                        if _pts.tzinfo is None else _pts
+                    uprev = {"ts": _pts.timestamp(),
+                             "valid": bool(urow.prev_valid),
+                             "bird": urow.prev_bird}
+                except Exception:
+                    uprev = None
+            res = _unitcore.process_unit_sample(
+                sample, vstate, uprev, _uk._core_cfg())
+            out, snap = res.get("visit"), res.get("closed")
+            is_start = is_end = False
+            if res.get("outcome") == "swap-reopened":
+                if orow is not None:
+                    orow.visit_end = ts
+                    orow.bird_position = "outside"
+                    orow.close_reason = "swap"
+                nv = _new_live_visit(dev.cycle_id, out, sensor, unit, ts,
+                                     age_day)
+                s.add(nv)
+                s.flush()
+                vid, is_start = nv.id, True
+            elif res.get("opened"):
+                nv = _new_live_visit(dev.cycle_id, out, sensor, unit, ts,
+                                     age_day)
+                s.add(nv)
+                s.flush()
+                vid, is_start = nv.id, True
+            elif snap is not None:
+                if orow is not None:
+                    orow.visit_end = _uk._dt_of(snap["exit_ts"]) or ts
+                    orow.final_weight_g = snap["final"]
+                    orow.feed_intake_g = snap["feed"]
+                    orow.elapsed_s = snap["elapsed"]
+                    orow.presence_s = snap["presence"]
+                    orow.bird_position = "outside"
+                    orow.close_reason = snap["reason"]
+                    vid = orow.id
+                else:
+                    vid = None
+                is_end = True
+            elif out is not None and orow is not None:
+                orow.final_weight_g = out.get("current")
+                orow.feed_intake_g = round(out.get("feed") or 0.0, 1)
+                orow.elapsed_s = round(out.get("elapsed") or 0.0, 1)
+                orow.presence_s = round(out.get("presence_acc") or 0.0, 1)
+                orow.presence_acc = out.get("presence_acc") or 0.0
+                orow.counter_last = out.get("counter_last")
+                orow.counter_live = bool(out.get("counter_live"))
+                orow.bin_baseline = out.get("bin_base")
+                orow.bin_calib = out.get("bin_cal")
+                orow.empty_streak = out.get("streak") or 0
+                try:
+                    orow.empty_since = _uk._dt_of(out.get("empty_since"))
+                except Exception:
+                    orow.empty_since = None
+                orow.bird_position = out.get("position") or "inside"
+                orow.last_tag = out.get("last_tag")
+                orow.initial_confirmed_g = out.get("confirmed")
+                orow.stale = bool(out.get("stale"))
+                vid = orow.id
+            else:
+                vid = None
+            if res.get("uprev") is not None:
+                _pu = res["uprev"]
+                _dt = _uk._dt_of(_pu.get("ts"))
+                _vv = _pu.get("valid")
+                _vv = bool(_vv) if _vv is not None else None
+                _bb = _pu.get("bird")
+                _bb = bool(_bb) if _bb is not None else None
+                if urow is None:
+                    s.add(UnitState(cycle_id=dev.cycle_id, device_id=sensor,
+                                    unit=unit, prev_ts=_dt, prev_valid=_vv,
+                                    prev_bird=_bb, updated_at=now))
+                else:
+                    urow.prev_ts, urow.prev_valid, urow.prev_bird = \
+                        _dt, _vv, _bb
+                    urow.updated_at = now
+            log = DeviceLog(
+                cycle_id=dev.cycle_id, timestamp=ts,
+                flock_id=flock, bird_id=rfid, sensor_id=sensor,
+                age_day=age_day, raw_weight_g=raw, weight_g=bird,
+                feed_bin_kg=binkg, feed_delta_g=_dev_num(ev.get("feed_delta_g")),
+                temp_c=_dev_num(ev.get("temp_c")),
+                humidity=_dev_num(ev.get("humidity")),
+                rssi=_dev_num(ev.get("rssi")), visit_id=vid,
+                is_visit_start=is_start, is_visit_end=is_end,
+                external_id=ext, status=sample["status_raw"])
+            s.add(log)
+            s.flush()
+            if out is not None:
+                _el, _fd = round(out["elapsed"] or 0.0, 1), round(out["feed"] or 0.0, 1)
+            elif snap is not None:
+                _el, _fd = snap["elapsed"], snap["feed"]
+            else:
+                _el, _fd = 0.0, 0.0
+            log_d = _log_to_dict(log, {
+                "elapsed_s": _el, "visit_feed_g": _fd, "unit": unit,
+                "bird_position": ("outside" if is_end
+                                  else ("inside" if vid else None)),
+                "bin_weight_g": round(bin_g, 2)
+                if bin_g is not None else None})
+            s.commit()
     except IntegrityError:
         # Lost a write race with an identical retry: the row exists now.
         return "duplicate", {"event_id": eid, "accepted": False,
@@ -889,12 +1075,33 @@ def _ingest_one(dev: Device, cyc_code: str, proc, ev: dict, now: datetime):
                                        dev.device_id, dev.cycle_id)
         return "error", {"event_id": eid, "accepted": False,
                          "error": "ingest_failed"}
-    log_d["unit"] = 1  # single-unit direct devices live on lane 1
+    try:
+        get_processor(dev.cycle_id).open.clear()
+    except Exception:
+        pass
     try:
         hub.publish(log_d)
     except Exception:
         pass
     return "accepted", {"event_id": eid, "accepted": True}
+
+
+def _new_live_visit(cycle_id, out, sensor, unit, ts_dt, age_day):
+    """Visit row from a live-core open state (shared shape, Source B)."""
+    return Visit(
+        cycle_id=cycle_id, bird_id=out["bird_id"], visit_start=ts_dt,
+        sensor_id=sensor, initial_weight_g=out["initial"],
+        final_weight_g=out["current"], age_day=age_day, read_ok=True,
+        unit=unit, feed_intake_g=round(out["feed"] or 0.0, 1),
+        elapsed_s=round(out["elapsed"] or 0.0, 1),
+        presence_s=round(out["presence_acc"] or 0.0, 1),
+        presence_acc=out["presence_acc"] or 0.0,
+        counter_last=out["counter_last"],
+        counter_live=bool(out["counter_live"]),
+        bin_baseline=out["bin_base"], bin_calib=out["bin_cal"],
+        empty_streak=0, empty_since=None, bird_position="inside",
+        last_tag=out["last_tag"], initial_confirmed_g=out["confirmed"],
+        close_reason=None, stale=bool(out["stale"]))
 
 
 @app.post("/api/device/ingest")
@@ -907,11 +1114,13 @@ def device_ingest(payload: dict = Body(...), request: Request = None):
     cyc, cerr = _device_cycle_or_err(dev)
     if cerr:
         return cerr
+    serr = _device_source_or_err(cyc)
+    if serr:
+        return serr
     now = datetime.now(timezone.utc)
     _touch_device(dev.id, request, payload if isinstance(payload, dict) else {},
                   now)
-    kind, res = _ingest_one(dev, cyc["code"], get_processor(dev.cycle_id),
-                            payload, now)
+    kind, res = _ingest_one(dev, cyc, payload, now)
     if kind == "accepted":
         return {"success": True, "accepted": True,
                 "event_id": res["event_id"], "device_id": dev.device_id,
@@ -939,6 +1148,9 @@ def device_ingest_batch(payload: DeviceBatchIn, request: Request):
     cyc, cerr = _device_cycle_or_err(dev)
     if cerr:
         return cerr
+    serr = _device_source_or_err(cyc)
+    if serr:
+        return serr
     events = payload.events
     if not isinstance(events, list) or not events:
         return _dev_err("invalid_payload", 400)
@@ -946,10 +1158,9 @@ def device_ingest_batch(payload: DeviceBatchIn, request: Request):
         return _dev_err("batch_too_large", 400)
     now = datetime.now(timezone.utc)
     _touch_device(dev.id, request, {}, now)
-    proc = get_processor(dev.cycle_id)
     results, acc, dup, failed = [], 0, 0, 0
     for ev in events:
-        kind, res = _ingest_one(dev, cyc["code"], proc, ev, now)
+        kind, res = _ingest_one(dev, cyc, ev, now)
         results.append(res)
         if kind == "accepted":
             acc += 1
@@ -961,6 +1172,38 @@ def device_ingest_batch(payload: DeviceBatchIn, request: Request):
             "cycle_id": dev.cycle_id, "accepted_count": acc,
             "duplicate_count": dup, "failed_count": failed,
             "results": results}
+
+
+class SourceIn(BaseModel):
+    source: str = ""
+
+
+@app.get("/api/cycles/{cycle_id}/source")
+def get_cycle_source(cycle_id: int,
+                     current: User = Depends(authmod.get_current_user)):
+    """Active ingestion source for a cycle ("api" or "direct"). Exactly one
+    source is active: API polling 409s when the cycle is on "direct", and
+    device pushes 409 when it is on "api". Default "api" (legacy behavior)."""
+    with SessionLocal() as s:
+        cyc = _require_owner_cycle(s, cycle_id, current)
+        return {"cycle_id": cycle_id,
+                "source": getattr(cyc, "ingest_source", None) or "api"}
+
+
+@app.patch("/api/cycles/{cycle_id}/source")
+def set_cycle_source(cycle_id: int, payload: SourceIn,
+                     current: User = Depends(authmod.get_current_user)):
+    """Switch a cycle's ingestion source. Switching never touches visits:
+    open rows keep their persisted state and continue under the new
+    source's next record (same core, same columns)."""
+    want = (payload.source or "").strip().lower()
+    if want not in ("api", "direct"):
+        raise HTTPException(400, "source must be 'api' or 'direct'")
+    with SessionLocal() as s:
+        cyc = _require_owner_cycle(s, cycle_id, current)
+        cyc.ingest_source = want
+        s.commit()
+        return {"cycle_id": cycle_id, "source": want}
 
 
 def _owner_device(s: Session, device_id: str, user: User) -> Device:

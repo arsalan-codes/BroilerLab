@@ -353,20 +353,28 @@ def test_two_units_independent_lanes(tmp_path, monkeypatch):
         cid = c.id
     try:
         r = uktech.sync_serial_to_cycle(cid, serial="ESP800")
-        assert r["inserted"] == 8 and r["events"] == 2, r  # 4 recs x 2 units
+        # WHY changed (live core, no session gate): events now count every
+        # surfacing transition (2 opens + 2 closes), not just REGISTERs.
+        assert r["inserted"] == 8 and r["events"] == 4, r  # 4 recs x 2 units
         with SessionLocal() as s:
             visits = (s.query(Visit).filter(Visit.cycle_id == cid)
                       .order_by(Visit.id).all())
             assert len(visits) == 2
             by_bird = {v.bird_id: v for v in visits}
-            # each bird weighed on its own unit lane
-            assert by_bird["B1"].initial_weight_g == 201.0
-            assert by_bird["B2"].initial_weight_g == 301.0
+            # each bird weighed on its own unit lane. WHY changed: the first
+            # touch opens immediately (no DETECTING delay), so initial is the
+            # entry weight (200.0), not the confirmed one (201.0 lives on as
+            # the initial_confirmed_g annotation).
+            assert by_bird["B1"].initial_weight_g == 200.0
+            assert by_bird["B2"].initial_weight_g == 300.0
             assert by_bird["B1"].unit == 1 and by_bird["B2"].unit == 2
             # both closed by the second zero row; presence = validated span:
-            # register 12:01 -> zero 12:03 = 120s (device tsec ignored)
+            # 12:00 -> 12:02 = 120s. elapsed runs on the device counter here
+            # (tsec 10 -> 70 across the one VALID-prev pair): 10 + 60 = 70,
+            # diverging from presence exactly as designed.
             assert all(v.visit_end is not None for v in visits)
             assert all(v.presence_s == 120.0 for v in visits)
+            assert all(v.elapsed_s == 70.0 for v in visits)
             # each lane's hopper level stored on its own rows (g, not mixed)
             bins = {(l.bird_id, l.sensor_id): l.feed_bin_kg for l in
                     s.query(DeviceLog).filter(DeviceLog.cycle_id == cid).all()
@@ -439,8 +447,11 @@ def test_invalid_flag_with_real_weight_still_registers(tmp_path, monkeypatch):
 
 
 def test_upstream_reset_restarts_cleanly(tmp_path, monkeypatch):
-    """Device DB wiped upstream (ids restart): stale rows for the serial are
-    dropped, cursor restarts, fresh rows ingest with reset=True."""
+    """Device DB wiped upstream (ids restart): NON-DESTRUCTIVE policy (replaces
+    the old wipe — working rule: no destructive op without confirmation).
+    Open visits finalize as "interrupted" (history preserved), the id
+    generation bumps so new rows ("g1") never shadow old ones ("g0"), the
+    pair clock drops, and the new generation ingests by id with reset=True."""
     db = tmp_path / "ukreset.db"
     monkeypatch.setenv("BROILER_DATABASE_URL", f"sqlite:///{db.as_posix()}")
     import config
@@ -478,16 +489,23 @@ def test_upstream_reset_restarts_cleanly(tmp_path, monkeypatch):
         monkeypatch.setattr(uktech, "fetch_records", fetch_with_meta)
         r2 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
         assert r2["reset"] is True, r2
+        assert r2["interrupted"] == 1, r2  # the still-open 219.81 visit
         assert r2["inserted"] == 4 and r2["last_id"] == 2
         with SessionLocal() as s:
             rows = s.query(DeviceLog).filter(
                 DeviceLog.cycle_id == cid).all()
-            assert len(rows) == 4
-            assert sorted(r.external_id for r in rows) == [
-                "ESP800:1:u1", "ESP800:1:u2",
-                "ESP800:2:u1", "ESP800:2:u2"]
-            # stale visits (only aggregated wiped rows) are gone
-            assert s.query(Visit).filter(Visit.cycle_id == cid).count() >= 1
+            # old generation intact (6) + new generation (4): nothing wiped
+            assert len(rows) == 10, [r.external_id for r in rows]
+            exts = sorted(r.external_id for r in rows)
+            assert "ESP800:g0:100:u1" in exts  # old generation preserved
+            assert "ESP800:g1:1:u1" in exts and "ESP800:g1:2:u2" in exts
+            visits = s.query(Visit).filter(Visit.cycle_id == cid).all()
+            assert len(visits) == 2, [(v.bird_id, v.close_reason) for v in visits]
+            old_v = [v for v in visits if v.close_reason == "interrupted"]
+            assert len(old_v) == 1 and old_v[0].visit_end is not None
+            assert old_v[0].bird_position == "outside"
+            new_v = [v for v in visits if v.close_reason is None]
+            assert len(new_v) == 1 and new_v[0].visit_end is None
             assert uktech.get_cursor("ESP800", cid) == 2
     finally:
         processor._processors.pop(cid, None)
@@ -677,9 +695,12 @@ def test_changes_track_new_visit_then_hopper_refill(tmp_path, monkeypatch):
         assert len(r1["changes"]) >= 1, r1
         opened = [c for c in r1["changes"] if c.get("is_new")]
         assert len(opened) == 1, r1["changes"]
-        assert abs(opened[0]["initial_weight_g"] - 219.6) < 0.01, opened
+        # WHY changed (live core): the FIRST touch (212.44) opens the visit
+        # immediately — initial is the entry weight, not the confirmed 219.6.
+        assert abs(opened[0]["initial_weight_g"] - 212.44) < 0.01, opened
         assert opened[0]["bin_weight_g"] == 0.0, opened  # hopper 0 at open
         assert opened[0]["is_closed"] is False, opened
+        assert opened[0]["bird_position"] == "inside", opened
         vid = opened[0]["id"]
         seq2 = [dict(REC, id=75 + i, weight_1=b, weight_2=220.19,
                      total_weight=b + 220.19,
