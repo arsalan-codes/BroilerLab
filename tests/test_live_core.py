@@ -134,12 +134,64 @@ def test_elapsed_multiple_invalid_episodes():
     # Actually with valid fallback, need to check: with counter 0->10 (+10), 10->rebaseline, 11->16 (+5), 16->rebaseline, 17->20 (+3) = 18
     assert v["elapsed"] == 18.0
 
-def test_elapsed_invalid_at_entry_no_effect():
+def test_weight_jump_freezes_unloading_slope():
+    # Unloading slope (motor ejection: 220 -> 45 in one step, 175g) is not
+    # weight loss: the live weight freezes at the last plausible value and
+    # the final weight stays the real bird weight (visit 340 showed 42.28
+    # before this fix — the residual had polluted the final).
+    v, up = None, None
+    r0 = core.process_unit_sample(sample(1000, 219.9), v, up, CFG)
+    v, up = r0["visit"], r0["uprev"]
+    r1 = core.process_unit_sample(sample(1010, 45.0), v, up, CFG)
+    assert "unloading" in r1["events"]
+    assert r1["visit"]["current"] == 219.9  # frozen, not 45
+    v, up = r1["visit"], r1["uprev"]
+    r2 = core.process_unit_sample(sample(1020, 12.6), v, up, CFG)  # empty streak
+    r3 = core.process_unit_sample(sample(1030, 0), r2["visit"], r2["uprev"], CFG)
+    assert r3["outcome"] == "closed"
+    assert r3["closed"]["final"] == 219.9  # real bird weight, not residual
+    # a genuine decrease (grams per sample) is still accepted
+    v, up = None, None
+    r0 = core.process_unit_sample(sample(1000, 219.9), v, up, CFG)
+    v, up = r0["visit"], r0["uprev"]
+    r1 = core.process_unit_sample(sample(1010, 216.6), v, up, CFG)
+    assert r1["visit"]["current"] == 216.6
+    assert "unloading" not in r1["events"]
+
+
+def test_invalid_zero_counts_as_empty_weight_trumps_status():
+    # Owner rule: w2/w4 zero -> out, regardless of the flaky flag (the
+    # device itself flags zero rows both VALID and INVALID). An INVALID
+    # zero row on an open visit feeds the EXIT streak, never "paused".
+    v, up = None, None
+    r0 = core.process_unit_sample(sample(1000, 220.0), v, up, CFG)
+    v, up = r0["visit"], r0["uprev"]
+    r1 = core.process_unit_sample(sample(1010, 0, valid=False), v, up, CFG)
+    assert r1["outcome"] == "empty-streak"  # not paused
+    r2 = core.process_unit_sample(sample(1020, 0, valid=False), r1["visit"], r1["uprev"], CFG)
+    assert r2["outcome"] == "closed"
+    assert r2["closed"]["reason"] == "exit"
+
+
+def test_invalid_at_entry_opens_paused():
+    # Owner rule: INVALID at entry = bird IS inside but not eating (motor
+    # ejects in ~30s): the visit opens PAUSED — elapsed 0, feed 0 — then
+    # resumes on VALID (re-baseline) and closes when the weight zeroes.
     r0 = core.process_unit_sample(sample(1000, 220.0, valid=False), None, None, CFG)
-    assert r0["outcome"] == "invalid-idle"
-    r1 = core.process_unit_sample(sample(1010, 220.0), None, r0["uprev"], CFG)
-    assert r1["outcome"] == "opened"
-    assert r1["visit"]["elapsed"] == 0.0
+    assert r0["outcome"] == "opened"
+    assert "opened-paused" in r0["events"]
+    assert r0["visit"]["elapsed"] == 0.0
+    assert r0["visit"]["position"] == "inside"
+    r1 = core.process_unit_sample(sample(1010, 220.0), r0["visit"], r0["uprev"], CFG)
+    assert r1["visit"]["elapsed"] == 0.0  # first VALID after INVALID: re-baseline
+    v, up = r1["visit"], r1["uprev"]
+    r2 = core.process_unit_sample(sample(1020, 220.5), v, up, CFG)
+    assert r2["visit"]["elapsed"] == 10.0  # resumes
+    v, up = r2["visit"], r2["uprev"]
+    r3 = core.process_unit_sample(sample(1030, 0), v, up, CFG)
+    r4 = core.process_unit_sample(sample(1040, 0), r3["visit"], r3["uprev"], CFG)
+    assert r4["outcome"] == "closed"
+    assert r4["closed"]["final"] == 220.5
 
 def test_elapsed_counter_reset_rebaselines():
     v, up = None, None
@@ -170,7 +222,7 @@ def test_two_units_independent():
     v1 = core.process_unit_sample(s1, None, None, cfg)
     v2 = core.process_unit_sample(s2, None, None, cfg)
     assert v1["opened"] is True
-    assert v2["outcome"] == "invalid-idle"
+    assert v2["outcome"] == "empty-idle"  # weight trumps status: w4=0 = out
     s1b = {**s1, "ts": 1010, "bird": 215.0}
     r = core.process_unit_sample(s1b, v1["visit"], v1["uprev"], cfg)
     assert r["visit"]["current"] == 215.0

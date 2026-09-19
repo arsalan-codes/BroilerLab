@@ -175,14 +175,10 @@ def process_unit_sample(sample: dict, visit: dict | None,
             return {"visit": None, "closed": None, "opened": False,
                     "uprev": uprev_new, "events": events,
                     "outcome": "stale-idle", "touched": False}
-        if not sample.get("valid"):
-            # INVALID with no open visit is idle: no pause, no visit.
-            return {"visit": None, "closed": None, "opened": False,
-                    "uprev": uprev_new, "events": events,
-                    "outcome": "invalid-idle", "touched": False}
         if not has_bird:
-            if w > 0 and not sample.get("rfid"):
-                pass  # weightless/empty rows below: same unidentified rule
+            # WEIGHT TRUMPS STATUS (owner rule): w2/w4 zero (or residual
+            # <= threshold) with no open visit = bird out / idle, any flag
+            # (the device itself flags zero rows both VALID and INVALID).
             return {"visit": None, "closed": None, "opened": False,
                     "uprev": uprev_new, "events": events,
                     "outcome": "empty-idle", "touched": False}
@@ -193,6 +189,13 @@ def process_unit_sample(sample: dict, visit: dict | None,
                     "outcome": "unidentified", "touched": False}
         v = new_visit_state(sample, cfg)
         events.append("opened")
+        if not sample.get("valid"):
+            # Owner rule: INVALID at entry = the bird IS inside but not
+            # eating (the electronic motor ejects it within ~30s). Open the
+            # visit PAUSED: elapsed stays 0 until a VALID pair, feed 0; it
+            # resumes on VALID (re-baseline) and closes when the weight
+            # zeroes. A flaky-flag glitch is closed by the next empty pair.
+            events.append("opened-paused")
         return {"visit": v, "closed": None, "opened": True,
                 "uprev": uprev_new, "events": events,
                 "outcome": "opened", "touched": True}
@@ -204,22 +207,16 @@ def process_unit_sample(sample: dict, visit: dict | None,
         return {"visit": v, "closed": None, "opened": False,
                 "uprev": uprev_new, "events": events,
                 "outcome": "stale-hold", "touched": True}
+    v["stale"] = False  # device is back online: clear on every path below
 
-    if not sample.get("valid"):
-        # Paused: freeze everything; the pair rule excludes this stretch
-        # via uprev.valid=False on the NEXT record automatically.
-        v["stale"] = False
-        return {"visit": v, "closed": None, "opened": False,
-                "uprev": uprev_new, "events": events,
-                "outcome": "paused", "touched": False}
-
-    v["stale"] = False
     if is_empty:
-        # Empty VALID reading (zero or residual): freeze accumulation,
-        # grow the debounce streak. A lone flicker never closes.
-        # Presence still takes the closing span (bird was there until this
-        # record) when the previous record had the bird; later empties add
-        # nothing — the bird is already gone.
+        # WEIGHT TRUMPS STATUS (owner rule): w2/w4 zero (or residual <=
+        # threshold) = the bird is out, regardless of the flaky flag (the
+        # device itself flags zero rows both VALID and INVALID). Any-status
+        # empty readings grow the debounce streak; a lone flicker never
+        # closes. Presence still takes the closing span (bird was there
+        # until this record) when the previous record was VALID; later
+        # empties add nothing — the bird is already gone.
         if uprev is not None and uprev.get("valid") and uprev.get("bird"):
             v["presence_acc"] = (v.get("presence_acc") or 0.0) + max(
                 0.0, ts - uprev["ts"])
@@ -239,16 +236,35 @@ def process_unit_sample(sample: dict, visit: dict | None,
                 "uprev": uprev_new, "events": events,
                 "outcome": "empty-streak", "touched": True}
 
+    if not sample.get("valid"):
+        # Paused (owner rule): the bird is STILL INSIDE but not eating —
+        # the electronic motor ejects it within ~30s. Freeze accumulation;
+        # the pair rule excludes this stretch via uprev.valid=False on the
+        # NEXT record automatically. Empty readings never reach here (the
+        # weight-based check above runs first).
+        return {"visit": v, "closed": None, "opened": False,
+                "uprev": uprev_new, "events": events,
+                "outcome": "paused", "touched": False}
+
     # ---- live bird record: everything updates, every cycle ----
     touched = True
     v["streak"] = 0
     v["empty_since"] = None
 
-    # 1) bird weight overwrites live, up AND down — no ratchet.
-    v["current"] = w
-    if v.get("confirmed") is None and abs(w - (v.get("initial") or w)) <= CONFIRM_TOL_G:
-        v["confirmed"] = w
-        events.append("confirmed")
+    # 1) bird weight overwrites live, up AND down — no ratchet. BUT a
+    # single-step change larger than BIRD_JUMP_G is the unloading slope
+    # (motor ejecting the bird: 219.9 -> 45 in seconds) or a sensor
+    # glitch, not real weight change (birds gain/lose grams per sample):
+    # freeze the live weight at the last plausible value; the empty
+    # streak closes the visit so the final weight stays the real one.
+    JUMP = cfg.get("BIRD_JUMP_G", 30.0)
+    if abs(w - (v.get("current") or 0.0)) > JUMP:
+        events.append("unloading")
+    else:
+        v["current"] = w
+        if v.get("confirmed") is None and abs(w - (v.get("initial") or w)) <= CONFIRM_TOL_G:
+            v["confirmed"] = w
+            events.append("confirmed")
 
     # 2) tag swap with continuous weight (no empty between).
     rfid = sample.get("rfid")

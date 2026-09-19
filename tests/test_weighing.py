@@ -255,6 +255,9 @@ def test_sync_registers_one_visit_for_acceptance_sequence(tmp_path, monkeypatch)
             assert v.initial_confirmed_g == 219.1  # annotation, never a gate
             assert v.visit_end is not None
             assert v.bird_position == "outside" and v.close_reason == "exit"
+            # final weight = the real bird weight (unloading slope frozen
+            # by BIRD_JUMP_G: 218.9 -> 120/45 never overwrite the live one)
+            assert abs(v.final_weight_g - 218.9) <= 0.01, v.final_weight_g
             # visit linkage: the entry row (is_start) opens the visit and
             # every later row of the lane links to it until the debounced
             # close (is_end) — 9 attached rows, one table row total.

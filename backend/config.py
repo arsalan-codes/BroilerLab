@@ -121,6 +121,10 @@ UKTECH_REFILL_JUMP_G = float(os.getenv("UKTECH_REFILL_JUMP_G", "50"))
 # Tag swap with continuous weight: "keep-open" (reader flapping observed:
 # 7 swaps in 20 records at constant weight) or "close-open".
 UKTECH_RFID_SWAP_POLICY = os.getenv("UKTECH_RFID_SWAP_POLICY", "keep-open").strip().lower()
+# A single-step bird-weight change larger than this (g) is the unloading
+# slope (motor ejection: 219.9 -> 45 in seconds) or a glitch, not real
+# weight change: the live weight freezes at the last plausible value.
+UKTECH_BIRD_JUMP_G = float(os.getenv("UKTECH_BIRD_JUMP_G", "30"))
 UKTECH_PAGES_PER_TICK = int(os.getenv("UKTECH_PAGES_PER_TICK", "4") or 4)
 UKTECH_PRESENCE_TOL_S = float(os.getenv("UKTECH_PRESENCE_TOL_S", "30"))
 

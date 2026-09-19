@@ -233,16 +233,29 @@
     var u = parseInt(d && d.unit, 10);
     return u === 2 ? 2 : 1;
   }
+  function regUnitLabel(u) {
+    // Unit column per spec: fa «یونیت ۱/۲» (Persian digits), en Unit 1/2.
+    if (u == null) return "—";
+    var s = String(u);
+    if ((window.LANG || "fa") === "fa") {
+      var FA = ["۰","۱","۲","۳","۴","۵","۶","۷","۸","۹"];
+      s = s.replace(/[0-9]/g, function (c) { return FA[+c]; });
+    }
+    return s;
+  }
   function regPosHtml(o) {
     // Bird-position badge: inside (live) / outside (finalized), with pause
-    // (latest row INVALID) and stale (device offline) markers. The elapsed
-    // value shown is always the latest record's — never ticked locally.
+    // (latest row INVALID = bird still inside, motor ejects in ~30s) and
+    // stale (device offline) markers. The elapsed value shown is always
+    // the latest record's — never ticked locally.
     if (!o.pos) return '<span class="reg-cell reg-cell--pos">—</span>';
     var inside = o.pos === "inside";
     var label = inside ? tr("dev.pos.inside", "داخل دستگاه") : tr("dev.pos.outside", "خارج از دستگاه");
     var extra = (o.paused ? " ⏸" : "") + (o.stale ? " ⌛" : "");
+    var tip = o.paused ? tr("dev.pos.ejectTip", "داده نامعتبر — موتور تا ۳۰ ثانیه دیگر مرغ را خارج می‌کند") : "";
     return '<span class="reg-cell reg-cell--pos"><span class="reg-pos ' +
-      (inside ? "in" : "out") + '">' + esc(label + extra) + "</span></span>";
+      (inside ? "in" : "out") + '"' + (tip ? ' title="' + esc(tip) + '"' : "") + ">" +
+      esc(label + extra) + "</span></span>";
   }
   function regRowHtml(o) {
     // o: {feed, w, bin, elap, dtJoin, bird, sensor, unit, pos, paused,
@@ -255,7 +268,7 @@
       '<span class="reg-cell reg-cell--dt">' + esc(o.dtJoin) + '</span>' +
       '<span class="reg-cell reg-cell--tag">' + esc(o.bird || "—") + '</span>' +
       '<span class="reg-cell reg-cell--sensor">' + esc(o.sensor || "—") + '</span>' +
-      '<span class="reg-cell reg-cell--unit">' + esc(o.unit != null ? String(o.unit) : "—") + "</span>" +
+      '<span class="reg-cell reg-cell--unit">' + esc(regUnitLabel(o.unit)) + "</span>" +
       regPosHtml(o);
   }
   function regSkeletonHtml() {

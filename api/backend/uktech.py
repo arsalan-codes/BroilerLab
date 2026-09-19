@@ -359,12 +359,13 @@ def _core_cfg() -> dict:
     """Live-core thresholds (UKTECH_* env, documented defaults in config)."""
     from config import (UKTECH_EMPTY_THRESHOLD_G, UKTECH_EMPTY_DEBOUNCE,
                         UKTECH_FEED_NOISE_G, UKTECH_REFILL_JUMP_G,
-                        UKTECH_RFID_SWAP_POLICY)
+                        UKTECH_RFID_SWAP_POLICY, UKTECH_BIRD_JUMP_G)
     return {"EMPTY_THRESHOLD_G": UKTECH_EMPTY_THRESHOLD_G,
             "EMPTY_DEBOUNCE": UKTECH_EMPTY_DEBOUNCE,
             "FEED_NOISE_G": UKTECH_FEED_NOISE_G,
             "REFILL_JUMP_G": UKTECH_REFILL_JUMP_G,
-            "RFID_SWAP_POLICY": UKTECH_RFID_SWAP_POLICY}
+            "RFID_SWAP_POLICY": UKTECH_RFID_SWAP_POLICY,
+            "BIRD_JUMP_G": UKTECH_BIRD_JUMP_G}
 
 
 def _gen_key(serial: str, cycle_id: int) -> str:

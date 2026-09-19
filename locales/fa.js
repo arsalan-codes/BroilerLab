@@ -772,6 +772,7 @@ window.I18N_FA={
 "dev.reg.position": "موقعیت پرنده",
 "dev.pos.inside": "داخل دستگاه",
 "dev.pos.outside": "خارج از دستگاه",
+"dev.pos.ejectTip": "داده نامعتبر — موتور تا ۳۰ ثانیه دیگر مرغ را خارج می‌کند",
 "dev.source": "منبع داده:",
 "dev.srcApi": "API (پول توزین)",
 "dev.srcDirect": "ESP32 مستقیم",
