@@ -95,21 +95,24 @@ def rebuild_cycle(cycle_id: int, dry_run: bool = True, verbose: bool = True):
         # shape as uktech/device sync: per-unit with bin as stored grams.
         openv = {}   # (sensor, unit) -> visit idx in after_visits
         ustate = {}  # (sensor, unit) -> {"ts": epoch, "valid": bool, "bird": bool}
+        state_by_lane = {}  # (sensor, unit) -> live-core state dict (carries streak/invalid_since across records)
         after_visits = []
 
-        def _new_visit(sample, ts_dt, age_day, sensor, unit):
-            return {"bird_id": sample["rfid"], "unit": unit,
+        def _new_visit(sample, ts_dt, age_day, sensor, unit, out):
+            return {"bird_id": out["bird_id"], "unit": unit,
                     "visit_start": ts_dt, "visit_end": None,
-                    "initial_weight_g": sample["bird"],
-                    "final_weight_g": sample["bird"],
-                    "feed_intake_g": 0.0, "elapsed_s": 0.0,
-                    "presence_s": 0.0, "presence_acc": 0.0,
-                    "counter_last": sample["counter"], "counter_live": False,
-                    "bin_baseline": sample["bin"], "bin_calib": sample.get("bin_cal"),
+                    "initial_weight_g": out["initial"],
+                    "final_weight_g": out["current"],
+                    "feed_intake_g": round(out["feed"] or 0.0, 1),
+                    "elapsed_s": round(out["elapsed"] or 0.0, 1),
+                    "presence_s": round(out["presence_acc"] or 0.0, 1),
+                    "counter_last": out["counter_last"], "counter_live": bool(out["counter_live"]),
+                    "bin_baseline": out["bin_base"], "bin_calib": out["bin_cal"],
                     "empty_streak": 0, "empty_since": None,
-                    "bird_position": "inside", "last_tag": sample["rfid"],
-                    "initial_confirmed_g": None, "close_reason": None,
-                    "stale": bool(sample["stale"]),
+                    "invalid_since": None,
+                    "bird_position": "inside", "last_tag": out["last_tag"],
+                    "initial_confirmed_g": out["confirmed"], "close_reason": None,
+                    "stale": bool(out["stale"]),
                     "sensor_id": sensor, "age_day": age_day}
 
         for log in logs:
@@ -123,10 +126,7 @@ def rebuild_cycle(cycle_id: int, dry_run: bool = True, verbose: bool = True):
             valid = True if not log.status or not str(log.status).strip() \
                 else str(log.status).strip().upper() == "VALID"
             sensor = (log.sensor_id or "").strip() or "-"
-            unit = log.visit_id and 1 or 1  # stored visits know unit; fallback 1
-            # Resolve unit from existing visit if any, else from log ordering
-            # (single-log replay keeps unit 1; dual-unit uktech logs already
-            # appear as two rows with correct sensor/unit).
+            unit = 1  # stored visits know unit; resolved below when linked
             try:
                 if log.visit_id:
                     with SessionLocal() as _s:
@@ -142,25 +142,10 @@ def rebuild_cycle(cycle_id: int, dry_run: bool = True, verbose: bool = True):
                       "record_id": log.external_id, "status_raw": log.status}
             lane = (sensor, unit)
             cur_idx = openv.get(lane)
-            vstate = after_visits[cur_idx] if cur_idx is not None else None
-            # Normalize vstate to the core's dict shape
-            if vstate is not None:
-                vstate = {"bird_id": vstate["bird_id"], "initial": vstate["initial_weight_g"],
-                          "confirmed": vstate["initial_confirmed_g"],
-                          "current": vstate["final_weight_g"],
-                          "feed": vstate["feed_intake_g"] or 0.0,
-                          "elapsed": vstate["elapsed_s"] or 0.0,
-                          "presence_acc": vstate["presence_s"] or 0.0,
-                          "counter_last": vstate["counter_last"],
-                          "counter_live": bool(vstate["counter_live"]),
-                          "bin_base": vstate["bin_baseline"],
-                          "bin_cal": vstate["bin_calib"],
-                          "streak": vstate["empty_streak"] or 0,
-                          "empty_since": vstate["empty_since"].timestamp() if vstate["empty_since"] else None,
-                          "position": vstate["bird_position"] or "inside",
-                          "last_tag": vstate["last_tag"] or vstate["bird_id"],
-                          "close_reason": vstate["close_reason"],
-                          "stale": bool(vstate["stale"])}
+            # The live-core state dict is carried across records in memory
+            # (streak/invalid_since/counter survive), NOT re-derived from
+            # the display list — otherwise debounced closes would never fire.
+            vstate = state_by_lane.get(lane)
             uprev = ustate.get(lane)
             if uprev and uprev.get("ts") is None:
                 uprev = None
@@ -174,31 +159,23 @@ def rebuild_cycle(cycle_id: int, dry_run: bool = True, verbose: bool = True):
                     after_visits[cur_idx]["bird_position"] = "outside"
                     after_visits[cur_idx]["close_reason"] = "swap"
                     del openv[lane]
-                nv = _new_visit(out, log.timestamp, log.age_day, sensor, unit)
-                # Push live values from out
-                nv["initial_weight_g"] = out["initial"]
-                nv["final_weight_g"] = out["current"]
-                nv["feed_intake_g"] = round(out["feed"] or 0.0, 1)
-                nv["elapsed_s"] = round(out["elapsed"] or 0.0, 1)
-                nv["presence_s"] = round(out["presence_acc"] or 0.0, 1)
+                state_by_lane.pop(lane, None)
+                nv = _new_visit(sample, log.timestamp, log.age_day, sensor, unit, out)
                 after_visits.append(nv)
                 openv[lane] = len(after_visits) - 1
+                state_by_lane[lane] = out
             elif res.get("opened"):
-                nv = _new_visit(out, log.timestamp, log.age_day, sensor, unit)
-                nv["initial_weight_g"] = out["initial"]
-                nv["final_weight_g"] = out["current"]
-                nv["feed_intake_g"] = round(out["feed"] or 0.0, 1)
-                nv["elapsed_s"] = round(out["elapsed"] or 0.0, 1)
-                nv["presence_s"] = round(out["presence_acc"] or 0.0, 1)
+                state_by_lane.pop(lane, None)
+                nv = _new_visit(sample, log.timestamp, log.age_day, sensor, unit, out)
                 after_visits.append(nv)
                 openv[lane] = len(after_visits) - 1
+                state_by_lane[lane] = out
             elif snap is not None:
                 if cur_idx is not None:
-                    after_visits[cur_idx]["visit_end"] = snap["exit_ts"] and snap["exit_ts"] if isinstance(snap["exit_ts"], type(log.timestamp)) else log.timestamp
-                    try:
-                        after_visits[cur_idx]["visit_end"] = log.timestamp
-                    except Exception:
-                        pass
+                    exit_dt = snap.get("exit_ts")
+                    after_visits[cur_idx]["visit_end"] = (
+                        log.timestamp if not exit_dt else exit_dt
+                        if hasattr(exit_dt, "year") else log.timestamp)
                     after_visits[cur_idx]["final_weight_g"] = snap["final"]
                     after_visits[cur_idx]["feed_intake_g"] = snap["feed"]
                     after_visits[cur_idx]["elapsed_s"] = snap["elapsed"]
@@ -206,12 +183,25 @@ def rebuild_cycle(cycle_id: int, dry_run: bool = True, verbose: bool = True):
                     after_visits[cur_idx]["bird_position"] = "outside"
                     after_visits[cur_idx]["close_reason"] = snap["reason"]
                     del openv[lane]
-            elif out is not None and cur_idx is not None:
-                after_visits[cur_idx]["final_weight_g"] = out.get("current")
-                after_visits[cur_idx]["feed_intake_g"] = round(out.get("feed") or 0.0, 1)
-                after_visits[cur_idx]["elapsed_s"] = round(out.get("elapsed") or 0.0, 1)
-                after_visits[cur_idx]["presence_s"] = round(out.get("presence_acc") or 0.0, 1)
-                after_visits[cur_idx]["bird_position"] = out.get("position") or "inside"
+                state_by_lane.pop(lane, None)
+            elif out is not None:
+                state_by_lane[lane] = out
+                if cur_idx is not None:
+                    after_visits[cur_idx]["final_weight_g"] = out.get("current")
+                    after_visits[cur_idx]["feed_intake_g"] = round(out.get("feed") or 0.0, 1)
+                    after_visits[cur_idx]["elapsed_s"] = round(out.get("elapsed") or 0.0, 1)
+                    after_visits[cur_idx]["presence_s"] = round(out.get("presence_acc") or 0.0, 1)
+                    after_visits[cur_idx]["bird_position"] = out.get("position") or "inside"
+
+        # still-open lanes: finalize the display entries from the live state
+        for lane, idx in openv.items():
+            st = state_by_lane.get(lane)
+            if st is not None and idx < len(after_visits):
+                after_visits[idx]["final_weight_g"] = st.get("current")
+                after_visits[idx]["feed_intake_g"] = round(st.get("feed") or 0.0, 1)
+                after_visits[idx]["elapsed_s"] = round(st.get("elapsed") or 0.0, 1)
+                after_visits[idx]["presence_s"] = round(st.get("presence_acc") or 0.0, 1)
+                after_visits[idx]["bird_position"] = st.get("position") or "inside"
 
         after = []
         for i, v in enumerate(sorted(after_visits, key=lambda x: x["visit_start"] or "")):

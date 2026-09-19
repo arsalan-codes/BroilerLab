@@ -125,6 +125,11 @@ UKTECH_RFID_SWAP_POLICY = os.getenv("UKTECH_RFID_SWAP_POLICY", "keep-open").stri
 # slope (motor ejection: 219.9 -> 45 in seconds) or a glitch, not real
 # weight change: the live weight freezes at the last plausible value.
 UKTECH_BIRD_JUMP_G = float(os.getenv("UKTECH_BIRD_JUMP_G", "30"))
+# INVALID lasting this many seconds of consecutive INVALID records = the
+# motor has ejected the bird (owner rule): the visit finalizes as OUT
+# (exit = invalid_since + window) in the same row. A lone flaky glitch
+# plus an irregular gap never ejects a feeding bird.
+UKTECH_INVALID_EJECT_S = float(os.getenv("UKTECH_INVALID_EJECT_S", "30"))
 UKTECH_PAGES_PER_TICK = int(os.getenv("UKTECH_PAGES_PER_TICK", "4") or 4)
 UKTECH_PRESENCE_TOL_S = float(os.getenv("UKTECH_PRESENCE_TOL_S", "30"))
 

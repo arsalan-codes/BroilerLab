@@ -1019,6 +1019,10 @@ def _ingest_one(dev: Device, cyc: dict, ev: dict, now: datetime):
                     orow.empty_since = _uk._dt_of(out.get("empty_since"))
                 except Exception:
                     orow.empty_since = None
+                try:
+                    orow.invalid_since = _uk._dt_of(out.get("invalid_since"))
+                except Exception:
+                    orow.invalid_since = None
                 orow.bird_position = out.get("position") or "inside"
                 orow.last_tag = out.get("last_tag")
                 orow.initial_confirmed_g = out.get("confirmed")
@@ -1099,7 +1103,8 @@ def _new_live_visit(cycle_id, out, sensor, unit, ts_dt, age_day):
         counter_last=out["counter_last"],
         counter_live=bool(out["counter_live"]),
         bin_baseline=out["bin_base"], bin_calib=out["bin_cal"],
-        empty_streak=0, empty_since=None, bird_position="inside",
+        empty_streak=0, empty_since=None, invalid_since=None,
+        bird_position="inside",
         last_tag=out["last_tag"], initial_confirmed_g=out["confirmed"],
         close_reason=None, stale=bool(out["stale"]))
 

@@ -173,6 +173,73 @@ def test_invalid_zero_counts_as_empty_weight_trumps_status():
     assert r2["closed"]["reason"] == "exit"
 
 
+def test_invalid_stretch_30s_ejects_same_row():
+    # Owner rule: after 30s of consecutive INVALID records the motor has
+    # ejected the bird — considered OUT, and the SAME row is finalized
+    # with the precise values frozen at the last VALID record (never a
+    # new row). Data keeps flowing from the API regardless.
+    v, up = None, None
+    r0 = core.process_unit_sample(sample(1000, 220.0, counter=10), v, up, CFG)
+    v, up = r0["visit"], r0["uprev"]
+    r1 = core.process_unit_sample(sample(1010, 220.0, counter=20), v, up, CFG)
+    v, up = r1["visit"], r1["uprev"]
+    # INVALID stretch: first record starts the countdown
+    r2 = core.process_unit_sample(sample(1020, 220.0, valid=False, counter=30), v, up, CFG)
+    assert r2["outcome"] == "paused"
+    assert r2["visit"]["invalid_since"] == 1020.0
+    assert r2["visit"]["elapsed"] == 20.0  # frozen (INVALID span excluded)
+    # second INVALID 40s later (248s stretch in real data): eject fires
+    r3 = core.process_unit_sample(sample(1060, 220.0, valid=False, counter=40), r2["visit"], r2["uprev"], CFG)
+    assert r3["outcome"] == "closed"
+    assert "ejected" in r3["events"]
+    assert r3["closed"]["reason"] == "ejected"
+    assert r3["closed"]["final"] == 220.0  # frozen at last VALID
+    assert r3["closed"]["elapsed"] == 20.0  # INVALID spans never count
+    assert r3["closed"]["exit_ts"] == 1020.0 + 30.0  # ejection moment
+
+
+def test_invalid_short_flap_resumes_no_eject():
+    # A lone flaky glitch (1 INVALID record, ~3s) + an irregular gap never
+    # ejects a feeding bird: the stretch resets on the next VALID row.
+    v, up = None, None
+    r0 = core.process_unit_sample(sample(1000, 220.0), v, up, CFG)
+    v, up = r0["visit"], r0["uprev"]
+    r1 = core.process_unit_sample(sample(1003, 219.8, valid=False), v, up, CFG)
+    assert r1["outcome"] == "paused"
+    r2 = core.process_unit_sample(sample(1040, 219.9), r1["visit"], r1["uprev"], CFG)
+    assert r2["outcome"] == "updated"
+    assert r2["visit"]["invalid_since"] is None  # stretch reset
+    assert r2["visit"]["elapsed"] == 0.0  # re-baselined (gap excluded)
+    # the visit is still open
+    assert r2["visit"]["position"] == "inside"
+
+
+def test_invalid_stretch_then_zero_closed_by_weight():
+    # INVALID stretch shorter than 30s, then the zero row arrives: the
+    # weight trumps and the debounce closes (reason exit, not ejected).
+    v, up = None, None
+    r0 = core.process_unit_sample(sample(1000, 220.0), v, up, CFG)
+    v, up = r0["visit"], r0["uprev"]
+    r1 = core.process_unit_sample(sample(1010, 0, valid=False), v, up, CFG)
+    assert r1["outcome"] == "empty-streak"
+    r2 = core.process_unit_sample(sample(1020, 0, valid=False), r1["visit"], r1["uprev"], CFG)
+    assert r2["outcome"] == "closed"
+    assert r2["closed"]["reason"] == "exit"
+
+
+def test_paused_entry_ejected_when_never_eats():
+    # Visit opened on INVALID (bird inside, not eating) that stays INVALID:
+    # after 30s the motor ejects — the row finalizes with elapsed 0, feed 0.
+    r0 = core.process_unit_sample(sample(1000, 220.0, valid=False), None, None, CFG)
+    assert r0["outcome"] == "opened"  # paused-open
+    r1 = core.process_unit_sample(sample(1040, 220.0, valid=False), r0["visit"], r0["uprev"], CFG)
+    assert r1["outcome"] == "closed"
+    assert r1["closed"]["reason"] == "ejected"
+    assert r1["closed"]["elapsed"] == 0.0
+    assert r1["closed"]["feed"] == 0.0
+    assert r1["closed"]["exit_ts"] == 1030.0  # entry + 30s
+
+
 def test_invalid_at_entry_opens_paused():
     # Owner rule: INVALID at entry = bird IS inside but not eating (motor
     # ejects in ~30s): the visit opens PAUSED — elapsed 0, feed 0 — then

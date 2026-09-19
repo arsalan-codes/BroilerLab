@@ -359,13 +359,15 @@ def _core_cfg() -> dict:
     """Live-core thresholds (UKTECH_* env, documented defaults in config)."""
     from config import (UKTECH_EMPTY_THRESHOLD_G, UKTECH_EMPTY_DEBOUNCE,
                         UKTECH_FEED_NOISE_G, UKTECH_REFILL_JUMP_G,
-                        UKTECH_RFID_SWAP_POLICY, UKTECH_BIRD_JUMP_G)
+                        UKTECH_RFID_SWAP_POLICY, UKTECH_BIRD_JUMP_G,
+                        UKTECH_INVALID_EJECT_S)
     return {"EMPTY_THRESHOLD_G": UKTECH_EMPTY_THRESHOLD_G,
             "EMPTY_DEBOUNCE": UKTECH_EMPTY_DEBOUNCE,
             "FEED_NOISE_G": UKTECH_FEED_NOISE_G,
             "REFILL_JUMP_G": UKTECH_REFILL_JUMP_G,
             "RFID_SWAP_POLICY": UKTECH_RFID_SWAP_POLICY,
-            "BIRD_JUMP_G": UKTECH_BIRD_JUMP_G}
+            "BIRD_JUMP_G": UKTECH_BIRD_JUMP_G,
+            "INVALID_EJECT_S": UKTECH_INVALID_EJECT_S}
 
 
 def _gen_key(serial: str, cycle_id: int) -> str:
@@ -423,6 +425,8 @@ def _visit_to_state(v) -> dict:
         "bin_cal": v.bin_calib,
         "streak": v.empty_streak or 0,
         "empty_since": es,
+        "invalid_since": (None if v.invalid_since is None
+                          else _aware_utc(v.invalid_since).timestamp()),
         "position": v.bird_position or "inside",
         "last_tag": v.last_tag or v.bird_id,
         "close_reason": v.close_reason,
@@ -736,7 +740,8 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             st = working.get(lane)
             upd = {"id": cur.id, "visit_end": exit_dt,
                    "bird_position": "outside", "close_reason": reason,
-                   "empty_streak": 0, "empty_since": None}
+                   "empty_streak": 0, "empty_since": None,
+                   "invalid_since": None}
             if st is not None:
                 upd.update({
                     "final_weight_g": st.get("current"),
@@ -773,6 +778,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 nv.bin_calib = st.get("bin_cal")
                 nv.empty_streak = st.get("streak") or 0
                 nv.empty_since = _dt_of(st.get("empty_since"))
+                nv.invalid_since = _dt_of(st.get("invalid_since"))
                 nv.bird_position = st.get("position") or "inside"
                 nv.last_tag = st.get("last_tag")
                 nv.initial_confirmed_g = st.get("confirmed")
@@ -791,6 +797,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 "bin_calib": st.get("bin_cal"),
                 "empty_streak": st.get("streak") or 0,
                 "empty_since": _dt_of(st.get("empty_since")),
+                "invalid_since": _dt_of(st.get("invalid_since")),
                 "bird_position": st.get("position") or "inside",
                 "last_tag": st.get("last_tag"),
                 "initial_confirmed_g": st.get("confirmed"),
@@ -864,6 +871,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                         bin_baseline=out["bin_base"],
                         bin_calib=out["bin_cal"],
                         empty_streak=0, empty_since=None,
+                        invalid_since=None,
                         bird_position="inside", last_tag=out["last_tag"],
                         initial_confirmed_g=out["confirmed"],
                         close_reason=None, stale=bool(out["stale"]))
@@ -893,6 +901,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                         bin_baseline=out["bin_base"],
                         bin_calib=out["bin_cal"],
                         empty_streak=0, empty_since=None,
+                        invalid_since=None,
                         bird_position="inside", last_tag=out["last_tag"],
                         initial_confirmed_g=out["confirmed"],
                         close_reason=None, stale=bool(out["stale"]))

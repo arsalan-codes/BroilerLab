@@ -123,6 +123,11 @@ class Visit(Base):
     bin_calib = Column(Float, nullable=True)
     empty_streak = Column(Integer, nullable=False, default=0)
     empty_since = Column(DateTime(timezone=True), nullable=True)
+    # First INVALID record of the current consecutive-INVALID stretch:
+    # the motor ejects the bird ~30s after it (owner rule) — persisted so
+    # the eject fires exactly across chunk boundaries/restarts. NULL while
+    # the unit is VALID or empty.
+    invalid_since = Column(DateTime(timezone=True), nullable=True)
     initial_confirmed_g = Column(Float, nullable=True)
     close_reason = Column(String(16), nullable=True)
     stale = Column(Boolean, nullable=False, default=False)
@@ -418,6 +423,7 @@ def init_db():
                     ("visits", "bin_calib", "FLOAT"),
                     ("visits", "empty_streak", "INTEGER NOT NULL DEFAULT 0"),
                     ("visits", "empty_since", "TIMESTAMP"),
+                    ("visits", "invalid_since", "TIMESTAMP"),
                     ("visits", "initial_confirmed_g", "FLOAT"),
                     ("visits", "close_reason", "VARCHAR(16)"),
                     ("visits", "stale", "BOOLEAN NOT NULL DEFAULT 0"),

@@ -76,6 +76,7 @@ def new_visit_state(sample: dict, cfg: dict) -> dict:
         "bin_cal": sample.get("bin_cal"),
         "streak": 0,
         "empty_since": None,
+        "invalid_since": None,
         "position": INSIDE,
         "last_tag": sample["rfid"],
         "close_reason": None,
@@ -194,7 +195,10 @@ def process_unit_sample(sample: dict, visit: dict | None,
             # eating (the electronic motor ejects it within ~30s). Open the
             # visit PAUSED: elapsed stays 0 until a VALID pair, feed 0; it
             # resumes on VALID (re-baseline) and closes when the weight
-            # zeroes. A flaky-flag glitch is closed by the next empty pair.
+            # zeroes. The countdown starts HERE (the entry is the first
+            # INVALID of the stretch); a flaky-flag glitch is closed by
+            # the next empty pair.
+            v["invalid_since"] = ts
             events.append("opened-paused")
         return {"visit": v, "closed": None, "opened": True,
                 "uprev": uprev_new, "events": events,
@@ -223,6 +227,7 @@ def process_unit_sample(sample: dict, visit: dict | None,
         v["streak"] = (v.get("streak") or 0) + 1
         if v["streak"] == 1:
             v["empty_since"] = ts
+        v["invalid_since"] = None
         c = sample.get("counter") or 0.0
         v["counter_last"] = c
         if v["streak"] >= DEB:
@@ -237,11 +242,29 @@ def process_unit_sample(sample: dict, visit: dict | None,
                 "outcome": "empty-streak", "touched": True}
 
     if not sample.get("valid"):
-        # Paused (owner rule): the bird is STILL INSIDE but not eating —
-        # the electronic motor ejects it within ~30s. Freeze accumulation;
-        # the pair rule excludes this stretch via uprev.valid=False on the
-        # NEXT record automatically. Empty readings never reach here (the
-        # weight-based check above runs first).
+        # INVALID (owner rule): the bird is still inside but not eating;
+        # the electronic motor ejects it ~30s after the status went
+        # INVALID — considered OUT after 30s of consecutive INVALID
+        # records, and the visit's row (SAME row, never a new one) is
+        # finalized with the precise values frozen at the last VALID
+        # record. Data keeps flowing from the API regardless. The stretch
+        # is measured across CONSECUTIVE INVALID records only (a lone
+        # flaky glitch + an irregular gap never ejects a feeding bird);
+        # empty readings never reach here (weight runs first).
+        EJECT = cfg.get("INVALID_EJECT_S", 30.0)
+        inv = v.get("invalid_since")
+        if inv is None:
+            v["invalid_since"] = ts  # first INVALID of this stretch
+            return {"visit": v, "closed": None, "opened": False,
+                    "uprev": uprev_new, "events": events,
+                    "outcome": "paused", "touched": False}
+        if (ts - inv) >= EJECT:
+            snap = finalize_visit(v, inv + EJECT, "ejected")
+            events.append("ejected")
+            return {"visit": None, "closed": snap, "opened": False,
+                    "uprev": uprev_new, "events": events,
+                    "outcome": "closed", "touched": True,
+                    "state": v}
         return {"visit": v, "closed": None, "opened": False,
                 "uprev": uprev_new, "events": events,
                 "outcome": "paused", "touched": False}
@@ -250,6 +273,7 @@ def process_unit_sample(sample: dict, visit: dict | None,
     touched = True
     v["streak"] = 0
     v["empty_since"] = None
+    v["invalid_since"] = None
 
     # 1) bird weight overwrites live, up AND down — no ratchet. BUT a
     # single-step change larger than BIRD_JUMP_G is the unloading slope
@@ -342,9 +366,11 @@ def process_unit_sample(sample: dict, visit: dict | None,
 def finalize_visit(v: dict, ts: float, reason: str) -> dict:
     """Freeze a visit into its closing snapshot. The SAME row keeps every
     finalized value (never a new row): final weight = last live weight
-    (empty records never overwrite it), elapsed/feed/presence frozen at
-    their maximum effective values, even if the exit record's counter
-    reads 0."""
+    (empty/unloading records never overwrite it), elapsed/feed/presence
+    frozen at their maximum effective values (INVALID spans excluded),
+    even if the exit record's counter reads 0. exit_ts: the first empty
+    record for "exit" (the physical exit), the ejection moment
+    (invalid_since + 30s) for "ejected", the record ts for "swap"."""
     v["position"] = OUTSIDE
     v["close_reason"] = reason
     v["streak"] = 0
