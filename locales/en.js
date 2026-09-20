@@ -782,6 +782,7 @@ window.I18N_EN={
 "dev.espNote": "Each device has its own key and only writes into its assigned cycle. The key is shown once at creation — copy it into the firmware.",
 "dev.espCopy": "Copy key",
 "dev.espOnce": "This key will not be shown again.",
+"dev.espEmpty": "No devices registered yet.",
 "dev.espCreate": "Register device on selected cycle",
 "dev.espOff": "disabled",
 "dev.espDisable": "Disable",

@@ -370,11 +370,12 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 #uk-sess-state[data-state="DETECTING"]{color:#e0a63c}
 #uk-sess-state[data-state="WAITING_FOR_EMPTY"]{color:#7fd1ff}
 .dev-regs__note{margin-top:12px}
-.reg-table{border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.reg-table{border:1px solid var(--line);border-radius:11px;overflow:auto;max-height:380px}
 .reg-thead{
   display:grid;
   grid-template-columns:1fr 1fr 1fr .8fr 1.4fr 1fr .7fr .6fr .9fr;
-  gap:0;background:var(--bg2);border-bottom:1px solid var(--line)
+  gap:0;background:var(--bg2);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:2
 }
 .reg-unit-title{font-size:11px;font-weight:800;color:var(--fg);margin:14px 2px 8px;display:flex;align-items:center;gap:7px}
 .reg-unit-title .fa{color:var(--acc);font-size:11px}
@@ -383,7 +384,11 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
   font-size:10px;font-weight:750;color:var(--mut);text-transform:uppercase;
   letter-spacing:.03em;padding:9px 12px;white-space:nowrap
 }
-.reg-body{max-height:340px;overflow-y:auto}
+.reg-body{position:static}
+/* the table itself scrolls (both axes) and the header is sticky: on
+   narrow screens thead+rows scroll together horizontally — the old split
+   (thead outside a y-only scroll body) let rows slide under a clipped,
+   non-scrolling header and misaligned every column. */
 .reg-row{
   display:grid;grid-template-columns:1fr 1fr 1fr .8fr 1.4fr 1fr .7fr .6fr .9fr;
   align-items:center;border-bottom:1px solid rgba(31,42,61,.45);
@@ -423,6 +428,10 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 .reg-pos{display:inline-block;padding:2px 9px;border-radius:99px;font-size:10.5px;font-weight:750;white-space:nowrap}
 .reg-pos.in{background:rgba(25,195,154,.14);color:#19c39a}
 .reg-pos.out{background:rgba(148,163,184,.14);color:var(--mut)}
+#esp-form .field__input{padding:8px 13px}
+.esp-list:empty::before{content:"دستگاهی ثبت نشده است.";}
+.esp-keybox code{font-size:11px;word-break:break-all}
+#cy-source:focus{outline:none;border-color:rgba(25,195,154,.6);box-shadow:0 0 0 3px rgba(25,195,154,.1)}
 .langseg button{height:32px;padding:0 13px;display:inline-flex;align-items:center}
 .hctl .pill{height:26px}
 .hctl .vbadge{align-self:center;display:inline-flex;align-items:center}

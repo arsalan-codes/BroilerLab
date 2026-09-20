@@ -820,6 +820,13 @@
     var body = $("esp-list");
     if (!body) return;
     body.innerHTML = "";
+    if (!(list || []).length) {
+      // proper empty message (the shared .cy-list:empty::before says
+      // "no cycles" — wrong text for the device inventory)
+      body.innerHTML = '<div class="cy-meta" style="padding:10px">' +
+        esc(tr("dev.espEmpty", "دستگاهی ثبت نشده است.")) + '</div>';
+      return;
+    }
     (list || []).forEach(function (d) {
       var row = document.createElement("div");
       row.className = "cy-item";
