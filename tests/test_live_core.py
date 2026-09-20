@@ -188,14 +188,18 @@ def test_invalid_stretch_30s_ejects_same_row():
     assert r2["outcome"] == "paused"
     assert r2["visit"]["invalid_since"] == 1020.0
     assert r2["visit"]["elapsed"] == 20.0  # frozen (INVALID span excluded)
+    assert r2["visit"]["business_state"] == "EJECTING"  # explicit state
+    # (asserted before r3: finalize_visit mutates the state dict in place)
     # second INVALID 40s later (248s stretch in real data): eject fires
     r3 = core.process_unit_sample(sample(1060, 220.0, valid=False, counter=40), r2["visit"], r2["uprev"], CFG)
     assert r3["outcome"] == "closed"
-    assert "ejected" in r3["events"]
+    assert "finalized" in r3["events"]  # INVALID for the full 30 seconds
     assert r3["closed"]["reason"] == "ejected"
     assert r3["closed"]["final"] == 220.0  # frozen at last VALID
     assert r3["closed"]["elapsed"] == 20.0  # INVALID spans never count
     assert r3["closed"]["exit_ts"] == 1020.0 + 30.0  # ejection moment
+    assert r3["state"]["business_state"] == "EXITED"  # finalized
+    assert r3["closed"]["weight_gain"] == 0.0  # final - initial
 
 
 def test_invalid_short_flap_resumes_no_eject():
@@ -209,6 +213,8 @@ def test_invalid_short_flap_resumes_no_eject():
     r2 = core.process_unit_sample(sample(1040, 219.9), r1["visit"], r1["uprev"], CFG)
     assert r2["outcome"] == "updated"
     assert r2["visit"]["invalid_since"] is None  # stretch reset
+    assert r2["visit"]["invalid_deadline"] is None  # timer cancelled
+    assert r2["visit"]["business_state"] == "FEEDING"  # same Visit continues
     assert r2["visit"]["elapsed"] == 0.0  # re-baselined (gap excluded)
     # the visit is still open
     assert r2["visit"]["position"] == "inside"

@@ -505,8 +505,28 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
                 except Exception:
                     elapsed = 0.0
             binkg = binmap.get(v.id)
+            # ejection countdown: persisted deadline minus server now,
+            # for EJECTING visits only (server-authoritative; the browser
+            # only renders this value, never computes finalization).
+            eject_in = None
+            try:
+                if (v.business_state == "EJECTING"
+                        and v.visit_end is None
+                        and v.invalid_deadline is not None):
+                    _dl = v.invalid_deadline
+                    _dl = _dl.replace(tzinfo=timezone.utc) \
+                        if _dl.tzinfo is None else _dl
+                    eject_in = max(0.0, (_dl - now).total_seconds())
+            except Exception:
+                eject_in = None
             out.append({"id": v.id, "bird_id": v.bird_id, "initial_weight_g": v.initial_weight_g,
                         "final_weight_g": v.final_weight_g,
+                        "live_weight_g": v.live_weight_g,
+                        "last_valid_weight_g": v.last_valid_weight_g,
+                        "initial_bin_weight_g": v.initial_bin_weight_g,
+                        "last_valid_bin_weight_g": v.last_valid_bin_weight_g,
+                        "final_bin_weight_g": v.final_bin_weight_g,
+                        "weight_gain_g": v.weight_gain_g,
                         # NULL stays NULL (frontend renders "—"): a missing
                         # measurement must never be fabricated as 0.0.
                         "feed_intake_g": (round(v.feed_intake_g, 1)
@@ -515,6 +535,9 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
                         "elapsed_s": round(elapsed, 1),
                         "presence_s": v.presence_s,
                         "unit": v.unit if v.unit in (1, 2) else unitmap.get(v.id, 1),
+                        "business_state": v.business_state or "EMPTY",
+                        "eject_in_s": (round(eject_in, 0)
+                                       if eject_in is not None else None),
                         "bird_position": v.bird_position or "inside",
                         "stale": bool(v.stale),
                         "paused": bool(pausemap.get(v.id))
@@ -980,14 +1003,19 @@ def _ingest_one(dev: Device, cyc: dict, ev: dict, now: datetime):
                     orow.visit_end = ts
                     orow.bird_position = "outside"
                     orow.close_reason = "swap"
+                    orow.business_state = "EXITED"
+                    orow.empty_streak = 0
+                    orow.empty_since = None
+                    orow.invalid_since = None
+                    orow.invalid_deadline = None
                 nv = _new_live_visit(dev.cycle_id, out, sensor, unit, ts,
-                                     age_day)
+                                     age_day, source_id=eid)
                 s.add(nv)
                 s.flush()
                 vid, is_start = nv.id, True
             elif res.get("opened"):
                 nv = _new_live_visit(dev.cycle_id, out, sensor, unit, ts,
-                                     age_day)
+                                     age_day, source_id=eid)
                 s.add(nv)
                 s.flush()
                 vid, is_start = nv.id, True
@@ -995,17 +1023,30 @@ def _ingest_one(dev: Device, cyc: dict, ev: dict, now: datetime):
                 if orow is not None:
                     orow.visit_end = _uk._dt_of(snap["exit_ts"]) or ts
                     orow.final_weight_g = snap["final"]
+                    orow.live_weight_g = snap["final"]
+                    orow.last_valid_weight_g = snap["final"]
+                    orow.final_bin_weight_g = snap.get("final_bin")
+                    orow.last_valid_bin_weight_g = snap.get("final_bin")
+                    orow.weight_gain_g = snap.get("weight_gain")
                     orow.feed_intake_g = snap["feed"]
                     orow.elapsed_s = snap["elapsed"]
                     orow.presence_s = snap["presence"]
                     orow.bird_position = "outside"
                     orow.close_reason = snap["reason"]
+                    orow.business_state = "EXITED"
+                    orow.empty_streak = 0
+                    orow.empty_since = None
+                    orow.invalid_since = None
+                    orow.invalid_deadline = None
                     vid = orow.id
                 else:
                     vid = None
                 is_end = True
             elif out is not None and orow is not None:
                 orow.final_weight_g = out.get("current")
+                orow.live_weight_g = out.get("current")
+                orow.last_valid_weight_g = out.get("last_valid")
+                orow.last_valid_bin_weight_g = out.get("last_valid_bin")
                 orow.feed_intake_g = round(out.get("feed") or 0.0, 1)
                 orow.elapsed_s = round(out.get("elapsed") or 0.0, 1)
                 orow.presence_s = round(out.get("presence_acc") or 0.0, 1)
@@ -1023,10 +1064,18 @@ def _ingest_one(dev: Device, cyc: dict, ev: dict, now: datetime):
                     orow.invalid_since = _uk._dt_of(out.get("invalid_since"))
                 except Exception:
                     orow.invalid_since = None
+                try:
+                    orow.invalid_deadline = _uk._dt_of(
+                        out.get("invalid_deadline"))
+                except Exception:
+                    orow.invalid_deadline = None
+                orow.business_state = out.get("business_state") or "FEEDING"
                 orow.bird_position = out.get("position") or "inside"
                 orow.last_tag = out.get("last_tag")
                 orow.initial_confirmed_g = out.get("confirmed")
                 orow.stale = bool(out.get("stale"))
+                orow.last_source_id = str(eid)
+                orow.last_source_timestamp = ts
                 vid = orow.id
             else:
                 vid = None
@@ -1037,13 +1086,35 @@ def _ingest_one(dev: Device, cyc: dict, ev: dict, now: datetime):
                 _vv = bool(_vv) if _vv is not None else None
                 _bb = _pu.get("bird")
                 _bb = bool(_bb) if _bb is not None else None
+                if snap is not None:
+                    # lane freed by a close: unit back to EMPTY, no visit
+                    _bs, _avid = "EMPTY", None
+                    _inv = _dead = None
+                else:
+                    _vo = out if out is not None else None
+                    _bs = (_vo or {}).get("business_state") if _vo else None
+                    _avid = vid if _vo is not None else None
+                    _inv = (_vo or {}).get("invalid_since") if _vo else None
+                    _dead = (_vo or {}).get("invalid_deadline") \
+                        if _vo else None
                 if urow is None:
                     s.add(UnitState(cycle_id=dev.cycle_id, device_id=sensor,
                                     unit=unit, prev_ts=_dt, prev_valid=_vv,
-                                    prev_bird=_bb, updated_at=now))
+                                    prev_bird=_bb,
+                                    business_state=_bs or "EMPTY",
+                                    active_visit_id=_avid,
+                                    invalid_since=_uk._dt_of(_inv),
+                                    invalid_deadline=_uk._dt_of(_dead),
+                                    last_source_id=str(eid),
+                                    updated_at=now))
                 else:
                     urow.prev_ts, urow.prev_valid, urow.prev_bird = \
                         _dt, _vv, _bb
+                    urow.business_state = _bs or "EMPTY"
+                    urow.active_visit_id = _avid
+                    urow.invalid_since = _uk._dt_of(_inv)
+                    urow.invalid_deadline = _uk._dt_of(_dead)
+                    urow.last_source_id = str(eid)
                     urow.updated_at = now
             log = DeviceLog(
                 cycle_id=dev.cycle_id, timestamp=ts,
@@ -1090,12 +1161,19 @@ def _ingest_one(dev: Device, cyc: dict, ev: dict, now: datetime):
     return "accepted", {"event_id": eid, "accepted": True}
 
 
-def _new_live_visit(cycle_id, out, sensor, unit, ts_dt, age_day):
+def _new_live_visit(cycle_id, out, sensor, unit, ts_dt, age_day,
+                    source_id=None):
     """Visit row from a live-core open state (shared shape, Source B)."""
+    import uktech as _uk
     return Visit(
         cycle_id=cycle_id, bird_id=out["bird_id"], visit_start=ts_dt,
         sensor_id=sensor, initial_weight_g=out["initial"],
-        final_weight_g=out["current"], age_day=age_day, read_ok=True,
+        final_weight_g=out["current"],
+        live_weight_g=out["current"],
+        last_valid_weight_g=out.get("last_valid"),
+        initial_bin_weight_g=out.get("initial_bin"),
+        last_valid_bin_weight_g=out.get("last_valid_bin"),
+        age_day=age_day, read_ok=True,
         unit=unit, feed_intake_g=round(out["feed"] or 0.0, 1),
         elapsed_s=round(out["elapsed"] or 0.0, 1),
         presence_s=round(out["presence_acc"] or 0.0, 1),
@@ -1103,10 +1181,15 @@ def _new_live_visit(cycle_id, out, sensor, unit, ts_dt, age_day):
         counter_last=out["counter_last"],
         counter_live=bool(out["counter_live"]),
         bin_baseline=out["bin_base"], bin_calib=out["bin_cal"],
-        empty_streak=0, empty_since=None, invalid_since=None,
+        empty_streak=0, empty_since=None,
+        invalid_since=_uk._dt_of(out.get("invalid_since")),
+        invalid_deadline=_uk._dt_of(out.get("invalid_deadline")),
+        business_state=out.get("business_state") or "FEEDING",
         bird_position="inside",
         last_tag=out["last_tag"], initial_confirmed_g=out["confirmed"],
-        close_reason=None, stale=bool(out["stale"]))
+        close_reason=None, stale=bool(out["stale"]),
+        last_source_id=(str(source_id) if source_id is not None else None),
+        last_source_timestamp=ts_dt)
 
 
 @app.post("/api/device/ingest")
@@ -1123,6 +1206,13 @@ def device_ingest(payload: dict = Body(...), request: Request = None):
     if serr:
         return serr
     now = datetime.now(timezone.utc)
+    # Shared lazy sweep: overdue EJECTING visits finalize by their
+    # persisted deadline even when the device sends nothing new.
+    try:
+        import uktech as _uksweep
+        _uksweep.sweep_overdue_ejections(dev.cycle_id, now)
+    except Exception:
+        pass
     _touch_device(dev.id, request, payload if isinstance(payload, dict) else {},
                   now)
     kind, res = _ingest_one(dev, cyc, payload, now)
@@ -1162,6 +1252,11 @@ def device_ingest_batch(payload: DeviceBatchIn, request: Request):
     if len(events) > DEVICE_MAX_BATCH:
         return _dev_err("batch_too_large", 400)
     now = datetime.now(timezone.utc)
+    try:
+        import uktech as _uksweep
+        _uksweep.sweep_overdue_ejections(dev.cycle_id, now)
+    except Exception:
+        pass
     _touch_device(dev.id, request, {}, now)
     results, acc, dup, failed = [], 0, 0, 0
     for ev in events:

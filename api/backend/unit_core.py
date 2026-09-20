@@ -60,11 +60,28 @@ CONFIRM_TOL_G = 2.0
 def new_visit_state(sample: dict, cfg: dict) -> dict:
     """Open-visit state from an entry sample."""
     c = sample.get("counter") or 0.0
+    eject = cfg.get("INVALID_EJECT_S", 30.0)
+    # Explicit business state (never confuse the raw VALID/INVALID flag
+    # with it): VALID -> FEEDING, INVALID -> EJECTING (the motor runs its
+    # ~30s countdown; the deadline is persisted, not slept).
+    st = "FEEDING"
+    inv_since = None
+    inv_deadline = None
+    if not sample.get("valid"):
+        st = "EJECTING"
+        inv_since = sample["ts"]
+        inv_deadline = sample["ts"] + eject
     return {
         "bird_id": sample["rfid"],
         "initial": sample["bird"],
         "confirmed": None,
         "current": sample["bird"],
+        # last valid/stable bird weight (frozen the moment INVALID begins;
+        # the exit slope must never overwrite it).
+        "last_valid": sample["bird"],
+        "last_valid_bin": sample.get("bin"),
+        # hopper at entry, captured once and never overwritten this visit.
+        "initial_bin": sample.get("bin"),
         "feed": 0.0,
         # Spec: elapsed starts at the record's counter value (0 when the
         # counter is dead, as in all data observed to date).
@@ -76,11 +93,14 @@ def new_visit_state(sample: dict, cfg: dict) -> dict:
         "bin_cal": sample.get("bin_cal"),
         "streak": 0,
         "empty_since": None,
-        "invalid_since": None,
+        "invalid_since": inv_since,
+        "invalid_deadline": inv_deadline,
+        "business_state": st,
         "position": INSIDE,
         "last_tag": sample["rfid"],
         "close_reason": None,
         "stale": bool(sample.get("stale")),
+        "last_source_ts": sample["ts"],
     }
 
 
@@ -166,6 +186,16 @@ def process_unit_sample(sample: dict, visit: dict | None,
                 "uprev": uprev, "events": events,
                 "outcome": "held", "touched": False}
 
+    # Out-of-order guard (state mutation is monotonic): a late old record
+    # must never roll the unit state backward. Raw data is still stored by
+    # the caller for audit; only the business processing is skipped. The
+    # uktech path is sorted ascending + cursor-guarded, so this only ever
+    # fires on the direct-ESP source (device retries/reordered pushes).
+    if uprev is not None and ts < uprev.get("ts", ts):
+        return {"visit": visit, "closed": None, "opened": False,
+                "uprev": uprev, "events": ["out-of-order"],
+                "outcome": "stale-sample", "touched": False}
+
     has_bird = w > EMPTY_T
     uprev_new = {"ts": ts, "valid": bool(sample.get("valid"))
                  and not sample.get("stale"), "bird": has_bird}
@@ -193,12 +223,11 @@ def process_unit_sample(sample: dict, visit: dict | None,
         if not sample.get("valid"):
             # Owner rule: INVALID at entry = the bird IS inside but not
             # eating (the electronic motor ejects it within ~30s). Open the
-            # visit PAUSED: elapsed stays 0 until a VALID pair, feed 0; it
-            # resumes on VALID (re-baseline) and closes when the weight
-            # zeroes. The countdown starts HERE (the entry is the first
-            # INVALID of the stretch); a flaky-flag glitch is closed by
-            # the next empty pair.
-            v["invalid_since"] = ts
+            # visit EJECTING with the deadline persisted (invalid_since +
+            # EJECTION_TIMEOUT_S): elapsed stays 0 until a VALID pair, feed
+            # 0; it resumes on VALID (deadline cancelled) and finalizes at
+            # the deadline. The countdown starts HERE (the entry is the
+            # first INVALID of the stretch).
             events.append("opened-paused")
         return {"visit": v, "closed": None, "opened": True,
                 "uprev": uprev_new, "events": events,
@@ -206,8 +235,14 @@ def process_unit_sample(sample: dict, visit: dict | None,
 
     # ---- open visit below ----
     v = visit
+    v["last_source_ts"] = ts  # monotonic anchor for stale-sample rejection
     if sample.get("stale"):
+        # Device offline (device_status != online): a connection problem,
+        # NOT an exit — the visit stays open, marked STALE; the state
+        # reverts to its pre-stale value when data flows again.
         v["stale"] = True
+        if v.get("business_state") not in ("EJECTING",):
+            v["business_state"] = "STALE"
         return {"visit": v, "closed": None, "opened": False,
                 "uprev": uprev_new, "events": events,
                 "outcome": "stale-hold", "touched": True}
@@ -228,6 +263,7 @@ def process_unit_sample(sample: dict, visit: dict | None,
         if v["streak"] == 1:
             v["empty_since"] = ts
         v["invalid_since"] = None
+        v["invalid_deadline"] = None
         c = sample.get("counter") or 0.0
         v["counter_last"] = c
         if v["streak"] >= DEB:
@@ -242,38 +278,53 @@ def process_unit_sample(sample: dict, visit: dict | None,
                 "outcome": "empty-streak", "touched": True}
 
     if not sample.get("valid"):
-        # INVALID (owner rule): the bird is still inside but not eating;
-        # the electronic motor ejects it ~30s after the status went
-        # INVALID — considered OUT after 30s of consecutive INVALID
-        # records, and the visit's row (SAME row, never a new one) is
-        # finalized with the precise values frozen at the last VALID
-        # record. Data keeps flowing from the API regardless. The stretch
-        # is measured across CONSECUTIVE INVALID records only (a lone
-        # flaky glitch + an irregular gap never ejects a feeding bird);
-        # empty readings never reach here (weight runs first).
+        # INVALID (owner rule) -> EJECTING, never an immediate exit: the
+        # physical machine runs its ejection motor for ~30s. The deadline
+        # (invalid_since + EJECTION_TIMEOUT_S) is PERSISTED so a restart
+        # never resets the remaining seconds and the lazy sweep finalizes
+        # an overdue visit even without a new record. The visit's row
+        # (SAME row, never a new one) is finalized with the precise values
+        # frozen at the last VALID record. Data keeps flowing from the API
+        # regardless. The stretch is measured across CONSECUTIVE INVALID
+        # records only (a lone flaky glitch + an irregular gap never
+        # ejects a feeding bird); empty readings never reach here (weight
+        # runs first).
         EJECT = cfg.get("INVALID_EJECT_S", 30.0)
         inv = v.get("invalid_since")
         if inv is None:
-            v["invalid_since"] = ts  # first INVALID of this stretch
+            # EJECTION_STARTED: freeze the last valid measurements (they
+            # are already in last_valid_*), start the persisted countdown.
+            v["invalid_since"] = ts
+            v["invalid_deadline"] = ts + EJECT
+            v["business_state"] = "EJECTING"
+            events.append("ejection-started")
             return {"visit": v, "closed": None, "opened": False,
                     "uprev": uprev_new, "events": events,
-                    "outcome": "paused", "touched": False}
-        if (ts - inv) >= EJECT:
+                    "outcome": "paused", "touched": True}
+        if ts >= (v.get("invalid_deadline") or (inv + EJECT)):
+            # INVALID for the full 30 seconds: FINALIZE the visit.
             snap = finalize_visit(v, inv + EJECT, "ejected")
-            events.append("ejected")
+            events.append("finalized")
             return {"visit": None, "closed": snap, "opened": False,
                     "uprev": uprev_new, "events": events,
                     "outcome": "closed", "touched": True,
                     "state": v}
+        v["business_state"] = "EJECTING"
         return {"visit": v, "closed": None, "opened": False,
                 "uprev": uprev_new, "events": events,
-                "outcome": "paused", "touched": False}
+                "outcome": "paused", "touched": True}
 
     # ---- live bird record: everything updates, every cycle ----
     touched = True
     v["streak"] = 0
     v["empty_since"] = None
+    if v.get("invalid_since") is not None or v.get("invalid_deadline") is not None:
+        # INVALID -> VALID before the deadline: the bird did not exit.
+        # EJECTION_CANCELLED -> FEEDING: same RFID, same Visit continues.
+        events.append("ejection-cancelled")
     v["invalid_since"] = None
+    v["invalid_deadline"] = None
+    v["business_state"] = "FEEDING"
 
     # 1) bird weight overwrites live, up AND down — no ratchet. BUT a
     # single-step change larger than BIRD_JUMP_G is the unloading slope
@@ -285,7 +336,10 @@ def process_unit_sample(sample: dict, visit: dict | None,
     if abs(w - (v.get("current") or 0.0)) > JUMP:
         events.append("unloading")
     else:
+        # accepted VALID reading: live + last-valid tracking (frozen later
+        # when INVALID begins — the exit slope never overwrites these).
         v["current"] = w
+        v["last_valid"] = w
         if v.get("confirmed") is None and abs(w - (v.get("initial") or w)) <= CONFIRM_TOL_G:
             v["confirmed"] = w
             events.append("confirmed")
@@ -335,6 +389,8 @@ def process_unit_sample(sample: dict, visit: dict | None,
                 # |delta| <= noise: add nothing, never subtract.
             if bcal is not None:
                 v["bin_cal"] = bcal
+        if b is not None:
+            v["last_valid_bin"] = b  # last VALID hopper (frozen at INVALID)
 
     # 4) elapsed: counter deltas across VALID-prev pairs, else fallback.
     c = sample.get("counter") or 0.0
@@ -365,20 +421,28 @@ def process_unit_sample(sample: dict, visit: dict | None,
 
 def finalize_visit(v: dict, ts: float, reason: str) -> dict:
     """Freeze a visit into its closing snapshot. The SAME row keeps every
-    finalized value (never a new row): final weight = last live weight
-    (empty/unloading records never overwrite it), elapsed/feed/presence
-    frozen at their maximum effective values (INVALID spans excluded),
-    even if the exit record's counter reads 0. exit_ts: the first empty
-    record for "exit" (the physical exit), the ejection moment
-    (invalid_since + 30s) for "ejected", the record ts for "swap"."""
+    finalized value (never a new row): final weight = the last valid/
+    stable bird weight (empty/unloading records never overwrite it),
+    elapsed/feed/presence frozen at their maximum effective values
+    (INVALID spans excluded), even if the exit record's counter reads 0.
+    Once finalized the row is immutable for business-critical values.
+    exit_ts: the first empty record for "exit" (the physical exit), the
+    ejection moment (invalid_since + 30s) for "ejected", the record ts
+    for "swap"."""
     v["position"] = OUTSIDE
     v["close_reason"] = reason
+    v["business_state"] = "EXITED"
     v["streak"] = 0
+    final = (v.get("last_valid") if v.get("last_valid") is not None
+             else v.get("current"))
     return {
         "bird_id": v.get("bird_id"),
         "initial": v.get("initial"),
         "confirmed": v.get("confirmed"),
-        "final": v.get("current"),
+        "final": final,
+        "final_bin": v.get("last_valid_bin") if v.get("last_valid_bin") is not None else v.get("bin_base"),
+        "weight_gain": (round((final or 0.0) - (v.get("initial") or 0.0), 1)
+                        if final is not None else None),
         "feed": round(v.get("feed") or 0.0, 1),
         "elapsed": round(v.get("elapsed") or 0.0, 1),
         "presence": round(v.get("presence_acc") or 0.0, 1),

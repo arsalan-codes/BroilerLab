@@ -772,6 +772,7 @@ window.I18N_EN={
 "dev.reg.position": "Bird Position",
 "dev.pos.inside": "Inside",
 "dev.pos.outside": "Outside",
+"dev.pos.ejecting": "Ejecting",
 "dev.pos.ejectTip": "Invalid data — the motor ejects the bird within 30 seconds",
 "dev.source": "Data source:",
 "dev.srcApi": "API (weight poll)",

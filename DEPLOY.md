@@ -58,6 +58,18 @@ postgresql://USER:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/neondb?sslm
 | `DEVICE_ONLINE_SECONDS` | آستانه «آنلاین» از روی `last_seen_at` (پیش‌فرض `300`) |
 | `DEVICE_MAX_CLOCK_SKEW_S` | تلرانس ساعت آینده دستگاه (پیش‌فرض `300`)؛ بیشتر از این → خطای 400 |
 | `DEVICE_MAX_BATCH` | سقف رویداد هر بچ (پیش‌فرض `50`) |
+| `UKTECH_PAGE_SIZE` | اندازه صفحه واکشی upstream (پیش‌فرض `500`) |
+| `UKTECH_MAX_PAGES` | سقف ایمنی صفحات هر سینک (پیش‌فرض `20`) |
+| `UKTECH_PAGES_PER_TICK` | سقف صفحه در هر تیک سرورلس (پیش‌فرض `4`) — مازاد در تیک بعد |
+| `UKTECH_EMPTY_THRESHOLD_G` | وزن خالی یونیت به گرم (پیش‌فرض `15`) — صفر و پسماند زیر این حد = مرغ خارج |
+| `UKTECH_EMPTY_DEBOUNCE` | خوانش خالی پیاپی برای بستن ویزیت (پیش‌فرض `2`) — فلیکر تکی نمی‌بندد |
+| `UKTECH_FEED_NOISE_G` | نویز لودسل مخزن (پیش‌فرض `0.5`) — افت کمتر نادیده گرفته می‌شود |
+| `UKTECH_REFILL_JUMP_G` | جهش شارژ مخزن (پیش‌فرض `50`) — re-baseline بدون مصرف منفی |
+| `UKTECH_RFID_SWAP_POLICY` | سیاست تعویض تگ (`keep-open` پیش‌فرض؛ `close-open` هم ممکن) |
+| `UKTECH_BIRD_JUMP_G` | پرش تک‌مرحله‌ای وزن پرنده (پیش‌فرض `30`) — شیب تخلیه وزن زنده را فریز می‌کند |
+| `UKTECH_INVALID_EJECT_S` / `EJECTION_TIMEOUT_SECONDS` | پنجره تخلیه INVALID (پیش‌فرض `30`) — ددلاین persisted، با restart ریست نمی‌شود |
+| `UKTECH_PRESENCE_TOL_S` | تلرانس اختلاف presence/elapsed برای لاگ (پیش‌فرض `30`) |
+| `UKTECH_AUTO_POLL` / `UKTECH_POLL_SECONDS` / `UKTECH_CYCLE_ID` | پول پس‌زمینه فقط dev (`false` پیش‌فرض؛ روی Vercel همیشه خاموش — تیک ۳s کلاینت) |
 
 > جدول `devices` (کلیدهای ESP32) با مایگریشن `012_devices` می‌آید؛ روی
 > دیتابیس‌های موجود هم `init_db` در بوت آن را خودش می‌سازد (self-heal)، و

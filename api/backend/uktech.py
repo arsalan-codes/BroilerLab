@@ -406,16 +406,22 @@ def _visit_to_state(v) -> dict:
     """Persisted Visit row -> live-core visit state (Nones = legacy rows:
     elapsed/feed restart at 0, bin baseline reseeds, position inside)."""
     from processor import _aware_utc
-    es = None
-    try:
-        es = _aware_utc(v.empty_since).timestamp() if v.empty_since else None
-    except Exception:
-        es = None
+
+    def _ep(dt):
+        try:
+            return _aware_utc(dt).timestamp() if dt else None
+        except Exception:
+            return None
+
     return {
         "bird_id": v.bird_id,
         "initial": v.initial_weight_g,
         "confirmed": v.initial_confirmed_g,
-        "current": v.final_weight_g,
+        "current": (v.live_weight_g if v.live_weight_g is not None
+                    else v.final_weight_g),
+        "last_valid": v.last_valid_weight_g,
+        "initial_bin": v.initial_bin_weight_g,
+        "last_valid_bin": v.last_valid_bin_weight_g,
         "feed": v.feed_intake_g or 0.0,
         "elapsed": v.elapsed_s or 0.0,
         "presence_acc": v.presence_acc or 0.0,
@@ -424,13 +430,15 @@ def _visit_to_state(v) -> dict:
         "bin_base": v.bin_baseline,
         "bin_cal": v.bin_calib,
         "streak": v.empty_streak or 0,
-        "empty_since": es,
-        "invalid_since": (None if v.invalid_since is None
-                          else _aware_utc(v.invalid_since).timestamp()),
+        "empty_since": _ep(v.empty_since),
+        "invalid_since": _ep(v.invalid_since),
+        "invalid_deadline": _ep(v.invalid_deadline),
+        "business_state": v.business_state or "FEEDING",
         "position": v.bird_position or "inside",
         "last_tag": v.last_tag or v.bird_id,
         "close_reason": v.close_reason,
         "stale": bool(v.stale),
+        "last_source_ts": _ep(v.last_source_timestamp),
     }
 
 
@@ -439,6 +447,72 @@ def _dt_of(epoch):
         return datetime.fromtimestamp(float(epoch), tz=timezone.utc)
     except (TypeError, ValueError, OverflowError, OSError):
         return None
+
+
+def sweep_overdue_ejections(cycle_id: int, now=None) -> int:
+    """Lazy finalization sweep: any EJECTING visit whose persisted
+    invalid_deadline has passed is finalized NOW — no new record needed.
+
+    This is what makes the 30s ejection deadline authoritative on hosts
+    without a persistent worker (serverless): every sync (client tick,
+    Source B ingest, cron) sweeps first, so an overdue visit closes on
+    the next poll even if the device sends nothing more. The frozen
+    values (final weight/feed/elapsed from the last VALID record) are
+    already on the row; only the close fields are written, so finalized
+    visits stay immutable afterwards. Returns the count finalized."""
+    from processor import _aware_utc
+    now = now or utcnow()
+    n = 0
+    with SessionLocal() as s:
+        rows = (s.query(Visit)
+                .filter(Visit.cycle_id == cycle_id,
+                        Visit.visit_end.is_(None),
+                        Visit.business_state == "EJECTING",
+                        Visit.invalid_deadline.isnot(None),
+                        Visit.invalid_deadline <= now)
+                .all())
+        for v in rows:
+            try:
+                exit_dt = _aware_utc(v.invalid_deadline)
+            except Exception:
+                exit_dt = now
+            v.visit_end = exit_dt
+            v.bird_position = "outside"
+            v.close_reason = "ejected"
+            v.business_state = "EXITED"
+            v.empty_streak = 0
+            v.empty_since = None
+            v.invalid_since = None
+            v.invalid_deadline = None
+            try:
+                if (v.final_weight_g is not None
+                        and v.initial_weight_g is not None):
+                    v.weight_gain_g = round(
+                        v.final_weight_g - v.initial_weight_g, 1)
+            except (TypeError, ValueError):
+                pass
+            try:
+                urow = (s.query(UnitState)
+                        .filter(UnitState.cycle_id == cycle_id,
+                                UnitState.device_id == (v.sensor_id or "-"),
+                                UnitState.unit == (v.unit or 1))
+                        .first())
+                if urow is not None:
+                    urow.business_state = "EMPTY"
+                    urow.active_visit_id = None
+                    urow.invalid_since = None
+                    urow.invalid_deadline = None
+                    urow.updated_at = utcnow()
+            except Exception:
+                pass
+            n += 1
+            logging.getLogger(__name__).info(
+                "[UNIT %s] RFID=%s Visit=%s FINALIZED(sweep) weight=%s feed=%s",
+                v.unit or 1, v.bird_id, v.id, v.final_weight_g,
+                v.feed_intake_g)
+        if n:
+            s.commit()
+    return n
 
 
 def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
@@ -488,6 +562,14 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
         except Exception:
             start_day = None
 
+    # Lazy finalization sweep FIRST: any EJECTING visit whose persisted
+    # deadline already passed finalizes now — even with zero new records
+    # upstream. The deadline (not a new record) is authoritative, so the
+    # visit cannot leak open when the device goes quiet after INVALID.
+    try:
+        swept = sweep_overdue_ejections(cycle_id)
+    except Exception:
+        swept = 0
     last_id = get_cursor(serial, cycle_id)
     entry_last_id = last_id
     global _LAST_META
@@ -720,11 +802,45 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
         new_visits = []
         visit_updates = []  # bulk mappings for closes/updates
         working = {}  # lane -> live visit-state dict carried across rows
-        unit_writes = {}  # (dev, unit) -> (dt, valid) pair-clock write-back
+        unit_writes = {}  # (dev, unit) -> True when the pair clock advanced
+        lane_state = {}  # (dev, unit) -> (visit_ref|None, state|None, rid)
         log_specs = []  # (rid, unit, ext, sample, ts_dt, age, vid|("new",i)|None, is_start, is_end, elapsed, feed)
         affected = []  # visit refs ("new", idx) / ("old", vid) this call created or changed
 
-        def _close_lane(lane, exit_dt, reason):
+        def _finalize_row(nv_dict_setter, st, exit_dt, reason, snap):
+            """Shared finalization write: the SAME row freezes every
+            business-critical value once (final weights, feed, elapsed,
+            end, reason, state, source trace). Later samples never touch
+            these columns again (the lane pops from openv)."""
+            nv_dict_setter("visit_end", exit_dt)
+            nv_dict_setter("bird_position", "outside")
+            nv_dict_setter("close_reason", reason)
+            nv_dict_setter("business_state", "EXITED")
+            nv_dict_setter("empty_streak", 0)
+            nv_dict_setter("empty_since", None)
+            nv_dict_setter("invalid_since", None)
+            nv_dict_setter("invalid_deadline", None)
+            if snap is not None:
+                nv_dict_setter("final_weight_g", snap.get("final"))
+                nv_dict_setter("live_weight_g", snap.get("final"))
+                nv_dict_setter("last_valid_weight_g", snap.get("final"))
+                nv_dict_setter("final_bin_weight_g", snap.get("final_bin"))
+                nv_dict_setter("last_valid_bin_weight_g", snap.get("final_bin"))
+                nv_dict_setter("weight_gain_g", snap.get("weight_gain"))
+                nv_dict_setter("feed_intake_g", snap.get("feed"))
+                nv_dict_setter("elapsed_s", snap.get("elapsed"))
+                nv_dict_setter("presence_s", snap.get("presence"))
+            if st is not None:
+                nv_dict_setter("presence_acc", st.get("presence_acc") or 0.0)
+                nv_dict_setter("counter_last", st.get("counter_last"))
+                nv_dict_setter("counter_live", bool(st.get("counter_live")))
+                nv_dict_setter("bin_baseline", st.get("bin_base"))
+                nv_dict_setter("bin_calib", st.get("bin_cal"))
+                nv_dict_setter("last_tag", st.get("last_tag"))
+                nv_dict_setter("initial_confirmed_g", st.get("confirmed"))
+                nv_dict_setter("stale", bool(st.get("stale")))
+
+        def _close_lane(lane, exit_dt, reason, snap=None):
             """Finalize a lane's open visit (adopted row or chunk-new).
 
             Returns the visit ref for linking/affected lists."""
@@ -733,75 +849,62 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 return None
             if isinstance(cur, tuple):
                 nv = new_visits[cur[1]]
-                nv.visit_end = exit_dt
-                nv.bird_position = "outside"
-                nv.close_reason = reason
+                _finalize_row(lambda k, v: setattr(nv, k, v),
+                              working.get(lane), exit_dt, reason, snap)
                 return ("new", cur[1])
             st = working.get(lane)
-            upd = {"id": cur.id, "visit_end": exit_dt,
-                   "bird_position": "outside", "close_reason": reason,
-                   "empty_streak": 0, "empty_since": None,
-                   "invalid_since": None}
-            if st is not None:
-                upd.update({
-                    "final_weight_g": st.get("current"),
-                    "feed_intake_g": round(st.get("feed") or 0.0, 1),
-                    "elapsed_s": round(st.get("elapsed") or 0.0, 1),
-                    "presence_s": round(st.get("presence_acc") or 0.0, 1),
-                    "presence_acc": st.get("presence_acc") or 0.0,
-                    "counter_last": st.get("counter_last"),
-                    "counter_live": bool(st.get("counter_live")),
-                    "bin_baseline": st.get("bin_base"),
-                    "bin_calib": st.get("bin_cal"),
-                    "last_tag": st.get("last_tag"),
-                    "initial_confirmed_g": st.get("confirmed"),
-                    "stale": bool(st.get("stale"))})
+            upd = {}
+            _finalize_row(upd.__setitem__, st, exit_dt, reason, snap)
+            upd["id"] = cur.id
             visit_updates.append(upd)
             return ("old", cur.id)
 
-        def _push_live(lane, st):
+        def _push_live(lane, st, live_rid=None, live_ts=None):
             """Write a live (still-open) state back: chunk-new rows mutate
-            in place, adopted rows get an ordered bulk mapping (last wins)."""
+            in place, adopted rows get an ordered bulk mapping (last wins).
+            Finalized columns (final_weight_g etc.) are NOT touched here —
+            only the live/separated fields move until close."""
             cur = openv.get(lane)
             if cur is None:
                 return
+
+            def _apply(nv_dict_setter):
+                nv_dict_setter("live_weight_g", st.get("current"))
+                nv_dict_setter("last_valid_weight_g", st.get("last_valid"))
+                nv_dict_setter("last_valid_bin_weight_g",
+                               st.get("last_valid_bin"))
+                nv_dict_setter("feed_intake_g",
+                               round(st.get("feed") or 0.0, 1))
+                nv_dict_setter("elapsed_s", round(st.get("elapsed") or 0.0, 1))
+                nv_dict_setter("presence_s",
+                               round(st.get("presence_acc") or 0.0, 1))
+                nv_dict_setter("presence_acc", st.get("presence_acc") or 0.0)
+                nv_dict_setter("counter_last", st.get("counter_last"))
+                nv_dict_setter("counter_live", bool(st.get("counter_live")))
+                nv_dict_setter("bin_baseline", st.get("bin_base"))
+                nv_dict_setter("bin_calib", st.get("bin_cal"))
+                nv_dict_setter("empty_streak", st.get("streak") or 0)
+                nv_dict_setter("empty_since", _dt_of(st.get("empty_since")))
+                nv_dict_setter("invalid_since", _dt_of(st.get("invalid_since")))
+                nv_dict_setter("invalid_deadline",
+                               _dt_of(st.get("invalid_deadline")))
+                nv_dict_setter("business_state",
+                               st.get("business_state") or "FEEDING")
+                nv_dict_setter("bird_position", st.get("position") or "inside")
+                nv_dict_setter("last_tag", st.get("last_tag"))
+                nv_dict_setter("initial_confirmed_g", st.get("confirmed"))
+                nv_dict_setter("stale", bool(st.get("stale")))
+                if live_rid is not None:
+                    nv_dict_setter("last_source_id", str(live_rid))
+                if live_ts is not None:
+                    nv_dict_setter("last_source_timestamp", live_ts)
+
             if isinstance(cur, tuple):
-                nv = new_visits[cur[1]]
-                nv.final_weight_g = st.get("current")
-                nv.feed_intake_g = round(st.get("feed") or 0.0, 1)
-                nv.elapsed_s = round(st.get("elapsed") or 0.0, 1)
-                nv.presence_s = round(st.get("presence_acc") or 0.0, 1)
-                nv.presence_acc = st.get("presence_acc") or 0.0
-                nv.counter_last = st.get("counter_last")
-                nv.counter_live = bool(st.get("counter_live"))
-                nv.bin_baseline = st.get("bin_base")
-                nv.bin_calib = st.get("bin_cal")
-                nv.empty_streak = st.get("streak") or 0
-                nv.empty_since = _dt_of(st.get("empty_since"))
-                nv.invalid_since = _dt_of(st.get("invalid_since"))
-                nv.bird_position = st.get("position") or "inside"
-                nv.last_tag = st.get("last_tag")
-                nv.initial_confirmed_g = st.get("confirmed")
-                nv.stale = bool(st.get("stale"))
+                _apply(lambda k, v: setattr(new_visits[cur[1]], k, v))
                 return
-            visit_updates.append({
-                "id": cur.id,
-                "final_weight_g": st.get("current"),
-                "feed_intake_g": round(st.get("feed") or 0.0, 1),
-                "elapsed_s": round(st.get("elapsed") or 0.0, 1),
-                "presence_s": round(st.get("presence_acc") or 0.0, 1),
-                "presence_acc": st.get("presence_acc") or 0.0,
-                "counter_last": st.get("counter_last"),
-                "counter_live": bool(st.get("counter_live")),
-                "bin_baseline": st.get("bin_base"),
-                "bin_calib": st.get("bin_cal"),
-                "empty_streak": st.get("streak") or 0,
-                "empty_since": _dt_of(st.get("empty_since")),
-                "invalid_since": _dt_of(st.get("invalid_since")),
-                "bird_position": st.get("position") or "inside",
-                "last_tag": st.get("last_tag"),
-                "initial_confirmed_g": st.get("confirmed"),
-                "stale": bool(st.get("stale"))})
+            upd = {"id": cur.id}
+            _apply(upd.__setitem__)
+            visit_updates.append(upd)
 
         for rid, rec, ts_dt, ts_ep, age_day in planned:
             dev = (rec.get("device_id") or "").strip() or "-"
@@ -835,11 +938,21 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 if res.get("uprev") is not None:
                     ustate[lane] = res["uprev"]
                     unit_writes[lane] = True
+                # Structured lifecycle logs (unit-tagged; never the API
+                # token): opened/closed/unidentified/refill/ejection
+                # transitions at info, routine touches at debug.
                 for _ev in res.get("events") or []:
+                    _tag = {"opened": "CREATED",
+                            "ejection-started": "EJECTING",
+                            "ejection-cancelled": "EJECTION_CANCELLED",
+                            "refill": "REFILL",
+                            "closed": "CLOSED"}.get(_ev, _ev)
                     if _ev in ("opened", "closed", "unidentified",
-                               "counter-reset"):
-                        slog.info("[uktech] %s cycle=%s dev=%s u%s rid=%s",
-                                  _ev, cycle_id, dev, unit, rid)
+                               "counter-reset", "ejection-started",
+                               "ejection-cancelled", "refill", "swap-kept"):
+                        slog.info("[UNIT %s] RFID=%s %s cycle=%s dev=%s rid=%s",
+                                  unit, sample.get("rfid"), _tag, cycle_id,
+                                  dev, rid)
                     else:
                         slog.debug("[uktech] %s cycle=%s dev=%s u%s rid=%s",
                                    _ev, cycle_id, dev, unit, rid)
@@ -847,34 +960,55 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 snap = res.get("closed")
                 is_start = is_end = False
                 visit_ref = None
+                def _new_live_visit(out):
+                    return Visit(
+                        cycle_id=cycle_id, bird_id=out["bird_id"],
+                        visit_start=ts_dt,
+                        sensor_id=None if dev == "-" else dev,
+                        initial_weight_g=out["initial"],
+                        final_weight_g=out["current"],
+                        live_weight_g=out["current"],
+                        last_valid_weight_g=out.get("last_valid"),
+                        initial_bin_weight_g=out.get("initial_bin"),
+                        last_valid_bin_weight_g=out.get("last_valid_bin"),
+                        age_day=age_day, read_ok=True, unit=unit,
+                        feed_intake_g=round(out["feed"] or 0.0, 1),
+                        elapsed_s=round(out["elapsed"] or 0.0, 1),
+                        presence_s=round(out["presence_acc"] or 0.0, 1),
+                        presence_acc=out["presence_acc"] or 0.0,
+                        counter_last=out["counter_last"],
+                        counter_live=bool(out["counter_live"]),
+                        bin_baseline=out["bin_base"],
+                        bin_calib=out["bin_cal"],
+                        empty_streak=0, empty_since=None,
+                        invalid_since=_dt_of(out.get("invalid_since")),
+                        invalid_deadline=_dt_of(out.get("invalid_deadline")),
+                        business_state=out.get("business_state") or "FEEDING",
+                        bird_position="inside", last_tag=out["last_tag"],
+                        initial_confirmed_g=out["confirmed"],
+                        close_reason=None, stale=bool(out["stale"]),
+                        last_source_id=(str(rid) if rid is not None else None),
+                        last_source_timestamp=ts_dt)
+
                 if res.get("outcome") == "swap-reopened":
                     # This record closed the old visit AND opened a new one:
                     # finalize the old lane row, register the new visit, and
                     # link the log row to the new visit as its start.
-                    old_ref = _close_lane(lane, ts_dt, "swap")
+                    old_ref = _close_lane(lane, ts_dt, "swap",
+                                          res.get("closed"))
                     if old_ref is not None:
                         affected.append(old_ref)
                         events_count += 1
-                    nv = Visit(
-                        cycle_id=cycle_id, bird_id=out["bird_id"],
-                        visit_start=ts_dt,
-                        sensor_id=None if dev == "-" else dev,
-                        initial_weight_g=out["initial"],
-                        final_weight_g=out["current"],
-                        age_day=age_day, read_ok=True, unit=unit,
-                        feed_intake_g=round(out["feed"] or 0.0, 1),
-                        elapsed_s=round(out["elapsed"] or 0.0, 1),
-                        presence_s=round(out["presence_acc"] or 0.0, 1),
-                        presence_acc=out["presence_acc"] or 0.0,
-                        counter_last=out["counter_last"],
-                        counter_live=bool(out["counter_live"]),
-                        bin_baseline=out["bin_base"],
-                        bin_calib=out["bin_cal"],
-                        empty_streak=0, empty_since=None,
-                        invalid_since=None,
-                        bird_position="inside", last_tag=out["last_tag"],
-                        initial_confirmed_g=out["confirmed"],
-                        close_reason=None, stale=bool(out["stale"]))
+                if res.get("outcome") == "swap-reopened":
+                    # This record closed the old visit AND opened a new one:
+                    # finalize the old lane row, register the new visit, and
+                    # link the log row to the new visit as its start.
+                    old_ref = _close_lane(lane, ts_dt, "swap",
+                                          res.get("closed"))
+                    if old_ref is not None:
+                        affected.append(old_ref)
+                        events_count += 1
+                    nv = _new_live_visit(out)
                     new_visits.append(nv)
                     openv[lane] = ("new", len(new_visits) - 1)
                     working[lane] = out
@@ -884,27 +1018,9 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                     is_start = True
                     elapsed = round(out["elapsed"] or 0.0, 1)
                     feed_now = round(out["feed"] or 0.0, 1)
+                    lane_state[lane] = (visit_ref, out, rid)
                 elif res.get("opened"):
-                    nv = Visit(
-                        cycle_id=cycle_id, bird_id=out["bird_id"],
-                        visit_start=ts_dt,
-                        sensor_id=None if dev == "-" else dev,
-                        initial_weight_g=out["initial"],
-                        final_weight_g=out["current"],
-                        age_day=age_day, read_ok=True, unit=unit,
-                        feed_intake_g=round(out["feed"] or 0.0, 1),
-                        elapsed_s=round(out["elapsed"] or 0.0, 1),
-                        presence_s=round(out["presence_acc"] or 0.0, 1),
-                        presence_acc=out["presence_acc"] or 0.0,
-                        counter_last=out["counter_last"],
-                        counter_live=bool(out["counter_live"]),
-                        bin_baseline=out["bin_base"],
-                        bin_calib=out["bin_cal"],
-                        empty_streak=0, empty_since=None,
-                        invalid_since=None,
-                        bird_position="inside", last_tag=out["last_tag"],
-                        initial_confirmed_g=out["confirmed"],
-                        close_reason=None, stale=bool(out["stale"]))
+                    nv = _new_live_visit(out)
                     new_visits.append(nv)
                     openv[lane] = ("new", len(new_visits) - 1)
                     working[lane] = out
@@ -914,11 +1030,13 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                     is_start = True
                     elapsed = round(out["elapsed"] or 0.0, 1)
                     feed_now = round(out["feed"] or 0.0, 1)
+                    lane_state[lane] = (visit_ref, out, rid)
                 elif snap is not None:
                     if res.get("state") is not None:
                         working[lane] = res["state"]
                     exit_dt = _dt_of(snap["exit_ts"]) or ts_dt
-                    visit_ref = _close_lane(lane, exit_dt, snap["reason"])
+                    visit_ref = _close_lane(lane, exit_dt, snap["reason"],
+                                            snap)
                     if isinstance(openv.get(lane), tuple):
                         pass  # _close_lane mutated the chunk-new row already
                     openv.pop(lane, None)
@@ -929,17 +1047,25 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                     is_end = True
                     elapsed = snap["elapsed"]
                     feed_now = snap["feed"]
+                    lane_state[lane] = (None, None, rid)
+                    slog.info("[UNIT %s] RFID=%s FINALIZED weight=%s "
+                              "feed=%s reason=%s",
+                              unit, sample.get("rfid"),
+                              snap.get("final"), snap.get("feed"),
+                              snap.get("reason"))
                 elif out is not None:
                     working[lane] = out
-                    _push_live(lane, out)
+                    _push_live(lane, out, live_rid=rid, live_ts=ts_dt)
                     cur2 = openv.get(lane)
                     visit_ref = cur2 if isinstance(cur2, tuple) \
                         else ("old", cur2.id)
                     affected.append(visit_ref)
                     elapsed = round(out["elapsed"] or 0.0, 1)
                     feed_now = round(out["feed"] or 0.0, 1)
+                    lane_state[lane] = (visit_ref, out, rid)
                 else:
                     elapsed, feed_now = 0.0, 0.0
+                    lane_state[lane] = (None, None, rid)
                 log_specs.append((rid, unit, dev, ext, sample, ts_dt,
                                   age_day, visit_ref, is_start, is_end,
                                   round(elapsed, 1), round(feed_now, 1)))
@@ -984,23 +1110,54 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 s.flush()
             if visit_updates:
                 s.bulk_update_mappings(Visit, visit_updates)
-            # pair clocks (same txn: clock can never diverge from data)
+            # pair clocks + unit state (same txn: clock/state can never
+            # diverge from data). The unit row is the restart-proof view of
+            # the lane: current business state, active visit, eject
+            # countdown, and source trace.
             for (_dev, _unit), _w in unit_writes.items():
                 _st = ustate.get((_dev, _unit)) or {}
+                _vref, _vst, _rid = lane_state.get((_dev, _unit),
+                                                   (None, None, None))
+                if _vref is not None and _vref[0] == "new":
+                    _vid = (new_ids[_vref[1]]
+                            if _vref[1] < len(new_ids) else None)
+                elif _vref is not None:
+                    _vid = _vref[1]
+                else:
+                    _vid = None
                 _row = s.get(UnitState, (cycle_id, _dev, _unit))
                 _dt = _dt_of(_st.get("ts"))
                 _vv = _st.get("valid")
                 _vv = bool(_vv) if _vv is not None else None
                 _bb = _st.get("bird")
                 _bb = bool(_bb) if _bb is not None else None
+                _bs = (_vst or {}).get("business_state")
+                _inv = (_vst or {}).get("invalid_since")
+                _dead = (_vst or {}).get("invalid_deadline")
                 if _row is None:
-                    s.add(UnitState(cycle_id=cycle_id, device_id=_dev,
-                                    unit=_unit, prev_ts=_dt, prev_valid=_vv,
-                                    prev_bird=_bb, updated_at=utcnow()))
+                    s.add(UnitState(
+                        cycle_id=cycle_id, device_id=_dev, unit=_unit,
+                        prev_ts=_dt, prev_valid=_vv, prev_bird=_bb,
+                        business_state=_bs or "EMPTY",
+                        active_visit_id=_vid,
+                        invalid_since=_dt_of(_inv),
+                        invalid_deadline=_dt_of(_dead),
+                        last_source_id=(str(_rid) if _rid is not None
+                                        else None),
+                        updated_at=utcnow()))
                 else:
                     _row.prev_ts = _dt
                     _row.prev_valid = _vv
                     _row.prev_bird = _bb
+                    if _bs is not None or _vid is None:
+                        # closed lanes report EMPTY with no active visit
+                        _row.business_state = _bs or "EMPTY"
+                    if _vid is not None or _bs is None:
+                        _row.active_visit_id = _vid
+                    _row.invalid_since = _dt_of(_inv)
+                    _row.invalid_deadline = _dt_of(_dead)
+                    if _rid is not None:
+                        _row.last_source_id = str(_rid)
                     _row.updated_at = utcnow()
             s.commit()
             # ---- change analysis: one registrations-shaped entry per visit
@@ -1049,10 +1206,29 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                         except Exception:
                             _el = 0.0
                     _bk = binlast.get(_v.id)
+                    _eject = None
+                    try:
+                        if (_v.business_state == "EJECTING"
+                                and _v.visit_end is None
+                                and _v.invalid_deadline is not None):
+                            _dl = _v.invalid_deadline
+                            _eject = max(0.0, (_aware_utc(_dl) - now_ck)
+                                         .total_seconds())
+                    except Exception:
+                        _eject = None
                     tmp.append((_v.visit_start,
                                 {"id": _v.id, "bird_id": _v.bird_id,
                                  "initial_weight_g": _v.initial_weight_g,
                                  "final_weight_g": _v.final_weight_g,
+                                 "live_weight_g": _v.live_weight_g,
+                                 "last_valid_weight_g":
+                                 _v.last_valid_weight_g,
+                                 "initial_bin_weight_g":
+                                 _v.initial_bin_weight_g,
+                                 "last_valid_bin_weight_g":
+                                 _v.last_valid_bin_weight_g,
+                                 "final_bin_weight_g": _v.final_bin_weight_g,
+                                 "weight_gain_g": _v.weight_gain_g,
                                  "feed_intake_g": (round(_v.feed_intake_g, 1)
                                                    if _v.feed_intake_g is not None
                                                    else None),
@@ -1061,6 +1237,11 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                                  "unit": _v.unit if _v.unit in (1, 2) else 1,
                                  "bin_weight_g": (round(_bk * 1000.0, 2)
                                                   if _bk is not None else None),
+                                 "business_state": (_v.business_state
+                                                    or "EMPTY"),
+                                 "eject_in_s": (round(_eject, 0)
+                                                if _eject is not None
+                                                else None),
                                  "bird_position": (_v.bird_position
                                                    or "inside"),
                                  "stale": bool(_v.stale),
@@ -1087,6 +1268,8 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                 published.append(_log_to_dict(_lo, {
                     "elapsed_s": _el, "visit_feed_g": _feed,
                     "unit": _unit,
+                    "business_state": ("EXITED" if _is_end
+                                       else ("FEEDING" if _vid else "EMPTY")),
                     "bird_position": ("outside" if _is_end
                                       else ("inside" if _vid else None)),
                     "bin_weight_g": round(_bg, 2)
@@ -1129,6 +1312,7 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
             "inserted": inserted, "skipped": skipped, "last_id": max_seen,
             "complete": chunk_complete, "remaining": max(0, remaining),
             "reset": did_reset, "interrupted": interrupted,
+            "swept": swept,
             "events": events_count,
             "stalled": stalled, "stalled_reason": stalled_reason,
             "tls_insecure": _TLS_FALLBACK_USED,

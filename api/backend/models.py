@@ -128,6 +128,28 @@ class Visit(Base):
     # the eject fires exactly across chunk boundaries/restarts. NULL while
     # the unit is VALID or empty.
     invalid_since = Column(DateTime(timezone=True), nullable=True)
+    # Ejection countdown deadline (invalid_since + EJECTION_TIMEOUT_S):
+    # persisted so a restart never resets the remaining seconds and the
+    # lazy sweep can finalize an overdue visit without a new record.
+    invalid_deadline = Column(DateTime(timezone=True), nullable=True)
+    # Explicit business state machine (unit_core): EMPTY / FEEDING /
+    # EJECTING / EXITED / UNIDENTIFIED / STALE. Device-level VALID/INVALID
+    # is the raw flag (DeviceLog.status); this is what the server believes.
+    business_state = Column(String(16), nullable=False, default="EMPTY",
+                            server_default="EMPTY")
+    # Separated measurement fields (never overload one column): live weight
+    # updates on every record, final_* freeze once at close, last_valid_*
+    # freeze when INVALID begins, initial_bin never overwritten.
+    live_weight_g = Column(Float, nullable=True)
+    last_valid_weight_g = Column(Float, nullable=True)
+    initial_bin_weight_g = Column(Float, nullable=True)
+    last_valid_bin_weight_g = Column(Float, nullable=True)
+    final_bin_weight_g = Column(Float, nullable=True)
+    weight_gain_g = Column(Float, nullable=True)
+    # Source traceability + stale-sample rejection: the last upstream
+    # record id and its timestamp (raw may be stored, state is monotonic).
+    last_source_id = Column(String(64), nullable=True)
+    last_source_timestamp = Column(DateTime(timezone=True), nullable=True)
     initial_confirmed_g = Column(Float, nullable=True)
     close_reason = Column(String(16), nullable=True)
     stale = Column(Boolean, nullable=False, default=False)
@@ -240,6 +262,14 @@ class UnitState(Base):
     # Whether that record actually held the bird (closing-span presence
     # needs it across chunk boundaries, not just within one call).
     prev_bird = Column(Boolean, nullable=True)
+    # Unit-level view: current business state, the open visit (if any),
+    # the ejection countdown, and the last processed source record.
+    business_state = Column(String(16), nullable=False, default="EMPTY",
+                            server_default="EMPTY")
+    active_visit_id = Column(Integer, nullable=True)
+    invalid_since = Column(DateTime(timezone=True), nullable=True)
+    invalid_deadline = Column(DateTime(timezone=True), nullable=True)
+    last_source_id = Column(String(64), nullable=True)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow)
 
 
@@ -408,9 +438,16 @@ def init_db():
                 print("[migrate] created unit_states")
             else:
                 _ucols = [c["name"] for c in inspect(conn).get_columns("unit_states")]
-                if "prev_bird" not in _ucols:
-                    conn.execute(text("ALTER TABLE unit_states ADD COLUMN prev_bird BOOLEAN"))
-                    print("[migrate] added unit_states.prev_bird")
+                for _uc, _ud in (
+                        ("prev_bird", "BOOLEAN"),
+                        ("business_state", "VARCHAR(16) NOT NULL DEFAULT 'EMPTY'"),
+                        ("active_visit_id", "INTEGER"),
+                        ("invalid_since", "TIMESTAMP"),
+                        ("invalid_deadline", "TIMESTAMP"),
+                        ("last_source_id", "VARCHAR(64)")):
+                    if _uc not in _ucols:
+                        conn.execute(text(f"ALTER TABLE unit_states ADD COLUMN {_uc} {_ud}"))
+                        print(f"[migrate] added unit_states.{_uc}")
             # 013 columns on long-lived dev DBs (additive, idempotent)
             for _tbl, _col, _ddl in (
                     ("visits", "bird_position", "VARCHAR(8) NOT NULL DEFAULT 'inside'"),
@@ -424,6 +461,16 @@ def init_db():
                     ("visits", "empty_streak", "INTEGER NOT NULL DEFAULT 0"),
                     ("visits", "empty_since", "TIMESTAMP"),
                     ("visits", "invalid_since", "TIMESTAMP"),
+                    ("visits", "invalid_deadline", "TIMESTAMP"),
+                    ("visits", "business_state", "VARCHAR(16) NOT NULL DEFAULT 'EMPTY'"),
+                    ("visits", "live_weight_g", "FLOAT"),
+                    ("visits", "last_valid_weight_g", "FLOAT"),
+                    ("visits", "initial_bin_weight_g", "FLOAT"),
+                    ("visits", "last_valid_bin_weight_g", "FLOAT"),
+                    ("visits", "final_bin_weight_g", "FLOAT"),
+                    ("visits", "weight_gain_g", "FLOAT"),
+                    ("visits", "last_source_id", "VARCHAR(64)"),
+                    ("visits", "last_source_timestamp", "TIMESTAMP"),
                     ("visits", "initial_confirmed_g", "FLOAT"),
                     ("visits", "close_reason", "VARCHAR(16)"),
                     ("visits", "stale", "BOOLEAN NOT NULL DEFAULT 0"),
@@ -435,6 +482,34 @@ def init_db():
                         print(f"[migrate] added {_tbl}.{_col}")
                 except Exception as _e:
                     print(f"[migrate] {_tbl}.{_col} skipped: {_e}")
+            # 015: backfill business_state on rows predating it + the open-lane
+            # unique index (concurrency: two workers can never both hold an
+            # open visit for the same (cycle, device, unit) lane).
+            try:
+                conn.execute(text(
+                    "UPDATE visits SET business_state = CASE "
+                    "WHEN visit_end IS NULL THEN 'FEEDING' ELSE 'EXITED' END "
+                    "WHERE business_state = 'EMPTY' OR business_state IS NULL"))
+                # dedupe open lanes first (keep the NEWEST open visit per
+                # lane; older ones only aggregated contradictory state) so
+                # the unique index cannot fail on legacy data.
+                conn.execute(text(
+                    "UPDATE visits SET visit_end = CURRENT_TIMESTAMP, "
+                    "close_reason = 'superseded', business_state = 'EXITED' "
+                    "WHERE visit_end IS NULL AND id IN ("
+                    "SELECT v.id FROM visits v WHERE v.visit_end IS NULL AND EXISTS ("
+                    "SELECT 1 FROM visits v2 WHERE v2.visit_end IS NULL "
+                    "AND v2.cycle_id = v.cycle_id "
+                    "AND COALESCE(v2.device_id,'-') = COALESCE(v.device_id,'-') "
+                    "AND COALESCE(v2.unit,1) = COALESCE(v.unit,1) "
+                    "AND v2.id > v.id))"))
+                conn.execute(text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS uq_visit_open_lane "
+                    "ON visits(cycle_id, COALESCE(device_id,'-'), COALESCE(unit,1)) "
+                    "WHERE visit_end IS NULL"))
+                print("[migrate] business_state backfill + uq_visit_open_lane")
+            except Exception as _e:
+                print(f"[migrate] 015 index skipped: {_e}")
     except Exception as e:
         print(f"[migrate] uktech columns check failed: {e}")
 

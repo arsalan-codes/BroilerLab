@@ -117,6 +117,10 @@ DEVICE_KEY_PREFIX = "BLD_"
 UKTECH_EMPTY_THRESHOLD_G = float(os.getenv("UKTECH_EMPTY_THRESHOLD_G", "15"))
 UKTECH_EMPTY_DEBOUNCE = int(os.getenv("UKTECH_EMPTY_DEBOUNCE", "2") or 2)
 UKTECH_FEED_NOISE_G = float(os.getenv("UKTECH_FEED_NOISE_G", "0.5"))
+# Canonical alias from the monitoring spec (§51); same knob, either name.
+UKTECH_FEED_NOISE_THRESHOLD_G = float(
+    os.getenv("UKTECH_FEED_NOISE_THRESHOLD_G",
+              os.getenv("UKTECH_FEED_NOISE_G", "0.5")))
 UKTECH_REFILL_JUMP_G = float(os.getenv("UKTECH_REFILL_JUMP_G", "50"))
 # Tag swap with continuous weight: "keep-open" (reader flapping observed:
 # 7 swaps in 20 records at constant weight) or "close-open".
@@ -130,6 +134,10 @@ UKTECH_BIRD_JUMP_G = float(os.getenv("UKTECH_BIRD_JUMP_G", "30"))
 # (exit = invalid_since + window) in the same row. A lone flaky glitch
 # plus an irregular gap never ejects a feeding bird.
 UKTECH_INVALID_EJECT_S = float(os.getenv("UKTECH_INVALID_EJECT_S", "30"))
+# Canonical alias from the monitoring spec (§51); same knob, either name.
+EJECTION_TIMEOUT_SECONDS = float(
+    os.getenv("EJECTION_TIMEOUT_SECONDS",
+              os.getenv("UKTECH_INVALID_EJECT_S", "30")))
 UKTECH_PAGES_PER_TICK = int(os.getenv("UKTECH_PAGES_PER_TICK", "4") or 4)
 UKTECH_PRESENCE_TOL_S = float(os.getenv("UKTECH_PRESENCE_TOL_S", "30"))
 

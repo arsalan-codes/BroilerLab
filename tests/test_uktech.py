@@ -620,6 +620,107 @@ def _probe_harness(tmp_path, monkeypatch, name="uksmart.db", code="UKP"):
     return cid
 
 
+def test_sweep_finalizes_overdue_ejecting_without_new_records(tmp_path, monkeypatch):
+    """Lazy finalization: an EJECTING visit whose persisted deadline passed
+    finalizes on the next poll EVEN WHEN upstream sends nothing new. The
+    deadline (invalid_since + 30s, stored on the row) is authoritative —
+    no persistent worker needed. A simulated restart (fresh call = fresh
+    process state, DB only) must NOT reset the remaining countdown: the
+    same stored deadline still fires."""
+    cid = _probe_harness(tmp_path, monkeypatch, "uksweep.db", "UKS")
+    page = [dict(REC, id=10 + i, weight_2=w, total_weight=(w or 0) + 340.0,
+                 created_at=f"2026-09-18 12:0{i}:00")
+            for i, w in enumerate([220.0, 220.5, 220.5])]
+    monkeypatch.setattr(uktech, "fetch_records",
+                        lambda *a, **k: (list(page), False))
+    try:
+        from models import SessionLocal, Visit
+        r1 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r1["inserted"] == 6, r1
+        # flip the open visit to EJECTING with an overdue deadline (as if
+        # an INVALID record arrived and the worker "restarted" right after:
+        # the row alone must carry the countdown — nothing in memory).
+        with SessionLocal() as s:
+            v = s.query(Visit).filter(Visit.cycle_id == cid,
+                                      Visit.visit_end.is_(None)).one()
+            assert v.business_state == "FEEDING", v.business_state
+            from datetime import datetime, timezone, timedelta
+            v.business_state = "EJECTING"
+            v.invalid_since = datetime(2026, 9, 18, 12, 0, 0,
+                                       tzinfo=timezone.utc)
+            v.invalid_deadline = v.invalid_since + timedelta(seconds=30)
+            v.final_weight_g = 220.5
+            v.feed_intake_g = 1.0
+            v.elapsed_s = 20.0
+            s.commit()
+            vid, deadline = v.id, v.invalid_deadline
+        import processor
+        processor._processors.pop(cid, None)  # cold process: DB state only
+        # upstream sends nothing new (same stubbed page, probe caught up)
+        r2 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r2["inserted"] == 0 and r2["fetched"] == 0, r2
+        assert r2["swept"] == 1, r2  # the deadline fired, no record needed
+        with SessionLocal() as s:
+            v = s.get(Visit, vid)
+            assert v.visit_end is not None, "overdue EJECTING must close"
+            assert v.business_state == "EXITED", v.business_state
+            assert v.close_reason == "ejected", v.close_reason
+            assert v.visit_end.replace(tzinfo=timezone.utc) == deadline, \
+                (v.visit_end, deadline)  # exact persisted deadline, no reset
+            assert v.final_weight_g == 220.5  # frozen, not overwritten
+            assert v.feed_intake_g == 1.0
+        # a third poll finalizes nothing twice (idempotent sweep)
+        r3 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r3["swept"] == 0, r3
+        with SessionLocal() as s:
+            assert s.query(Visit).filter(Visit.cycle_id == cid).count() == 1
+    finally:
+        import processor
+        processor._processors.pop(cid, None)
+
+
+def test_finalized_visit_immutable_under_later_samples(tmp_path, monkeypatch):
+    """After close, later sensor samples open a NEW visit — the old row's
+    final_weight_g / final_bin_weight_g / feed_intake_g / visit_end /
+    close_reason never move (no silent history rewrite)."""
+    cid = _probe_harness(tmp_path, monkeypatch, "ukimm.db", "UKI")
+    first = [dict(REC, id=1 + i, weight_2=w, total_weight=(w or 0) + 340.0,
+                  created_at=f"2026-09-18 12:0{i}:00")
+             for i, w in enumerate([220.0, 220.5, 0, 0])]
+    monkeypatch.setattr(uktech, "fetch_records",
+                        lambda *a, **k: (list(first), False))
+    try:
+        from models import SessionLocal, Visit
+        r1 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        with SessionLocal() as s:
+            old = s.query(Visit).filter(Visit.cycle_id == cid).one()
+            assert old.visit_end is not None, "setup must close visit 1"
+            frozen = (old.final_weight_g, old.feed_intake_g, old.visit_end,
+                      old.close_reason, old.final_bin_weight_g)
+            old_id = old.id
+        more = [dict(REC, id=5 + i, weight_2=w, total_weight=(w or 0) + 340.0,
+                     created_at=f"2026-09-18 12:1{i}:00")
+                for i, w in enumerate([221.0, 221.5, 0, 0])]
+
+        def fetch_more(*a, **k):
+            uktech._LAST_META = {"total_records": 8}
+            return list(first + more), False
+
+        monkeypatch.setattr(uktech, "fetch_records", fetch_more)
+        r2 = uktech.sync_serial_to_cycle(cid, serial="ESP800")
+        assert r2["inserted"] == 8, r2  # 4 new recs x 2 units
+        with SessionLocal() as s:
+            assert s.query(Visit).filter(Visit.cycle_id == cid).count() == 2
+            again = s.get(Visit, old_id)
+            assert (again.final_weight_g, again.feed_intake_g,
+                    again.visit_end, again.close_reason,
+                    again.final_bin_weight_g) == frozen, \
+                "finalized visit must not move under later samples"
+    finally:
+        import processor
+        processor._processors.pop(cid, None)
+
+
 def test_probe_skips_page_walk_when_caught_up(tmp_path, monkeypatch):
     """Latest-id probe: a caught-up poll costs exactly one 1-row probe —
     no page walk, zero writes, empty changes."""

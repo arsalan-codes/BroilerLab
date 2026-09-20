@@ -244,23 +244,45 @@
     return s;
   }
   function regPosHtml(o) {
-    // Bird-position badge: inside (live) / outside (finalized), with pause
-    // (latest row INVALID = bird still inside, motor ejects in ~30s) and
-    // stale (device offline) markers. The elapsed value shown is always
-    // the latest record's — never ticked locally.
-    if (!o.pos) return '<span class="reg-cell reg-cell--pos">—</span>';
-    var inside = o.pos === "inside";
-    var label = inside ? tr("dev.pos.inside", "داخل دستگاه") : tr("dev.pos.outside", "خارج از دستگاه");
-    var extra = (o.paused ? " ⏸" : "") + (o.stale ? " ⌛" : "");
-    var tip = o.paused ? tr("dev.pos.ejectTip", "داده نامعتبر — موتور تا ۳۰ ثانیه دیگر مرغ را خارج می‌کند") : "";
+    // Business-state badge (server-authoritative; the browser only renders
+    // it): FEEDING green «inside», EJECTING orange with the persisted
+    // countdown («29s», from eject_in_s — never computed locally),
+    // EXITED gray «outside», STALE yellow. The elapsed value shown is
+    // always the latest record's — never ticked locally.
+    var st = o.state || (o.pos === "outside" ? "EXITED" : "FEEDING");
+    var label, cls, extra = "", tip = "";
+    if (st === "EJECTING") {
+      cls = "ejecting";
+      label = tr("dev.pos.ejecting", "در حال تخلیه");
+      if (o.eject_in != null && !isNaN(+o.eject_in)) {
+        extra = " · " + lnum(Math.max(0, Math.round(+o.eject_in))) +
+          tr("dev.reg.sec", "s");
+      } else if (o.paused) {
+        extra = " ⏸";
+      }
+      tip = tr("dev.pos.ejectTip", "داده نامعتبر — موتور تا ۳۰ ثانیه دیگر مرغ را خارج می‌کند");
+    } else if (st === "EXITED") {
+      cls = "out";
+      label = tr("dev.pos.outside", "خارج از دستگاه");
+    } else if (st === "STALE") {
+      cls = "in";
+      label = tr("dev.pos.inside", "داخل دستگاه");
+      extra = " ⌛";
+    } else {
+      cls = "in";
+      label = tr("dev.pos.inside", "داخل دستگاه");
+      if (o.paused) extra = " ⏸";
+    }
+    if (o.stale && st !== "STALE") extra += " ⌛";
     return '<span class="reg-cell reg-cell--pos"><span class="reg-pos ' +
-      (inside ? "in" : "out") + '"' + (tip ? ' title="' + esc(tip) + '"' : "") + ">" +
+      cls + '"' + (tip ? ' title="' + esc(tip) + '"' : "") + ">" +
       esc(label + extra) + "</span></span>";
   }
   function regRowHtml(o) {
-    // o: {feed, w, bin, elap, dtJoin, bird, sensor, unit, pos, paused,
-    // stale} — weights via the shared 2-decimal formatter (display only,
-    // stored values untouched). w is the LIVE weight (final first).
+    // o: {feed, w, bin, elap, dtJoin, bird, sensor, unit, pos, state,
+    // eject_in, paused, stale} — weights via the shared 2-decimal
+    // formatter (display only, stored values untouched). w is the LIVE
+    // weight (final first).
     return '<span class="reg-cell reg-cell--feed">' + formatWeight(o.feed) + '<span class="reg-unit">g</span></span>' +
       '<span class="reg-cell reg-cell--w">' + formatWeight(o.w) + '<span class="reg-unit">g</span></span>' +
       '<span class="reg-cell reg-cell--bin">' + formatWeight(o.bin) + '<span class="reg-unit">g</span></span>' +
@@ -321,6 +343,7 @@
       dtJoin: regDateJoin(d.timestamp || d.registered_at || ""),
       bird: d.bird_id, sensor: d.sensor_id, unit: d.unit,
       pos: d.bird_position || (d.is_visit_end ? "outside" : "inside"),
+      state: d.business_state || null, eject_in: d.eject_in_s,
       paused: !!d.paused, stale: !!d.stale
     });
     body.insertBefore(row, body.firstChild);
@@ -342,7 +365,8 @@
       feed: r.feed_intake_g, w: w, bin: r.bin_weight_g,
       elap: r.elapsed_s, dtJoin: regDateJoin(r.registered_at || ""),
       bird: r.bird_id, sensor: r.sensor_id, unit: r.unit,
-      pos: r.bird_position || null, paused: !!r.paused, stale: !!r.stale
+      pos: r.bird_position || null, state: r.business_state || null,
+      eject_in: r.eject_in_s, paused: !!r.paused, stale: !!r.stale
     });
   }
   function patchRegChanges(changes) {

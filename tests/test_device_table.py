@@ -138,6 +138,11 @@ def test_frontend_renders_nine_columns():
     assert "bin_weight_g" in js, "device-panel must render the hopper column"
     assert "bird_position" in js and "regPosHtml" in js, \
         "device-panel must render the position badge"
+    assert "reg-pos ejecting" not in js  # class is built, not hardcoded
+    assert "business_state" in js and "eject_in" in js, \
+        "device-panel must render the server-authoritative state badge + countdown"
+    assert "reg-pos.ejecting" in html or ".reg-pos.ejecting" in html, \
+        "ejecting badge style missing"
     assert "tickElapsed" not in js, \
         "elapsed must come from the latest record, never ticked locally"
     assert "cycleSource" in js and "/source" in js, \
@@ -159,7 +164,7 @@ def test_locales_have_device_headers():
         src = (ROOT / "webapp" / "locales" / loc).read_text(encoding="utf-8")
         for key in ("dev.reg.feed", "dev.reg.elapsed", "dev.reg.datetime", "dev.reg.sec",
                     "dev.reg.bin", "dev.reg.unit", "dev.reg.position",
-                    "dev.pos.inside", "dev.pos.outside",
+                    "dev.pos.inside", "dev.pos.outside", "dev.pos.ejecting",
                     "dev.source", "dev.srcApi", "dev.srcDirect",
                     "dev.srcDirectNote", "dev.srcSwitched",
                     "dev.unit1", "dev.unit2",
@@ -185,9 +190,14 @@ def test_device_table_e2e_sqlite(tmp_path):
     script = E2E.replace("@BACKEND@", BACKEND.as_posix())
     env = {"BROILER_DATABASE_URL": f"sqlite:///{db.as_posix()}",
            "BROILER_JWT_SECRET": "test-secret-" + "0" * 24,
+           # Child stdout must be UTF-8 on Windows: the backend prints
+           # em-dashes/degree signs; with the default ANSI code page the
+           # parent's UTF-8 decode fails and r.stdout comes back None.
+           "PYTHONIOENCODING": "utf-8",
            "PATH": os.environ.get("PATH", ""),
            "SYSTEMROOT": os.environ.get("SYSTEMROOT", "")}
     r = subprocess.run([sys.executable, "-c", script], capture_output=True,
-                       text=True, timeout=180, env=env)
+                       text=True, encoding="utf-8", errors="replace",
+                       timeout=180, env=env)
     assert r.returncode == 0, f"E2E failed:\n{r.stdout}\n{r.stderr[-2000:]}"
     assert "DEVICE-TABLE E2E OK" in r.stdout

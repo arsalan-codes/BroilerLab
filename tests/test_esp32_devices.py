@@ -268,9 +268,12 @@ def test_esp32_device_e2e_sqlite(tmp_path):
     env = {"BROILER_DATABASE_URL": f"sqlite:///{db.as_posix()}",
            "BROILER_JWT_SECRET": "test-secret-" + "0" * 24,
            "DEVICE_INGEST_RATE_LIMIT": "5",
+           # Same Windows encoding fix as test_device_table.py.
+           "PYTHONIOENCODING": "utf-8",
            "PATH": os.environ.get("PATH", ""),
            "SYSTEMROOT": os.environ.get("SYSTEMROOT", "")}
     r = subprocess.run([sys.executable, "-c", script], capture_output=True,
-                       text=True, timeout=180, env=env)
+                       text=True, encoding="utf-8", errors="replace",
+                       timeout=180, env=env)
     assert r.returncode == 0, f"E2E failed:\n{r.stdout}\n{r.stderr[-3000:]}"
     assert "ESP32-DEVICE E2E OK" in r.stdout
