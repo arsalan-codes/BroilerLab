@@ -1,6 +1,6 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Arian static dev server (stdlib only) â€” http://127.0.0.1:8080
+"""Arian static dev server (stdlib only) — http://127.0.0.1:8080
 
 Reconstructed 2026-09-17: the previous webapp_server.py in this folder had
 been overwritten with a copy of index.html (HTML). This replacement
@@ -40,7 +40,7 @@ GZIP_TYPES = (
     ".js", ".css", ".json", ".svg", ".html", ".txt", ".xml", ".map",
 )
 
-# Never serve backend sources, logs, databases or secrets over HTTP —
+# Never serve backend sources, logs, databases or secrets over HTTP �
 # only the public frontend asset types below.
 ALLOWED_EXTS = {
     ".html", ".css", ".js", ".json", ".svg", ".map", ".txt", ".xml",
@@ -61,7 +61,7 @@ def cache_for(path):
 
 
 class Handler(SimpleHTTPRequestHandler):
-    server_version = "ArianStatic/1.8.85"
+    server_version = "ArianStatic/1.8.86"
 
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=ROOT, **kw)
@@ -85,8 +85,13 @@ class Handler(SimpleHTTPRequestHandler):
         if raw in SPA_ROUTES or (raw.startswith("/") and raw[1:] in ("dash",)):
             return self._send_file(os.path.join(ROOT, "index.html"), head_only)
         fs_path = os.path.normpath(os.path.join(ROOT, raw.lstrip("/").replace("/", os.sep)))
-        # security: stay inside ROOT
-        if os.path.commonpath([ROOT, fs_path]) != ROOT:
+        # security: stay inside ROOT (commonpath raises ValueError on
+        # cross-drive paths, e.g. C:\ vs D:\ � treat those as 404 too)
+        try:
+            inside = os.path.commonpath([ROOT, fs_path]) == ROOT
+        except ValueError:
+            inside = False
+        if not inside:
             return self._send_file(os.path.join(ROOT, "404.html"), head_only, code=404)
         if os.path.isdir(fs_path):
             idx = os.path.join(fs_path, "index.html")

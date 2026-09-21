@@ -2,7 +2,7 @@
 (function(){
   "use strict";
   var dlg = null, iconEl, titleEl, msgEl, inputEl, input2El, errEl, cancelBtn, confirmBtn;
-  var _resolve = null, _mode = null;
+  var _resolve = null, _mode = null, _hideTimer = null;
 
   function ensure(){
     if(dlg) return;
@@ -63,7 +63,11 @@
       inputEl.hidden=true; inputEl.style.display='none';
       input2El.hidden=true; input2El.style.display='none';
     }
+    if(_hideTimer){ clearTimeout(_hideTimer); _hideTimer=null; }
     dlg.hidden=false;
+    // close() leaves aria-hidden="true" on the element: remove it so screen
+    // readers see the dialog again on every open.
+    dlg.removeAttribute('aria-hidden');
     // force reflow then add class for animation
     void dlg.offsetWidth;
     dlg.classList.add('on');
@@ -78,7 +82,7 @@
   function close(val){
     if(!dlg || dlg.hidden) return;
     dlg.classList.remove('on');
-    setTimeout(function(){ dlg.hidden=true; dlg.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }, 180);
+    _hideTimer = setTimeout(function(){ dlg.hidden=true; dlg.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }, 180);
     if(_resolve){ var r=_resolve; _resolve=null; r(val); }
   }
 

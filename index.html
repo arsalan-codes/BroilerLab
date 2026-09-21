@@ -6,7 +6,7 @@
 <script src="config.js?v=1.8.79"></script>
 <script src="services/api.js?v=1.8.79"></script>
 <script id="early-auth-gate">(function(){try{
-  var tok=localStorage.getItem("broiler_token");
+  var tok=localStorage.getItem("arian_token")||localStorage.getItem("broiler_token");
   var valid=false;
   if(tok){try{var b64=tok.split(".")[1].replace(/-/g,"+").replace(/_/g,"/");while(b64.length%4)b64+="=";var pl=JSON.parse(atob(b64));valid=pl.exp? (pl.exp*1000>Date.now()+5000):true;}catch(e){valid=false;}}
   window.__EARLY_AUTH_VALID=valid;
@@ -2306,8 +2306,8 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
       <button class="btn ghost" id="btn-jump" disabled>�� <span data-i18n="btn.toEnd">پرش به پایان</span></button>
       <button class="btn ghost" id="btn-pause" disabled>�� <span data-i18n="btn.pause">توق� موقت</span></button>
       <button class="btn ghost" id="btn-stop" disabled>�� <span data-i18n="btn.stop">پایان</span></button>
-      <button class="btn blue" id="btn-export" disabled>⬇ CSV</button>
-      <button class="btn warn" id="btn-export-xlsx" disabled>📊 Excel</button>
+      <button class="btn blue" id="btn-export" disabled>⬇ <span data-i18n="btn.exportCsv">CSV</span></button>
+      <button class="btn warn" id="btn-export-xlsx" disabled>📊 <span data-i18n="btn.exportExcel">Excel</span></button>
     </div>
     <div class="prog" style="margin-top:13px"><i id="pg"></i></div>
     <div style="display:flex;justify-content:space-between;margin-top:7px;font-size:11px;color:var(--mut)">
@@ -2469,7 +2469,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
               <li class="strain-select__option" role="option" data-key="ross308" aria-selected="true" tabindex="-1"><span class="strain-select__radio" aria-hidden="true"></span>Ross 308</li>
               <li class="strain-select__option" role="option" data-key="cobb500" aria-selected="false" tabindex="-1"><span class="strain-select__radio" aria-hidden="true"></span>Cobb 500</li>
               <li class="strain-select__option" role="option" data-key="aaplus" aria-selected="false" tabindex="-1"><span class="strain-select__radio" aria-hidden="true"></span>AA+</li>
-              <li class="strain-select__option" role="option" data-key="hubbardep" aria-selected="false" tabindex="-1"><span class="strain-select__radio" aria-hidden="true"></span>Hubbard EP</li>
+              <li class="strain-select__option" role="option" data-key="hubbardEP" aria-selected="false" tabindex="-1"><span class="strain-select__radio" aria-hidden="true"></span>Hubbard EP</li>
             </ul>
           </div>
         </div>

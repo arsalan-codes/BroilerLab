@@ -82,13 +82,13 @@ def upgrade() -> None:
         "SELECT v.id FROM visits v WHERE v.visit_end IS NULL AND EXISTS ("
         "SELECT 1 FROM visits v2 WHERE v2.visit_end IS NULL "
         "AND v2.cycle_id = v.cycle_id "
-        "AND COALESCE(v2.device_id,'-') = COALESCE(v.device_id,'-') "
+        "AND COALESCE(v2.sensor_id,'-') = COALESCE(v.sensor_id,'-') "
         "AND COALESCE(v2.unit,1) = COALESCE(v.unit,1) "
         "AND v2.id > v.id))"))
     # concurrency: two workers can never both hold an open visit per lane
     conn.execute(sa.text(
         "CREATE UNIQUE INDEX IF NOT EXISTS uq_visit_open_lane "
-        "ON visits(cycle_id, COALESCE(device_id,'-'), COALESCE(unit,1)) "
+        "ON visits(cycle_id, COALESCE(sensor_id,'-'), COALESCE(unit,1)) "
         "WHERE visit_end IS NULL"))
 
 

@@ -1653,6 +1653,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   setTimeout(syncSettingsInfo,120);});
 
 /* ===== Live clock in topbar (Shamsi date + HH:MM:SS) ===== */
+var _clockTimer=null;
 function startClock(){
   var elD=$("tc-date"), elT=$("tc-time");
   if(!elD||!elT) return;
@@ -1684,7 +1685,11 @@ function startClock(){
     try{ elT.textContent=(typeof window.formatTime==="function"?window.formatTime(now):timeStr); }catch(e){ elT.textContent=timeStr; }
   }
   tick();
-  setInterval(tick,1000);
-  // refresh on language change: i18n setLang already repaints, but force tick
-  window.addEventListener("rossim:lang", tick);
+  // startClock runs from several init paths: guard so the interval and the
+  // language listener are bound exactly once (no stacked 1s ticks).
+  if(_clockTimer===null){
+    _clockTimer=setInterval(tick,1000);
+    // refresh on language change: i18n setLang already repaints, but force tick
+    window.addEventListener("rossim:lang", tick);
+  }
 }

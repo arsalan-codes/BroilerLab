@@ -38,13 +38,13 @@
     return "";
   }
 
-  function demo() {
+  function demo(allOffline) {
     function rnd(a, b, d) { return +(a + Math.random() * (b - a)).toFixed(d == null ? 1 : d); }
     return {
       houses: HOUSES.map(function (h, hi) {
         var base = 26 + hi * 0.6 + rnd(-1, 1);
         return {
-          id: h.id, name: h.name, online: hi !== 2,
+          id: h.id, name: h.name, online: allOffline ? false : hi !== 2,
           tiles: {
             temp: base, rh: rnd(52, 64), bed: rnd(22, 30), feed: rnd(320, 520, 0),
             water: rnd(480, 720, 0), nh3: rnd(6, 16), o2: rnd(19.6, 20.8),
@@ -63,11 +63,16 @@
     };
   }
 
+  var UNAUTH = false;
   function fetchSummary() {
     if (!API) return Promise.resolve(null);
     return fetch(API + "/api/env/summary", {
       headers: { Authorization: "Bearer " + tok() }
-    }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    }).then(function (r) {
+      if (r.status === 401) { UNAUTH = true; return null; }
+      UNAUTH = false;
+      return r.ok ? r.json() : null;
+    }).catch(function () { return null; });
   }
 
   function renderHouses(d) {
@@ -192,6 +197,12 @@
 
   function tick(force) {
     fetchSummary().then(function (live) {
+      if (!live && UNAUTH) {
+        // auth expired: render the all-offline state — never show demo
+        // telemetry as if it were live data from a real farm
+        renderAll(demo(true));
+        return;
+      }
       renderAll(live || CUR.data || demo());
       if (force) renderAll(CUR.data);
     });
@@ -220,7 +231,8 @@
     var from = (document.getElementById("env-exp-from") || {}).value || "";
     var to = (document.getElementById("env-exp-to") || {}).value || "";
     var qs = "scope=" + encodeURIComponent(scope) + "&house=" + CUR.house +
-      (from ? "&from=" + from : "") + (to ? "&to=" + to : "");
+      (from ? "&from=" + encodeURIComponent(from) : "") +
+      (to ? "&to=" + encodeURIComponent(to) : "");
     var url = (API || "") + "/api/env/export?" + qs;
     if (lbl) { lbl.className = "env-exp-status busy"; lbl.textContent = ""; }
     fetch(url, { headers: { Authorization: "Bearer " + tok() } })

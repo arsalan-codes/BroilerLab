@@ -59,6 +59,8 @@
     return fetch(((window.ARIAN_API||"").replace(/\/+$/,"")||API) + path, fetchOpts).then(function (r) {
       if (r.status === 401) {
         var cur=document.querySelector("section.view.on"); var isPublic=cur && (cur.id==="v-landing" || cur.id==="v-about");
+        // stale token: clear it so the gated UI reflects the real state
+        try { if (window.Auth && window.Auth.clearAuth) window.Auth.clearAuth(); } catch(e){}
         if(!isPublic && window.showAuthModal) window.showAuthModal("login");
         throw new Error("401 Unauthorized - please login");
       }
@@ -140,6 +142,7 @@
 
   function loadStats(id) {
     api("/api/cycles/" + id + "/stats").then(function (s) {
+      if (id !== selectedCycle) return; // stale response: a newer selection won
       $("st-visits").textContent = lnum(s.visits);
       $("st-birds").textContent = lnum(s.unique_birds);
       $("st-rows").textContent = lnum(s.device_rows);
@@ -414,6 +417,7 @@
       }
     });
     api("/api/cycles/" + id + "/registrations?limit=100").then(function (list) {
+      if (id !== selectedCycle) return; // stale response: a newer selection won
       var arr = (list || []).slice();
       // defensive newest-first sort (never trust API order for display)
       if (DU.sortNewestFirst) {
@@ -715,6 +719,7 @@
     // default limit lets the first poll catch up fully; subsequent polls stop
     // after 1 page when min_id <= last_id — cheap live polling.
     api("/api/uktech/sync", { method: "POST", body: JSON.stringify({ cycle_id: selectedCycle }), signal: signal }).then(function (r) {
+      if (!r || r.cycle_id !== selectedCycle) return; // stale: selection changed mid-flight
       var n = (r && r.inserted) || 0;
       ukFails = 0;
       ukLastOk = Date.now();
@@ -769,7 +774,7 @@
       showUkRefresh(false);
       renderUkOnline();
       if (ukWantLive && selectedCycle && ukLiveTimer === null) {
-        ukSchedule(ukFails > 0 ? ukBackoff() : UK_POLL_MS);
+        ukSchedule(ukFails > 0 ? ukBackoffMs() : UK_POLL_MS);
       }
     });
   }
@@ -931,13 +936,22 @@
     document.addEventListener("visibilitychange", function () {
       if (!document.hidden && selectedCycle && !ukLiveTimer) startUkLive();
     });
-    // stop live when leaving device view
-    window.addEventListener("rossim:view", function (e) {
-      var v = e && e.detail;
+    // stop live when leaving device view (router dispatches arian:route)
+    window.addEventListener("arian:route", function (e) {
+      var v = e && e.detail && e.detail.view;
       if (v && v !== "v-dev") stopUkLive();
       else if (v === "v-dev" && selectedCycle) { startUkLive(); espLoad(); }
     });
   }
+
+  // Full teardown for the reset flow (app.js resetWorkspaceData): stop
+  // every timer/WS the panel owns so nothing keeps polling a wiped cycle.
+  window.clearDevicePanel = function () {
+    stopUkLive();
+    stopPoll();
+    if (ws) { try { ws.onclose = null; ws.close(); } catch (e) {} ws = null; }
+    setDot(false);
+  };
 
   if (document.readyState === "loading")
     document.addEventListener("DOMContentLoaded", init);

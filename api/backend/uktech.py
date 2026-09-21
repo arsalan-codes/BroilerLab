@@ -40,6 +40,8 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy.exc import IntegrityError
+
 from config import (
     UKTECH_API_BASE, UKTECH_SERIAL, UKTECH_TOKEN,
     UKTECH_TIMEOUT_S, UKTECH_PAGE_SIZE, UKTECH_MAX_PAGES, UKTECH_VERIFY_SSL,
@@ -999,15 +1001,6 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                     if old_ref is not None:
                         affected.append(old_ref)
                         events_count += 1
-                if res.get("outcome") == "swap-reopened":
-                    # This record closed the old visit AND opened a new one:
-                    # finalize the old lane row, register the new visit, and
-                    # link the log row to the new visit as its start.
-                    old_ref = _close_lane(lane, ts_dt, "swap",
-                                          res.get("closed"))
-                    if old_ref is not None:
-                        affected.append(old_ref)
-                        events_count += 1
                     nv = _new_live_visit(out)
                     new_visits.append(nv)
                     openv[lane] = ("new", len(new_visits) - 1)
@@ -1071,13 +1064,48 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                                   round(elapsed, 1), round(feed_now, 1)))
                 inserted += 1
         # ---- persist (one txn: visits + logs + pair clocks) ----
+        def _bail_concurrent():
+            # A concurrent worker persisted the same lane/log first: this
+            # txn rolled back wholesale. The cursor stays at its pre-sync
+            # value, so the next sync re-fetches the chunk (no 500, no
+            # poisoned state; the retry converges).
+            return {"cycle_id": cycle_id, "serial": serial,
+                    "fetched": len(fresh), "inserted": 0, "skipped": 0,
+                    "last_id": last_id, "complete": False,
+                    "remaining": remaining, "reset": False,
+                    "interrupted": interrupted, "swept": swept,
+                    "events": events_count, "stalled": True,
+                    "stalled_reason": "concurrent write conflict (retry)",
+                    "tls_insecure": _TLS_FALLBACK_USED,
+                    "probed": True, "upstream_max": upstream_max,
+                    "upstream_delta": upstream_delta, "changes": []}
+
         with SessionLocal() as s:
-            if new_visits:
-                s.add_all(new_visits)
-                s.flush()  # PKs assigned, still one txn
-                new_ids = [v.id for v in new_visits]
-            else:
-                new_ids = []
+            # closes first: a chunk that closes a lane AND opens a new visit
+            # on it must UPDATE the old open row before the new INSERT runs,
+            # else uq_visit_open_lane fires while the old row is still open.
+            try:
+                if visit_updates:
+                    # a concurrent worker may have closed some of these rows
+                    # between our read and this write: never resurrect a
+                    # closed visit (skip its live/close updates)
+                    upd_ids = [u["id"] for u in visit_updates]
+                    closed_ids = {r[0] for r in s.query(Visit.id).filter(
+                        Visit.id.in_(upd_ids),
+                        Visit.visit_end.isnot(None)).all()}
+                    if closed_ids:
+                        visit_updates = [u for u in visit_updates
+                                         if u["id"] not in closed_ids]
+                    s.bulk_update_mappings(Visit, visit_updates)
+                if new_visits:
+                    s.add_all(new_visits)
+                    s.flush()  # PKs assigned, still one txn
+                    new_ids = [v.id for v in new_visits]
+                else:
+                    new_ids = []
+            except IntegrityError:
+                s.rollback()
+                return _bail_concurrent()
             log_objs = []
             pub_vids = []
             for (rid, unit, dev, ext, sample, ts_dt, age_day, visit_ref,
@@ -1106,10 +1134,12 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                     is_visit_start=is_start, is_visit_end=is_end,
                     external_id=ext, status=sample.get("status_raw")))
             if log_objs:
-                s.add_all(log_objs)
-                s.flush()
-            if visit_updates:
-                s.bulk_update_mappings(Visit, visit_updates)
+                try:
+                    s.add_all(log_objs)
+                    s.flush()
+                except IntegrityError:
+                    s.rollback()
+                    return _bail_concurrent()
             # pair clocks + unit state (same txn: clock/state can never
             # diverge from data). The unit row is the restart-proof view of
             # the lane: current business state, active visit, eject
@@ -1159,7 +1189,11 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                     if _rid is not None:
                         _row.last_source_id = str(_rid)
                     _row.updated_at = utcnow()
-            s.commit()
+            try:
+                s.commit()
+            except IntegrityError:
+                s.rollback()
+                return _bail_concurrent()
             # ---- change analysis: one registrations-shaped entry per visit
             # this call created or changed (newest first), so the UI patches
             # exactly those rows instead of re-rendering the whole table.

@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import os
 from sqlalchemy import (
     create_engine, Column, Integer, String, Float, Boolean, DateTime,
-    ForeignKey, Index, UniqueConstraint, inspect, text,
+    ForeignKey, Index, UniqueConstraint, func, inspect, text,
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
@@ -86,10 +86,6 @@ class Cycle(Base):
 
 class Visit(Base):
     __tablename__ = "visits"
-    __table_args__ = (
-        Index("ix_visit_cycle_bird", "cycle_id", "bird_id"),
-        Index("ix_visit_start", "cycle_id", "visit_start"),
-    )
     id = Column(Integer, primary_key=True)
     cycle_id = Column(Integer, ForeignKey("cycles.id", ondelete="CASCADE"), nullable=False)
     bird_id = Column(String(32), nullable=False)
@@ -153,6 +149,18 @@ class Visit(Base):
     initial_confirmed_g = Column(Float, nullable=True)
     close_reason = Column(String(16), nullable=True)
     stale = Column(Boolean, nullable=False, default=False)
+    # Declared after the columns so the COALESCE expressions can reference
+    # them. Lane key mirrors the code (uktech/_ingest_one): sensor_id (the
+    # per-unit source, "-" when absent) + unit. Keeps fresh create_all DBs
+    # under the same concurrency guard migration 015 installs on prod.
+    __table_args__ = (
+        Index("ix_visit_cycle_bird", "cycle_id", "bird_id"),
+        Index("ix_visit_start", "cycle_id", "visit_start"),
+        Index("uq_visit_open_lane", "cycle_id",
+              func.coalesce(sensor_id, "-"), func.coalesce(unit, 1),
+              unique=True, sqlite_where=text("visit_end IS NULL"),
+              postgresql_where=text("visit_end IS NULL")),
+    )
     cycle = relationship("Cycle", back_populates="visits")
 
 
@@ -348,6 +356,9 @@ def init_db():
     mig = os.getenv("ARIAN_DB_MIGRATE") or os.getenv("BROILER_DB_MIGRATE")
     if (mig or "").lower() == "alembic":
         _run_alembic_upgrade()
+        # additive safety net: tables with no migration yet (env_samples)
+        # are created here; checkfirst never touches existing tables.
+        Base.metadata.create_all(engine)
         return
     Base.metadata.create_all(engine)
     # --- ad-hoc migrations for dev (create_all) databases -----------------
@@ -500,12 +511,12 @@ def init_db():
                     "SELECT v.id FROM visits v WHERE v.visit_end IS NULL AND EXISTS ("
                     "SELECT 1 FROM visits v2 WHERE v2.visit_end IS NULL "
                     "AND v2.cycle_id = v.cycle_id "
-                    "AND COALESCE(v2.device_id,'-') = COALESCE(v.device_id,'-') "
+                    "AND COALESCE(v2.sensor_id,'-') = COALESCE(v.sensor_id,'-') "
                     "AND COALESCE(v2.unit,1) = COALESCE(v.unit,1) "
                     "AND v2.id > v.id))"))
                 conn.execute(text(
                     "CREATE UNIQUE INDEX IF NOT EXISTS uq_visit_open_lane "
-                    "ON visits(cycle_id, COALESCE(device_id,'-'), COALESCE(unit,1)) "
+                    "ON visits(cycle_id, COALESCE(sensor_id,'-'), COALESCE(unit,1)) "
                     "WHERE visit_end IS NULL"))
                 print("[migrate] business_state backfill + uq_visit_open_lane")
             except Exception as _e:

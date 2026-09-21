@@ -22,7 +22,8 @@ from config import (
     DEVICE_ONLINE_SECONDS, DEVICE_MAX_CLOCK_SKEW_S, DEVICE_MAX_BATCH,
     DEVICE_KEY_PREFIX,
 )
-from models import init_db, SessionLocal, Cycle, Visit, DeviceLog, User, EnvSample, Device, UnitState
+from models import (init_db, SessionLocal, Cycle, Visit, DeviceLog, User,
+                    EnvSample, Device, UnitState, SyncState)
 from processor import get_processor, _log_to_dict
 import unit_core as _unitcore
 import hub
@@ -419,8 +420,21 @@ def reset_cycle_data(cycle_id: int, current: User = Depends(authmod.get_current_
         _require_owner_cycle(s, cycle_id, current)
         v = s.query(Visit).filter(Visit.cycle_id == cycle_id).delete(synchronize_session=False)
         l = s.query(DeviceLog).filter(DeviceLog.cycle_id == cycle_id).delete(synchronize_session=False)
+        # live-core state + sync cursors reference the deleted data: without
+        # this cleanup the next ingest resurrects a phantom lane and the
+        # sync reports STALLED forever (cursor points past the wiped table).
+        u = s.query(UnitState).filter(
+            UnitState.cycle_id == cycle_id).delete(synchronize_session=False)
+        cursors = s.query(SyncState).filter(
+            SyncState.key.like(f"uktech:%:cycle:{cycle_id}")).all()
+        for cur in cursors:
+            cur.last_id = 0
+            cur.updated_at = datetime.now(timezone.utc)
+            cur.note = f"cycle {cycle_id}: data reset"
         s.commit()
-        return {"cycle_id": cycle_id, "visits_deleted": v, "logs_deleted": l}
+        return {"cycle_id": cycle_id, "visits_deleted": v,
+                "logs_deleted": l, "unit_states_deleted": u,
+                "cursors_reset": len(cursors)}
 @app.get("/api/cycles/{cycle_id}/stats")
 def cycle_stats(cycle_id: int, current: User = Depends(authmod.get_current_user)):
     with SessionLocal() as s:
@@ -587,7 +601,10 @@ def env_summary(current: User = Depends(authmod.get_current_user)):
                     pass
             out["houses"].append({
                 "id": hid, "name": f"House {hid}",
-                "online": bool(r) and (datetime.now(timezone.utc) - r.ts).total_seconds() < 60 if r else False,
+                # _aware_dt: SQLite returns naive timestamps; subtracting a
+                # naive dt from an aware now() raises TypeError (500).
+                "online": bool(r) and (_aware_dt(datetime.now(timezone.utc))
+                                       - _aware_dt(r.ts)).total_seconds() < 60,
                 "tiles": {
                     "temp": r.temp_c if r else None, "rh": r.rh if r else None,
                     "bed": r.bed_rh if r else None, "feed": r.feed_kg if r else None,
@@ -1141,10 +1158,17 @@ def _ingest_one(dev: Device, cyc: dict, ev: dict, now: datetime):
                 "bin_weight_g": round(bin_g, 2)
                 if bin_g is not None else None})
             s.commit()
-    except IntegrityError:
-        # Lost a write race with an identical retry: the row exists now.
-        return "duplicate", {"event_id": eid, "accepted": False,
-                             "duplicate": True}
+    except IntegrityError as _ie:
+        # Only a genuine duplicate (same cycle+external_id log already
+        # persisted by a lost write race) may report "duplicate" — any other
+        # integrity failure (e.g. uq_visit_open_lane) must NOT swallow the
+        # event: report a retryable error so the device re-sends it.
+        _msg = str(_ie).lower()
+        if "uq_log_cycle_external" in _msg or "external_id" in _msg:
+            return "duplicate", {"event_id": eid, "accepted": False,
+                                 "duplicate": True}
+        return "error", {"error": "conflict",
+                         "detail": "write conflict, retry the event"}
     except Exception:
         get_logger(__name__).exception("device ingest failed device=%s cycle=%s",
                                        dev.device_id, dev.cycle_id)
@@ -1224,7 +1248,8 @@ def device_ingest(payload: dict = Body(...), request: Request = None):
         return {"success": True, "accepted": False, "duplicate": True,
                 "event_id": res["event_id"]}
     code = res.get("error", "invalid_payload")
-    return _dev_err(code, 429 if code == "rate_limited" else 400)
+    return _dev_err(code, 429 if code == "rate_limited"
+                    else 503 if code == "conflict" else 400)
 
 
 class DeviceBatchIn(BaseModel):
@@ -1396,7 +1421,7 @@ def get_device(device_id: str, current: User = Depends(authmod.get_current_user)
 
 
 class DeviceStatusIn(BaseModel):
-    active: bool = True
+    active: bool | None = None
 
 
 @app.patch("/api/devices/{device_id}/status")
@@ -1405,7 +1430,8 @@ def set_device_status(device_id: str, payload: DeviceStatusIn,
     """Enable/disable a device (disabled -> 403 on ingest, immediately)."""
     with SessionLocal() as s:
         d = _owner_device(s, device_id, current)
-        d.active = bool(payload.active)
+        if payload.active is not None:
+            d.active = bool(payload.active)
         s.commit()
         return _device_to_dict(d)
 
