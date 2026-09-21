@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -17,9 +17,9 @@
   // when authed, leave visible so dashboard shows instantly with no flash
 }catch(e){}} )();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title data-i18n="app.title">???? � ?????? ?????? ????? ? ????? ????</title>
+<title data-i18n="app.title">آرین — سامانه هوشمند پرورش و اصلاح نژاد</title>
 <meta name="author" content="Arsalan Rezazadeh">
-<meta name="description" content="Arian � intelligent poultry breeding &amp; rearing platform. Ross 308 / Cobb 500 / Arbor Acres Plus / Hubbard EP � RFID + dual load-cell � biostatistics lab">
+<meta name="description" content="Arian — intelligent poultry breeding &amp; rearing platform. Ross 308 / Cobb 500 / Arbor Acres Plus / Hubbard EP · RFID + dual load-cell · biostatistics lab">
 <link rel="icon" type="image/png" sizes="32x32" href="logo_32.png">
 <link rel="icon" type="image/png" sizes="180x180" href="logo_180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="logo_192.png">
@@ -58,7 +58,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);
   font-feature-settings:"tnum" 1,"ss01" 1}
 .wrap{max-width:1280px;margin:0 auto;padding:0 24px 64px}
 
-/* ============ Material scrollbars � theme-aware, slim overlay ============
+/* ============ Material scrollbars — theme-aware, slim overlay ============
    Floating pill thumb (no solid track), brightens on hover, accent while
    dragging. Chromium/Safari get the full custom design below; Firefox gets
    the standard thin scrollbar fed by the same theme variables. */
@@ -77,7 +77,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);
   *{scrollbar-width:thin;scrollbar-color:var(--sb-thumb) transparent}
 }
 
-/* ================= topbar v2 � modern, 100% responsive ================= */
+/* ================= topbar v2 — modern, 100% responsive ================= */
 .topbar{position:sticky;top:0;z-index:50;background:rgba(11,15,23,.82);
   backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);
   border-bottom:1px solid var(--line);
@@ -98,7 +98,7 @@ nav .tab{display:inline-flex;align-items:center;justify-content:center}
   display:flex;align-items:center;justify-content:center;background:none;border:none;box-shadow:none}
 .brand .mark img{width:100%;height:100%;object-fit:contain;display:block}
 .brand b{font-size:clamp(15px,1.3vw,18px);font-weight:800;letter-spacing:.2px;display:block;line-height:1.25}
-/* guaranteed visible gap between "?????? ??????" and "????" (a bare text-node
+/* guaranteed visible gap between "سامانه هوشمند" and "آرین" (a bare text-node
    space renders razor-thin in Vazirmatn and vanishes under some minifiers) */
 .brand b > span + span{margin-inline-start:.32em}
 .brand .tagline{display:block;font-size:clamp(10.5px,.85vw,12px);color:var(--mut);line-height:1.35;
@@ -307,7 +307,7 @@ html[dir=ltr] .field__label{transform-origin:left center}
   margin-top:4px
 }
 .cy-list:empty::before{
-  content:"??????? ??? ???? ???.";
+  content:"دوره‌ای ثبت نشده است.";
   display:block;padding:18px;text-align:center;color:var(--dim);
   font-size:11.5px;border:1px dashed var(--line);border-radius:10px
 }
@@ -407,7 +407,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 }
 .reg-body{position:static}
 /* the table itself scrolls (both axes) and the header is sticky: on
-   narrow screens thead+rows scroll together horizontally � the old split
+   narrow screens thead+rows scroll together horizontally — the old split
    (thead outside a y-only scroll body) let rows slide under a clipped,
    non-scrolling header and misaligned every column. */
 .reg-row{
@@ -451,7 +451,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
 .reg-pos.out{background:rgba(148,163,184,.14);color:var(--mut)}
 .reg-pos.ejecting{background:rgba(224,166,60,.16);color:#e0a63c}
 #esp-form .field__input{padding:8px 13px}
-.esp-list:empty::before{content:"??????? ??? ???? ???.";}
+.esp-list:empty::before{content:"دستگاهی ثبت نشده است.";}
 .esp-keybox code{font-size:11px;word-break:break-all}
 #cy-source:focus{outline:none;border-color:rgba(25,195,154,.6);box-shadow:0 0 0 3px rgba(25,195,154,.1)}
 .langseg button{height:32px;padding:0 13px;display:inline-flex;align-items:center}
@@ -471,8 +471,8 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
   /* RTL pages: clip horizontal overflow so nothing contributes to sideways scroll */
   html,body{overflow-x:hidden;overflow-x:clip}
   /* mobile topbar = full-bleed single row: brand + stacked clock + avatar.
-     .topbar sits inside .wrap (which owns 14px side padding at =860px), so it
-     pulls itself out with -14px margins and width:auto � measured L=0 R=0. */
+     .topbar sits inside .wrap (which owns 14px side padding at ≤860px), so it
+     pulls itself out with -14px margins and width:auto — measured L=0 R=0. */
   .topbar{width:auto;margin-left:-14px;margin-right:-14px}
   .topbar-in{max-width:100%;width:100%;margin:0;padding:0 12px}
   .topbar-in > .hctl{display:flex;align-items:center;flex:none;min-width:0}
@@ -552,7 +552,7 @@ html[dir=rtl] .cy-del{margin-left:0;margin-right:auto}
     padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
   #account-sheet.open.show{transform:none}
   /* BUGFIX: flex column children shrink by default, so on short screens the
-     content squished instead of overflowing � the sheet never scrolled.
+     content squished instead of overflowing — the sheet never scrolled.
      Pin children to natural height so overflow-y can actually scroll. */
   #account-sheet.open > *{flex-shrink:0}
   #account-sheet .sheet-handle{width:60px;height:6px;border-radius:999px;flex-shrink:0;
@@ -674,7 +674,7 @@ select,input[type=number],input[type=text]{background:var(--bg2);border:1px soli
 .settings-info .pill{justify-content:space-between;display:flex;align-items:center;padding:6px 10px}
 .settings-info .vbadge{align-self:flex-end}
 
-/* mobile: settings gear hidden � its entries live in the user menu */
+/* mobile: settings gear hidden — its entries live in the user menu */
 @media(max-width:992px){
   .hsettings{display:none}
 }
@@ -717,7 +717,7 @@ select:focus,input:focus{outline:none;border-color:rgba(25,195,154,.55);
 .sheetrow input{accent-color:var(--acc);width:15px;height:15px}
 .sheetrow.locked{opacity:.75;cursor:default}
 .sheetrow .cnt{margin-inline-start:auto;color:var(--dim);font-size:10.5px;direction:ltr}
-/* ---------- guided tour � modern glass + progress ---------- */
+/* ---------- guided tour — modern glass + progress ---------- */
 #tour-shade{position:fixed;inset:0;z-index:298;display:none;pointer-events:none;background:rgba(4,7,12,.58);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
 #tour-shade.on{display:block;pointer-events:auto}
 /* spotlight hole around the tour target: the shade never covers what the
@@ -789,7 +789,7 @@ html[dir=rtl] .parrow{transition:transform .2s}
   animation:pulse 1s infinite}
 
 /* ================= nav ================= */
-/* ================= nav � modern tabs ================= */
+/* ================= nav — modern tabs ================= */
 nav{display:flex;gap:4px;margin:0;border-bottom:1px solid var(--line);
   overflow-x:auto;scrollbar-width:none;padding:0 22px;height:54px;align-items:stretch;
   justify-content:center;
@@ -1245,7 +1245,7 @@ html[dir=ltr] body{font-family:"IBM Plex Sans","Vazirmatn",system-ui,sans-serif}
 .card,.tbl-scroll,.chart-box,.feedwrap{max-width:100%}
 .busyrow{flex-wrap:wrap;row-gap:5px}
 @media(max-width:620px){
-  .hsettings{display:none!important}   /* gear = drawer duplicate; kills the =430 overflow */
+  .hsettings{display:none!important}   /* gear = drawer duplicate; kills the ≤430 overflow */
   .topbar-in .mark{width:40px;height:40px;border-radius:11px}
   .topbar-in .brand b{font-size:13.5px}
   #auth-area .auth-login-btn{padding:8px 10px;font-size:11.5px}
@@ -1333,7 +1333,7 @@ html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
 @media(prefers-reduced-motion:reduce){.prod-status .dot{animation:none}}
 
 
-/* ================= ENV CONTROL (v-env) � site-token design ================= */
+/* ================= ENV CONTROL (v-env) — site-token design ================= */
 /* banner: ambient accent glow, mirrors .prod-hero language */
 .env-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
   padding:16px 20px;border-radius:18px;border:1px solid var(--line);margin-bottom:13px;
@@ -1386,7 +1386,7 @@ html[data-theme=dark] .prod-card:hover{box-shadow:0 16px 36px rgba(0,0,0,.4)}
 .env-hcard .hs{font-size:10.5px;margin-top:4px;font-weight:700}
 .env-hcard.ok .hs{color:var(--acc)} .env-hcard.wn .hs{color:var(--warn)} .env-hcard.bad .hs{color:var(--bad)}
 
-/* trends report (????? ???????): segmented scope picker + date range �
+/* trends report (گزارش تغییرات): segmented scope picker + date range —
    rides the site's own design system (cards, langseg-style segments,
    gradient primary btn, tabular numerals) */
 .env-export-hint{font-size:12px;color:var(--mut);margin:6px 0 14px;line-height:1.9}
@@ -1631,10 +1631,10 @@ html[data-theme=light] .ws-card:hover{box-shadow:var(--sh-md)}
 .landing-hero-inner{position:relative;z-index:1;min-width:0;display:flex;flex-direction:column;gap:20px}
 .landing-hero-inner .landing-badge{margin:0}
 .landing-hero-inner .landing-title{margin:-6px 0 8px;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
-/* Hero brand line � fluid type ladder (single source, both langs).
-   Sized from live glyph measurements: the EN prefix+accent line is �13.9em
-   wide, FA �10.6em. 6.1vw keeps EN on ONE line down to ~560px
-   (1024?62.5px/868px?, 860?52.5px/730px?, 560?34px/475px?);
+/* Hero brand line — fluid type ladder (single source, both langs).
+   Sized from live glyph measurements: the EN prefix+accent line is ≈13.9em
+   wide, FA ≈10.6em. 6.1vw keeps EN on ONE line down to ~560px
+   (1024→62.5px/868px✓, 860→52.5px/730px✓, 560→34px/475px✓);
    below 560 the line wraps balanced (text-wrap:balance) instead of shrinking
    to unreadable sizes. */
 .landing-title .brand-hero{font-size:clamp(34px,6.1vw,72px);font-weight:1000;letter-spacing:-.024em;line-height:1.08;display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:.04em .22em;text-wrap:balance}
@@ -1644,8 +1644,8 @@ html[data-theme=dark] .brand-hero-accent{filter:drop-shadow(0 1px 8px rgba(25,19
 .brand-hero-accent [data-i18n="brand.name"]{position:relative;z-index:1}
 .brand-hero-sub{font-weight:500;color:var(--mut);opacity:.9;margin-top:6px;min-height:1.5em;display:block;letter-spacing:.01em;
   white-space:nowrap;overflow:hidden;max-width:100%;
-  font-size:15px;   /* =1280px */
-  text-align:start} /* follows dir: RTL?right, LTR?left; never centered */
+  font-size:15px;   /* ≥1280px */
+  text-align:start} /* follows dir: RTL→right, LTR→left; never centered */
 @keyframes cursorBlink{50%{opacity:0}}
 
 @media(prefers-reduced-motion:reduce){}
@@ -1663,7 +1663,7 @@ html[data-theme=light] .landing-badge .lb-fact b{color:var(--acc2);text-shadow:n
   /* breathing room so 1000-weight hero glyphs and the negative letter-spacing never kiss the card edge */
   padding:.08em .12em .1em .04em}
 .landing-title > span:not(.brand-hero-sub):not(.brand-hero){display:block;font-size:clamp(15px,1.8vw,19px);font-weight:700;color:var(--mut);margin-top:6px;min-height:26px}
-/* landing-desc-box removed � unused */
+/* landing-desc-box removed — unused */
 .landing-cta{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 18px}
 .btn.lg{padding:10px 18px;font-size:13px;border-radius:12px}
 .btn.primary.lg{background:var(--acc);color:#fff;border:1px solid var(--acc);box-shadow:0 6px 18px rgba(25,195,154,.25)}
@@ -1707,10 +1707,10 @@ canvas{will-change: contents}
 [dir="ltr"] .strain-select__list{left:0;right:0}
 
 
-/* landing visual removed � keyframes pruned */
+/* landing visual removed — keyframes pruned */
 
 /* ============================================================
-   UI/UX Polish Layer v2.0 � additive, safe (no markup changes)
+   UI/UX Polish Layer v2.0 — additive, safe (no markup changes)
    ============================================================ */
 
 /* ---------- 1. Buttons: gradient + lift + focus ---------- */
@@ -1779,7 +1779,7 @@ html[data-theme=light] .landing-grid .lcard{background:#fff;border-color:#e2e8f0
 html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 
 
-/* hero subtitle: breakpoint type scale � always one line (fitFont shrinks further if needed) */
+/* hero subtitle: breakpoint type scale — always one line (fitFont shrinks further if needed) */
 @media(max-width:1279px){ .brand-hero-sub{font-size:14px} }
 @media(max-width:1024px){ .brand-hero-sub{font-size:13px} }
 @media(max-width:860px){ .brand-hero-sub{font-size:12.5px} }
@@ -1797,35 +1797,35 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <!-- ================= TOPBAR ================= -->
 <div class="topbar"><div class="topbar-in">
   <a class="brand" href="/" data-go="/">
-    <span class="mark"><img src="logo_128.png" width="52" height="52" alt="????" data-alt-i18n="brand.name" style="object-fit:contain;display:block;border:none"></span>
-    <span><b><span data-i18n="app.short">?????? ??????</span> <span data-i18n="brand.name">????</span></b><span class="tagline" data-i18n="app.tag">?????? ??????? ?????? ????? ???? ? ?????? ????? ???????? ?????</span>
-<span class="uni" data-i18n="app.uni">???? ???? ????? ??????? ????? ????</span></span>
+    <span class="mark"><img src="logo_128.png" width="52" height="52" alt="آرین" data-alt-i18n="brand.name" style="object-fit:contain;display:block;border:none"></span>
+    <span><b><span data-i18n="app.short">سامانه هوشمند</span> <span data-i18n="brand.name">آرین</span></b><span class="tagline" data-i18n="app.tag">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی</span>
+<span class="uni" data-i18n="app.uni">گروه علوم دامی، دانشگاه تربیت مدرس</span></span>
   </a>
   <div class="hspace"></div>
   <div class="hctl">
-    <div class="topclock" id="topclock" aria-live="off" data-title-i18n="hdr.clockTitle" title="????? ? ???? ?????">
-      <span class="tc-date" id="tc-date">�</span>
-      <span class="tc-sep">�</span>
-      <span class="tc-time" id="tc-time">�</span>
+    <div class="topclock" id="topclock" aria-live="off" data-title-i18n="hdr.clockTitle" title="تاریخ و ساعت کنونی">
+      <span class="tc-date" id="tc-date">—</span>
+      <span class="tc-sep">·</span>
+      <span class="tc-time" id="tc-time">—</span>
     </div>
 
     <div class="hgroup">
-      <span class="hlabel" data-i18n="hdr.lang">????</span>
+      <span class="hlabel" data-i18n="hdr.lang">زبان</span>
       <div class="langseg" role="group" aria-label="Language">
-        <button id="lang-fa" class="on" aria-pressed="true" lang="fa">?�?</button><button id="lang-en" aria-pressed="false" lang="en">EN</button>
+        <button id="lang-fa" class="on" aria-pressed="true" lang="fa">فا</button><button id="lang-en" aria-pressed="false" lang="en">EN</button>
       </div>
     </div>
-    <button id="btn-help" class="icon-btn" aria-label="Help" data-title-i18n="hdr.help" title="?"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button>
+    <button id="btn-help" class="icon-btn" aria-label="Help" data-title-i18n="hdr.help" title="؟"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button>
     <div class="hgroup">
-      <span class="hlabel" data-i18n="hdr.theme">?????</span>
+      <span class="hlabel" data-i18n="hdr.theme">پوسته</span>
       <div class="langseg" role="group" aria-label="Theme">
         <button id="theme-dark" class="on" aria-pressed="true" title="Dark" data-title-i18n="theme.dark"><i class="fa-solid fa-moon" aria-hidden="true"></i></button><button id="theme-light" aria-pressed="false" title="Light" data-title-i18n="theme.light"><i class="fa-solid fa-sun" aria-hidden="true"></i></button>
       </div>
     </div>
-    <button id="btn-reset" class="icon-btn" title="Reset cycle data" data-title-i18n="btn.resetCycle" aria-label="Reset"><span class="rb-ic"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></span><span class="rb-label" data-i18n="btn.resetCycle">???????? ???????? ????</span></button>
+    <button id="btn-reset" class="icon-btn" title="Reset cycle data" data-title-i18n="btn.resetCycle" aria-label="Reset"><span class="rb-ic"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></span><span class="rb-label" data-i18n="btn.resetCycle">بازنشانی داده‌های دوره</span></button>
     <div class="hpills">
-      <span class="pill tag ok" title="Weight MAE vs catalog"><span data-i18n="hdr.mae">MAE</span> <b id="h-mae">�</b></span>
-      <span class="pill tag bl" title="records per cycle">� <b id="h-rows">�</b> <span data-i18n="hdr.rows">?????</span></span>
+      <span class="pill tag ok" title="Weight MAE vs catalog"><span data-i18n="hdr.mae">MAE</span> <b id="h-mae">—</b></span>
+      <span class="pill tag bl" title="records per cycle">≈ <b id="h-rows">—</b> <span data-i18n="hdr.rows">رکورد</span></span>
       <span class="vbadge" data-vbadge>v1.0.0</span>
     </div>
     </div><!-- /hctl -->
@@ -1834,28 +1834,28 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 
     <!-- Settings button + dropdown (desktop) -->
     <div class="hsettings" role="group" aria-label="Settings">
-      <button id="btn-settings" class="icon-btn" aria-label="Settings" aria-expanded="false" aria-haspopup="true" data-title-i18n="hdr.settings" title="???????"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
-      <div id="settings-dropdown" class="settings-dropdown" role="menu" data-title-i18n="hdr.settingsAria" aria-label="???????" hidden>
+      <button id="btn-settings" class="icon-btn" aria-label="Settings" aria-expanded="false" aria-haspopup="true" data-title-i18n="hdr.settings" title="تنظیمات"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
+      <div id="settings-dropdown" class="settings-dropdown" role="menu" data-title-i18n="hdr.settingsAria" aria-label="تنظیمات" hidden>
         <div class="settings-section">
           <div class="settings-row">
-            <span class="settings-label" data-i18n="hdr.theme">?????</span>
+            <span class="settings-label" data-i18n="hdr.theme">پوسته</span>
             <div class="langseg" role="group" aria-label="Theme">
               <button id="theme-dark-dd" class="on" aria-pressed="true" title="Dark" data-title-i18n="theme.dark" role="menuitem"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
               <button id="theme-light-dd" aria-pressed="false" title="Light" data-title-i18n="theme.light" role="menuitem"><i class="fa-solid fa-sun" aria-hidden="true"></i></button>
             </div>
           </div>
           <div class="settings-row">
-            <span class="settings-label" data-i18n="hdr.lang">????</span>
+            <span class="settings-label" data-i18n="hdr.lang">زبان</span>
             <div class="langseg" role="group" aria-label="Language">
-              <button id="lang-fa-dd" class="on" aria-pressed="true" lang="fa" role="menuitem">?�?</button>
+              <button id="lang-fa-dd" class="on" aria-pressed="true" lang="fa" role="menuitem">فا</button>
               <button id="lang-en-dd" aria-pressed="false" lang="en" role="menuitem">EN</button>
             </div>
           </div>
           <div class="settings-row">
-            <span class="settings-label" data-i18n="hdr.strain">????</span>
-            <div class="strain-select" role="combobox" data-title-i18n="hdr.strainAria" aria-label="????" aria-expanded="false" aria-controls="strain-list" tabindex="0">
+            <span class="settings-label" data-i18n="hdr.strain">سویه</span>
+            <div class="strain-select" role="combobox" data-title-i18n="hdr.strainAria" aria-label="سویه" aria-expanded="false" aria-controls="strain-list" tabindex="0">
               <div class="strain-select__current" id="strain-current">
-                <span class="strain-select__value" id="strain-value">�</span>
+                <span class="strain-select__value" id="strain-value">—</span>
                 <span class="strain-select__icon" aria-hidden="true">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </span>
@@ -1864,43 +1864,43 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
             </div>
           </div>
           <div class="settings-row">
-            <span class="settings-label" data-i18n="hdr.dateFmt">?????</span>
+            <span class="settings-label" data-i18n="hdr.dateFmt">تقویم</span>
             <div class="langseg" role="group" aria-label="Calendar format">
-              <button id="df-auto" class="on" data-df="auto" role="menuitem" data-i18n="datefmt.auto">??????</button>
-              <button id="df-jalali" data-df="jalali" role="menuitem" data-i18n="datefmt.jalali">????</button>
-              <button id="df-gregorian" data-df="gregorian" role="menuitem" data-i18n="datefmt.gregorian">??????</button>
+              <button id="df-auto" class="on" data-df="auto" role="menuitem" data-i18n="datefmt.auto">خودکار</button>
+              <button id="df-jalali" data-df="jalali" role="menuitem" data-i18n="datefmt.jalali">شمسی</button>
+              <button id="df-gregorian" data-df="gregorian" role="menuitem" data-i18n="datefmt.gregorian">میلادی</button>
             </div>
           </div>
           <div class="settings-row">
-            <span class="settings-label" data-i18n="hdr.tz">????? ?????</span>
+            <span class="settings-label" data-i18n="hdr.tz">منطقه زمانی</span>
             <select id="tz-select" aria-label="Timezone">
-              <option value="auto" data-i18n="tz.auto">?????? (?????)</option>
-              <option value="Asia/Tehran">????? (UTC+3:30)</option>
+              <option value="auto" data-i18n="tz.auto">خودکار (سیستم)</option>
+              <option value="Asia/Tehran">تهران (UTC+3:30)</option>
               <option value="UTC">UTC</option>
-              <option value="Europe/Berlin">????? (UTC+1)</option>
-              <option value="Europe/London">???? (UTC+0)</option>
-              <option value="America/New_York">??????? (UTC-5)</option>
-              <option value="Asia/Dubai">??? (UTC+4)</option>
-              <option value="Asia/Istanbul">???????? (UTC+3)</option>
+              <option value="Europe/Berlin">برلین (UTC+1)</option>
+              <option value="Europe/London">لندن (UTC+0)</option>
+              <option value="America/New_York">نیویورک (UTC-5)</option>
+              <option value="Asia/Dubai">دبی (UTC+4)</option>
+              <option value="Asia/Istanbul">استانبول (UTC+3)</option>
             </select>
           </div>
         </div>
         <div class="settings-divider"></div>
         <div class="settings-section">
-          <button id="btn-help-dd" class="settings-action" role="menuitem" data-title-i18n="hdr.help" title="????? ????">
+          <button id="btn-help-dd" class="settings-action" role="menuitem" data-title-i18n="hdr.help" title="آموزش سریع">
             <span class="settings-icon"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></span>
-            <span class="settings-text" data-i18n="hdr.help">????? ????</span>
+            <span class="settings-text" data-i18n="hdr.help">آموزش سریع</span>
           </button>
-          <button id="btn-reset-dd" class="settings-action" role="menuitem" data-title-i18n="btn.resetCycle" title="???????? ???????? ????">
+          <button id="btn-reset-dd" class="settings-action" role="menuitem" data-title-i18n="btn.resetCycle" title="بازنشانی داده‌های دوره">
             <span class="settings-icon"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></span>
-            <span class="settings-text" data-i18n="btn.resetCycle">???????? ???????? ????</span>
+            <span class="settings-text" data-i18n="btn.resetCycle">بازنشانی داده‌های دوره</span>
           </button>
         </div>
         <div class="settings-divider"></div>
         <div class="settings-section settings-info">
           <div class="hpills">
-            <span class="pill tag ok" title="Weight MAE vs catalog"><span data-i18n="hdr.mae">MAE</span> <b id="h-mae-dd">�</b></span>
-            <span class="pill tag bl" title="records per cycle">� <b id="h-rows-dd">�</b> <span data-i18n="hdr.rows">?????</span></span>
+            <span class="pill tag ok" title="Weight MAE vs catalog"><span data-i18n="hdr.mae">MAE</span> <b id="h-mae-dd">—</b></span>
+            <span class="pill tag bl" title="records per cycle">≈ <b id="h-rows-dd">—</b> <span data-i18n="hdr.rows">رکورد</span></span>
             <span class="vbadge" data-vbadge>v1.0.0</span>
           </div>
         </div>
@@ -1912,13 +1912,13 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <section id="account-sheet" class="account-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-user-name" hidden></section>
 
 <nav id="mainnav">
-  <button class="tab on" data-v="v-landing" id="tab-landing"><span data-i18n="nav.landing">??�?? ????</span></button>
-  <button class="tab" id="nav-feed-btn" data-v="v-feed"><span data-i18n="nav.feedGroup">????? ???? ????� ?????</span></button>
-  <button class="tab" data-v="v-env"><span data-i18n="nav.env">????? ?????</span></button>
-  <button class="tab" data-v="v-sci"><span data-i18n="nav.sci">????? ????</span></button>
-  <button class="tab" data-v="v-met"><span data-i18n="nav.met">?????????</span></button>
-  <button class="tab" data-v="v-products"><span data-i18n="nav.products">??????? ? ?????</span></button>
-  <button class="tab" data-v="v-about"><span data-i18n="nav.about">?????? ??</span></button>
+  <button class="tab on" data-v="v-landing" id="tab-landing"><span data-i18n="nav.landing">صفحه اصلی</span></button>
+  <button class="tab" id="nav-feed-btn" data-v="v-feed"><span data-i18n="nav.feedGroup">سیستم پایش مصرف خوراک</span></button>
+  <button class="tab" data-v="v-env"><span data-i18n="nav.env">کنترل محیطی</span></button>
+  <button class="tab" data-v="v-sci"><span data-i18n="nav.sci">مبانی علمی</span></button>
+  <button class="tab" data-v="v-met"><span data-i18n="nav.met">روش‌شناسی</span></button>
+  <button class="tab" data-v="v-products"><span data-i18n="nav.products">محصولات و خدمات</span></button>
+  <button class="tab" data-v="v-about"><span data-i18n="nav.about">درباره ما</span></button>
 </nav>
 
 <main>
@@ -1930,245 +1930,245 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     <div class="landing-hero-bg"></div>
     <div class="landing-hero-inner">
       <div class="landing-badge" id="landing-facts" aria-live="off">
-        <span class="lb-fact"><i class="fa-solid fa-dna" aria-hidden="true"></i><b id="lb-strains">?</b>&nbsp;<span data-i18n="landing.fact.strains">???? ?????????</span></span>
-        <span class="lb-sep" aria-hidden="true">�</span>
-        <span class="lb-fact"><i class="fa-solid fa-database" aria-hidden="true"></i><b id="lb-points">?????</b>&nbsp;<span data-i18n="landing.fact.points">???? ???? ????</span></span>
-        <span class="lb-sep" aria-hidden="true">�</span>
-        <span class="lb-fact"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span data-i18n="landing.fact.verified">????? ???? ??? ?? ?????? ? ????????? ?????</span></span>
+        <span class="lb-fact"><i class="fa-solid fa-dna" aria-hidden="true"></i><b id="lb-strains">۴</b>&nbsp;<span data-i18n="landing.fact.strains">سویه استاندارد</span></span>
+        <span class="lb-sep" aria-hidden="true">·</span>
+        <span class="lb-fact"><i class="fa-solid fa-database" aria-hidden="true"></i><b id="lb-points">۲٬۳۸۰</b>&nbsp;<span data-i18n="landing.fact.points">نقطه داده مرجع</span></span>
+        <span class="lb-sep" aria-hidden="true">·</span>
+        <span class="lb-fact"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span data-i18n="landing.fact.verified">توسعه داده شده با مقالات و پژوهش‌های معتبر</span></span>
       </div>
-      <h1 class="landing-title"><span class="brand-hero"><span data-i18n="landing.heroPrefix">?????? ???? ??????</span><span class="brand-hero-accent"><span data-i18n="brand.name">????</span></span></span><span id="landing-typed" class="brand-hero-sub" data-text="?????? ??????? ?????? ????? ???? ? ?????? ????? ???????? ?????" aria-label="?????? ??????? ?????? ????? ???? ? ?????? ????? ???????? ?????">?????? ??????? ?????? ????? ???? ? ?????? ????? ???????? ?????</span></h1>
+      <h1 class="landing-title"><span class="brand-hero"><span data-i18n="landing.heroPrefix">سامانه پایش هوشمند</span><span class="brand-hero-accent"><span data-i18n="brand.name">آرین</span></span></span><span id="landing-typed" class="brand-hero-sub" data-text="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی" aria-label="سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی">سامانه یکپارچه هوشمند اصلاح نژاد و مدیریت پرورش جوجه‌های گوشتی</span></h1>
       <div class="landing-cta">
-        <button class="btn primary lg" id="landing-login"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="landing.login">???? ?? ???</span></button>
-        <button class="btn ghost lg" id="landing-register" data-i18n="landing.register">??????? ??????</button>
-        <button class="btn ghost lg" id="landing-guest" data-i18n="landing.guest">?????? ????�?</button>
+        <button class="btn primary lg" id="landing-login"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="landing.login">ورود به پنل</span></button>
+        <button class="btn ghost lg" id="landing-register" data-i18n="landing.register">ثبت‌نام رایگان</button>
+        <button class="btn ghost lg" id="landing-guest" data-i18n="landing.guest">مشاهده معرفی</button>
       </div>
       <div class="landing-stats">
-        <div class="ls"><b data-i18n="landing.stat.trials">??????? ???????</b></div>
-        <div class="ls"><b data-i18n="landing.stat.lab">????????? ????? ? ?????</b></div>
-        <div class="ls"><b data-i18n="landing.stat.24h">?? ?????</b><span data-i18n="landing.stat.live">???? ???? ??????</span></div>
-        <div class="ls"><b data-i18n="landing.stat.user">?????????</b><span data-i18n="landing.stat.live">???? ???? ??????</span></div>
+        <div class="ls"><b data-i18n="landing.stat.trials">طرح‌های آزمایشی</b></div>
+        <div class="ls"><b data-i18n="landing.stat.lab">آزمایشگاه مجازی و تخصصی</b></div>
+        <div class="ls"><b data-i18n="landing.stat.24h">۲۴ ساعته</b><span data-i18n="landing.stat.live">داده زنده دستگاه</span></div>
+        <div class="ls"><b data-i18n="landing.stat.user">کاربرمحور</b><span data-i18n="landing.stat.live">داده زنده دستگاه</span></div>
       </div>
     </div>
     
   </div>
   <div class="landing-grid">
-    <div class="lcard" data-go="v-dash" role="button" tabindex="0"><i class="fa-solid fa-chart-line"></i><h3 data-i18n="landing.card.dash.t">??????? ??????????</h3><p data-i18n="landing.card.dash.p">?????? ??????? ????? ????????? ?? ?????? ????????? ????? ????? ?? ?????? ??? ? ???? ????? ????? ??????? ?? ?????.</p></div>
-    <div class="lcard" data-go="v-exp" role="button" tabindex="0"><i class="fa-solid fa-vial"></i><h3 data-i18n="landing.card.exp.t">??? ??????</h3><p data-i18n="landing.card.exp.p">?????� ???????? ??????? ???????? ????? ? ???????? ??????? � ?? ???? ??????? ???? ? ?????? ?? ???? ?????? ??? ??? ??????.</p></div>
-    <div class="lcard" data-go="v-farm" role="button" tabindex="0"><i class="fa-solid fa-map"></i><h3 data-i18n="landing.card.farm.t">???? ?�??? ????</h3><p data-i18n="landing.card.farm.p">??????? ?????????? ??????? ?????? ? ????? ????? ???? ?�??? � ??????? ??????? ??????? ? ?????? ?? ?????? ??? ???? ????.</p></div>
-    <div class="lcard" data-go="v-sim" role="button" tabindex="0"><i class="fa-solid fa-satellite-dish"></i><h3 data-i18n="landing.card.sim.t">????????? ????</h3><p data-i18n="landing.card.sim.p">????? ?????? ?? ????? ??????? ? ?????? ??????? ????? ? ????????? ?????????.</p></div>
-    <div class="lcard" data-go="v-scn" role="button" tabindex="0"><i class="fa-solid fa-layer-group"></i><h3 data-i18n="landing.card.scn.t">????????</h3><p data-i18n="landing.card.scn.p">??????????? ?????? ? ????? ???? ????????? ????????????? ?? ????? ??????? ???? ?????.</p></div>
-    <div class="lcard" data-go="v-dev" role="button" tabindex="0"><i class="fa-solid fa-microchip"></i><h3 data-i18n="landing.card.dev.t">?????? ? ????</h3><p data-i18n="landing.card.dev.p">??? ? ?????????? ?????? ??????? ?????????? ???? � ??????? ??????? ???? ?????????? ???? ? ??????? ??? ??????? ??????.</p></div>
+    <div class="lcard" data-go="v-dash" role="button" tabindex="0"><i class="fa-solid fa-chart-line"></i><h3 data-i18n="landing.card.dash.t">داشبورد اعتبارسنجی</h3><p data-i18n="landing.card.dash.p">مقایسه لحظه‌ای نتایج شبیه‌سازی با عملکرد استاندارد سویه، همراه با نمودار رشد و ضریب تبدیل خوراک اختصاصی هر کاربر.</p></div>
+    <div class="lcard" data-go="v-exp" role="button" tabindex="0"><i class="fa-solid fa-vial"></i><h3 data-i18n="landing.card.exp.t">طرح آزمایش</h3><p data-i18n="landing.card.exp.p">تعریف دوره‌های پرورشی، گروه‌های تیمار و تکرارهای آزمایشی — هر دوره به‌صورت کامل و ایزوله در حساب کاربری شما ثبت می‌شود.</p></div>
+    <div class="lcard" data-go="v-farm" role="button" tabindex="0"><i class="fa-solid fa-map"></i><h3 data-i18n="landing.card.farm.t">نقشه فارم پویا</h3><p data-i18n="landing.card.farm.p">جانمایی جایگاه‌های پرورشی، حسگرها و نمایش وضعیت زنده فارم — داده‌ها به‌صورت اختصاصی و ایزوله در اختیار شما قرار دارد.</p></div>
+    <div class="lcard" data-go="v-sim" role="button" tabindex="0"><i class="fa-solid fa-satellite-dish"></i><h3 data-i18n="landing.card.sim.t">شبیه‌سازی زنده</h3><p data-i18n="landing.card.sim.p">اجرای سناریو با شناسه اختصاصی و مشاهده بلادرنگ نتایج و خروجی‌های شبیه‌سازی.</p></div>
+    <div class="lcard" data-go="v-scn" role="button" tabindex="0"><i class="fa-solid fa-layer-group"></i><h3 data-i18n="landing.card.scn.t">سناریوها</h3><p data-i18n="landing.card.scn.p">ذخیره‌سازی، مقایسه و اجرای مجدد سناریوهای شخصی‌سازی‌شده با امکان بازبینی دقیق نتایج.</p></div>
+    <div class="lcard" data-go="v-dev" role="button" tabindex="0"><i class="fa-solid fa-microchip"></i><h3 data-i18n="landing.card.dev.t">دستگاه و داده</h3><p data-i18n="landing.card.dev.p">ثبت و ذخیره‌سازی خودکار اطلاعات دستگاه‌های پایش — داده‌ها به‌صورت کامل کاربرمحور، ایمن و اختصاصی شما نگهداری می‌شود.</p></div>
   </div>
   <div class="landing-foot">
-    <p data-i18n="landing.foot.p">???? ?????? ?? ???????? ????????? ? ???????? ??????? ???? ???? ?????? ??? ????. ??????? ? ???????????? ?????? ??????? ? ?? ???? ?????? ??? ????? ???????.</p>
-    <button class="btn primary" id="landing-enter"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="landing.foot.btn">???? ? ????</span></button>
+    <p data-i18n="landing.foot.p">برای دسترسی به داشبورد، آزمایش‌ها و داده‌های دستگاه، وارد حساب کاربری خود شوید. داده‌ها و شبیه‌سازی‌ها کاملاً اختصاصی و بر اساس عملکرد شما ذخیره می‌شوند.</p>
+    <button class="btn primary" id="landing-enter"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="landing.foot.btn">ورود و شروع</span></button>
   </div>
 </section>
 
-<section class="view" id="v-workspace" data-title-i18n="ws.aria" aria-label="???? ??????">
+<section class="view" id="v-workspace" data-title-i18n="ws.aria" aria-label="محیط کاربری">
   <div class="ws-wrap">
     <div class="ws-head" id="ws-head">
-      <div class="ws-avatar" id="ws-avatar">?</div>
+      <div class="ws-avatar" id="ws-avatar">ق</div>
       <div class="ws-head-main">
-        <b id="ws-name" data-i18n="ws.title">???? ?????? ????</b>
-        <span id="ws-email" data-i18n="ws.subtitle">???? ??? � ???????? ??? ?????? ??????? ? ?????? ???</span>
+        <b id="ws-name" data-i18n="ws.title">محیط کاربری آرین</b>
+        <span id="ws-email" data-i18n="ws.subtitle">وارد شده — داده‌های شما کاملاً اختصاصی و ایزوله است</span>
       </div>
       <div class="ws-badges">
-        <span class="ws-badge ok" id="ws-role" data-i18n="ws.badge.user">?????</span>
-        <span class="ws-badge" id="ws-status" data-i18n="ws.badge.active">?�??? � ?????????</span>
+        <span class="ws-badge ok" id="ws-role" data-i18n="ws.badge.user">کاربر</span>
+        <span class="ws-badge" id="ws-status" data-i18n="ws.badge.active">فعال • کاربرمحور</span>
       </div>
     </div>
     <div class="ws-stats">
-      <div class="ws-stat ws-stat-btn" id="ws-cycles-stat" role="button" tabindex="0" aria-haspopup="true"><b id="ws-n-cycles">�</b><span data-i18n="ws.stat.cycles">???????</span></div>
-      <div class="ws-stat"><b id="ws-n-scenarios">�</b><span data-i18n="ws.stat.scenarios">????????</span></div>
-      <div class="ws-stat"><b id="ws-n-device">�</b><span data-i18n="ws.stat.device">????? ??????</span></div>
-      <div class="ws-stat"><b>?? ?????</b><span data-i18n="ws.stat.live">???? ????</span></div>
+      <div class="ws-stat ws-stat-btn" id="ws-cycles-stat" role="button" tabindex="0" aria-haspopup="true"><b id="ws-n-cycles">—</b><span data-i18n="ws.stat.cycles">دوره‌ها</span></div>
+      <div class="ws-stat"><b id="ws-n-scenarios">—</b><span data-i18n="ws.stat.scenarios">سناریوها</span></div>
+      <div class="ws-stat"><b id="ws-n-device">—</b><span data-i18n="ws.stat.device">رکورد دستگاه</span></div>
+      <div class="ws-stat"><b>۲۴ ساعته</b><span data-i18n="ws.stat.live">داده زنده</span></div>
     </div>
     <div id="ws-cycles-panel" hidden>
-      <div class="ws-cy-head"><b data-i18n="ws.cy.manage">?????? ???????</b><button id="ws-cy-close" class="icon-btn" aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
+      <div class="ws-cy-head"><b data-i18n="ws.cy.manage">مدیریت دوره‌ها</b><button id="ws-cy-close" class="icon-btn" aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
       <div id="ws-cy-list"></div>
     </div>
     <div class="ws-grid">
-      <div class="ws-card" data-go="v-dash"><i class="fa-solid fa-chart-line"></i><h3 data-i18n="ws.card.dash.t">??????? ??????????</h3><p data-i18n="ws.card.dash.p">?????? ????????? ?? ???? ????? ? ?????? ???</p><span class="ws-go" data-i18n="ws.go">???? ?? ??? <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-exp"><i class="fa-solid fa-vial"></i><h3 data-i18n="ws.card.exp.t">??? ??????</h3><p data-i18n="ws.card.exp.p">?????� ???????? ??????? ? ???????</p><span class="ws-go" data-i18n="ws.go">???? ?? ??? <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-farm"><i class="fa-solid fa-map"></i><h3 data-i18n="ws.card.farm.t">???? ?�??? ????</h3><p data-i18n="ws.card.farm.p">??????? ????? ? ?????? ??????? ????</p><span class="ws-go" data-i18n="ws.go">???? ?? ??? <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-sim"><i class="fa-solid fa-satellite-dish"></i><h3 data-i18n="ws.card.sim.t">????????? ????</h3><p data-i18n="ws.card.sim.p">????? ?????? ?? ????? ???????</p><span class="ws-go" data-i18n="ws.go">???? ?? ??? <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-scn"><i class="fa-solid fa-layer-group"></i><h3 data-i18n="ws.card.scn.t">????????</h3><p data-i18n="ws.card.scn.p">?????? ?????? ? ????? ????</p><span class="ws-go" data-i18n="ws.go">???? ?? ??? <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-dev"><i class="fa-solid fa-microchip"></i><h3 data-i18n="ws.card.dev.t">?????? ? ????</h3><p data-i18n="ws.card.dev.p">??? ?????? ??????? � ???????? ?????????</p><span class="ws-go" data-i18n="ws.go">???? ?? ??? <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-sci"><i class="fa-solid fa-book-open"></i><h3 data-i18n="ws.card.sci.t">????? ????</h3><p data-i18n="ws.card.sci.p">??????? ??? ? ????� ?????</p><span class="ws-go" data-i18n="ws.go">???? ?? ??? <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="ws-card" data-go="v-met"><i class="fa-solid fa-flask-vial"></i><h3 data-i18n="ws.card.met.t">?????????</h3><p data-i18n="ws.card.met.p">??? ??????????? ? ??????????</p><span class="ws-go" data-i18n="ws.go">???? ?? ??? <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-dash"><i class="fa-solid fa-chart-line"></i><h3 data-i18n="ws.card.dash.t">داشبورد اعتبارسنجی</h3><p data-i18n="ws.card.dash.p">مقایسه شبیه‌سازی با داده واقعی و نمودار رشد</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-exp"><i class="fa-solid fa-vial"></i><h3 data-i18n="ws.card.exp.t">طرح آزمایش</h3><p data-i18n="ws.card.exp.p">تعریف دوره‌ها، تیمارها و تکرارها</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-farm"><i class="fa-solid fa-map"></i><h3 data-i18n="ws.card.farm.t">نقشه فارم پویا</h3><p data-i18n="ws.card.farm.p">جانمایی پن‌ها و حسگرها به‌صورت زنده</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-sim"><i class="fa-solid fa-satellite-dish"></i><h3 data-i18n="ws.card.sim.t">شبیه‌سازی زنده</h3><p data-i18n="ws.card.sim.p">اجرای سناریو با نتیجه بلادرنگ</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-scn"><i class="fa-solid fa-layer-group"></i><h3 data-i18n="ws.card.scn.t">سناریوها</h3><p data-i18n="ws.card.scn.p">ذخیره، مقایسه و اجرای مجدد</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-dev"><i class="fa-solid fa-microchip"></i><h3 data-i18n="ws.card.dev.t">دستگاه و داده</h3><p data-i18n="ws.card.dev.p">ثبت خودکار داده‌ها — داده‌های کاربرمحور</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-sci"><i class="fa-solid fa-book-open"></i><h3 data-i18n="ws.card.sci.t">مبانی علمی</h3><p data-i18n="ws.card.sci.p">مدل‌های رشد و مصرف خوراک</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="ws-card" data-go="v-met"><i class="fa-solid fa-flask-vial"></i><h3 data-i18n="ws.card.met.t">روش‌شناسی</h3><p data-i18n="ws.card.met.p">روش اندازه‌گیری و اعتبارسنجی</p><span class="ws-go" data-i18n="ws.go">ورود به بخش <i class="fa-solid fa-arrow-left"></i></span></div>
     </div>
     <div class="ws-actions">
-      <button class="btn primary" id="ws-go-dash"><i class="fa-solid fa-gauge"></i> <span data-i18n="ws.btn.dash">??�?? ?? ???????</span></button>
-      <button class="btn ghost" id="ws-change-pass"><i class="fa-solid fa-key"></i> <span data-i18n="ws.btn.pass">????? ???</span></button>
-      <button class="btn ghost" id="ws-logout"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="ws.btn.logout">???? ?? ????</span></button>
-      <button class="btn ghost" id="ws-back-landing"><i class="fa-solid fa-house"></i> <span data-i18n="ws.btn.home">?????? ?? ??�?? ????</span></button>
+      <button class="btn primary" id="ws-go-dash"><i class="fa-solid fa-gauge"></i> <span data-i18n="ws.btn.dash">رفتن به داشبورد</span></button>
+      <button class="btn ghost" id="ws-change-pass"><i class="fa-solid fa-key"></i> <span data-i18n="ws.btn.pass">تغییر رمز</span></button>
+      <button class="btn ghost" id="ws-logout"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="ws.btn.logout">خروج از حساب</span></button>
+      <button class="btn ghost" id="ws-back-landing"><i class="fa-solid fa-house"></i> <span data-i18n="ws.btn.home">بازگشت به صفحه اصلی</span></button>
     </div>
   </div>
 </section>
 <section class="view" id="v-404" aria-label="Not found">
   <div class="nf-wrap">
     <div class="nf-code">404</div>
-    <h2 data-i18n="nf.title">??�?? ???? ???</h2>
-    <p data-i18n="nf.p">????? ?? ???? ???????? ???? ????? ?? ??????? ??? ???.</p>
+    <h2 data-i18n="nf.title">صفحه پیدا نشد</h2>
+    <p data-i18n="nf.p">آدرسی که وارد کرده‌اید وجود ندارد یا جابه‌جا شده است.</p>
     <div class="nf-actions">
-      <button class="btn primary" data-goto="v-landing"><i class="fa-solid fa-house"></i> <span data-i18n="nf.home">??�?? ????</span></button>
-      <button class="btn ghost" data-goto="v-about"><i class="fa-solid fa-circle-info"></i> <span data-i18n="nav.about">?????? ??</span></button>
+      <button class="btn primary" data-goto="v-landing"><i class="fa-solid fa-house"></i> <span data-i18n="nf.home">صفحه اصلی</span></button>
+      <button class="btn ghost" data-goto="v-about"><i class="fa-solid fa-circle-info"></i> <span data-i18n="nav.about">درباره ما</span></button>
     </div>
   </div>
 </section>
 <section class="view" id="v-feed" aria-label="Feed Monitoring">
   <div class="view-head">
-    <span class="eyebrow">FEED MONITORING � <span data-i18n="nav.feedGroup">????? ???? ????� ?????</span></span>
-    <h2 data-i18n="feed.h">????? ???? ????� ?????</h2>
-    <p data-i18n="feed.p">???? ??????? ????� ????? ?? ????? ?? ??????? RFID ? ????? ?????? � ?? ????? ?????? ?? ?????????? ? ????? ??????? ???? ??????? ??????? ?????? ?? ???? ???</p>
+    <span class="eyebrow">FEED MONITORING · <span data-i18n="nav.feedGroup">سیستم پایش مصرف خوراک</span></span>
+    <h2 data-i18n="feed.h">سیستم پایش مصرف خوراک</h2>
+    <p data-i18n="feed.p">پایش لحظه‌ای مصرف خوراک هر پرنده با حسگرهای RFID و لودسل دوگانه — از طراحی آزمایش تا اعتبارسنجی و تحلیل سناریو، تمام داده‌ها به‌صورت ایزوله در حساب شما</p>
   </div>
 
   <div class="feed-hero">
     <div class="feed-hero-bg"></div>
     <div class="feed-hero-inner">
-      <div class="feed-badge"><i class="fa-solid fa-satellite-dish"></i> <span data-i18n="feed.badge">???? ?? ????? � ???? ??????</span></div>
-      <h2><span data-i18n="feed.hero.t">??????? ?? ????? ?? ?????</span></h2>
-      <p data-i18n="feed.hero.p">??�? ????? ????? ?? ?? ???? ??? ??????: ??????????? ?????? ???? ????? ?????????? ??????? ??????�??? ? ?????????</p>
+      <div class="feed-badge"><i class="fa-solid fa-satellite-dish"></i> <span data-i18n="feed.badge">پایش ۲۴ ساعته · داده ایزوله</span></div>
+      <h2><span data-i18n="feed.hero.t">یکپارچه از مزرعه تا تحلیل</span></h2>
+      <p data-i18n="feed.hero.p">هفت ماژول تخصصی در یک گردش کار پیوسته: اعتبارسنجی، طراحی، نقشه زنده، شبیه‌سازی، سناریو، سخت‌افزار و روش‌شناسی</p>
       <div class="feed-hero-cta">
-        <button class="btn primary" data-goto="v-sim"><i class="fa-solid fa-play"></i> <span data-i18n="feed.btn.sim">???? ????????? ????</span></button>
-        <button class="btn ghost" data-goto="v-exp"><i class="fa-solid fa-vial"></i> <span data-i18n="feed.btn.exp">????? ??????</span></button>
+        <button class="btn primary" data-goto="v-sim"><i class="fa-solid fa-play"></i> <span data-i18n="feed.btn.sim">شروع شبیه‌سازی زنده</span></button>
+        <button class="btn ghost" data-goto="v-exp"><i class="fa-solid fa-vial"></i> <span data-i18n="feed.btn.exp">طراحی آزمایش</span></button>
       </div>
     </div>
     <div class="feed-visual" aria-hidden="true">
       <div class="feed-vis-grid">
-        <div class="feed-vis-card"><i class="fa-solid fa-chart-line"></i><b data-i18n="nav.dash">??????? ??????????</b><span>MAE ?�?% � FCR</span></div>
-        <div class="feed-vis-card"><i class="fa-solid fa-map"></i><b data-i18n="nav.farm">???? ?�??? ????</b><span>??? ????? � ?????</span></div>
-        <div class="feed-vis-card"><i class="fa-solid fa-satellite-dish"></i><b data-i18n="nav.sim">????????? ????</b><span>RFID + ?????</span></div>
-        <div class="feed-vis-card"><i class="fa-solid fa-microchip"></i><b data-i18n="nav.dev">?????? ? ????</b><span>?? ???? � ? ????�/????</span></div>
+        <div class="feed-vis-card"><i class="fa-solid fa-chart-line"></i><b data-i18n="nav.dash">داشبورد اعتبارسنجی</b><span>MAE ۱–۲٪ · FCR</span></div>
+        <div class="feed-vis-card"><i class="fa-solid fa-map"></i><b data-i18n="nav.farm">نقشه فارم پویا</b><span>پخش زمانی · اشغال</span></div>
+        <div class="feed-vis-card"><i class="fa-solid fa-satellite-dish"></i><b data-i18n="nav.sim">شبیه‌سازی زنده</b><span>RFID + لودسل</span></div>
+        <div class="feed-vis-card"><i class="fa-solid fa-microchip"></i><b data-i18n="nav.dev">دستگاه و داده</b><span>۱۲ ستون · ۳ ردیف/وعده</span></div>
       </div>
     </div>
   </div>
 
   <div class="feed-kpis">
-    <div class="feed-kpi"><b data-i18n="feed.kpi.acc.v">?�?%</b><span class="kpi-l" data-i18n="feed.kpi.acc">??? ??????????</span><span class="kpi-s" data-i18n="feed.kpi.acc.s">MAE ??? ?? ????? ???????</span></div>
-    <div class="feed-kpi"><b data-i18n="feed.kpi.live.v">?? ?????</b><span class="kpi-l" data-i18n="feed.kpi.live">???? ?????</span><span class="kpi-s" data-i18n="feed.kpi.live.s">????? ?-????�? ?? ????</span></div>
-    <div class="feed-kpi"><b data-i18n="feed.kpi.iso.v">???%</b><span class="kpi-l" data-i18n="feed.kpi.iso">?????? ?????</span><span class="kpi-s" data-i18n="feed.kpi.iso.s">?? ????? ???? ???????</span></div>
-    <div class="feed-kpi"><b data-i18n="feed.kpi.through.v">??k+</b><span class="kpi-l" data-i18n="feed.kpi.through">???�??</span><span class="kpi-s" data-i18n="feed.kpi.through.s">????? ?? ?? ????</span></div>
+    <div class="feed-kpi"><b data-i18n="feed.kpi.acc.v">۱–۲٪</b><span class="kpi-l" data-i18n="feed.kpi.acc">دقت اعتبارسنجی</span><span class="kpi-s" data-i18n="feed.kpi.acc.s">MAE وزن در برابر کاتالوگ</span></div>
+    <div class="feed-kpi"><b data-i18n="feed.kpi.live.v">۲۴ ساعته</b><span class="kpi-l" data-i18n="feed.kpi.live">پوشش زمانی</span><span class="kpi-s" data-i18n="feed.kpi.live.s">رکورد ۳-ردیفه هر وعده</span></div>
+    <div class="feed-kpi"><b data-i18n="feed.kpi.iso.v">۱۰۰٪</b><span class="kpi-l" data-i18n="feed.kpi.iso">ایزوله کاربر</span><span class="kpi-s" data-i18n="feed.kpi.iso.s">هر حساب، داده اختصاصی</span></div>
+    <div class="feed-kpi"><b data-i18n="feed.kpi.through.v">۱۰k+</b><span class="kpi-l" data-i18n="feed.kpi.through">ظرفیت</span><span class="kpi-s" data-i18n="feed.kpi.through.s">رکورد در هر دوره</span></div>
   </div>
 
   <div class="feed-section">
-    <h3><i class="fa-solid fa-diagram-project"></i> <span data-i18n="feed.steps.t">???? ???</span></h3>
+    <h3><i class="fa-solid fa-diagram-project"></i> <span data-i18n="feed.steps.t">گردش کار</span></h3>
     <div class="feed-steps">
-      <div class="feed-step"><div class="step-no">?</div><b data-i18n="feed.steps.s1.t">?. ?????</b><p data-i18n="feed.steps.s1.p">?????? ???????? ?????</p></div>
-      <div class="feed-step"><div class="step-no">?</div><b data-i18n="feed.steps.s2.t">?. ?????????</b><p data-i18n="feed.steps.s2.p">????? Weibull + ??� ???????</p></div>
-      <div class="feed-step"><div class="step-no">?</div><b data-i18n="feed.steps.s3.t">?. ???? ????</b><p data-i18n="feed.steps.s3.p">RFID + ?? ?????</p></div>
-      <div class="feed-step"><div class="step-no">?</div><b data-i18n="feed.steps.s4.t">?. ??????????</b><p data-i18n="feed.steps.s4.p">????? ??? vs ???????</p></div>
-      <div class="feed-step"><div class="step-no">?</div><b data-i18n="feed.steps.s5.t">?. ??????</b><p data-i18n="feed.steps.s5.p">??? ?????? / ??????? ???</p></div>
+      <div class="feed-step"><div class="step-no">۱</div><b data-i18n="feed.steps.s1.t">۱. طراحی</b><p data-i18n="feed.steps.s1.p">پن‌ها، تیمارها، تراکم</p></div>
+      <div class="feed-step"><div class="step-no">۲</div><b data-i18n="feed.steps.s2.t">۲. شبیه‌سازی</b><p data-i18n="feed.steps.s2.p">موتور Weibull + صف ۹۰ثانیه</p></div>
+      <div class="feed-step"><div class="step-no">۳</div><b data-i18n="feed.steps.s3.t">۳. پایش زنده</b><p data-i18n="feed.steps.s3.p">RFID + دو لودسل</p></div>
+      <div class="feed-step"><div class="step-no">۴</div><b data-i18n="feed.steps.s4.t">۴. اعتبارسنجی</b><p data-i18n="feed.steps.s4.p">منحنی رشد vs کاتالوگ</p></div>
+      <div class="feed-step"><div class="step-no">۵</div><b data-i18n="feed.steps.s5.t">۵. سناریو</b><p data-i18n="feed.steps.s5.p">تنش گرمایی / ایستگاه دوم</p></div>
     </div>
   </div>
 
   <div class="feed-section">
-    <h3><i class="fa-solid fa-layer-group"></i> <span data-i18n="feed.grid.t">??�? ????? � ?? ??????</span></h3>
+    <h3><i class="fa-solid fa-layer-group"></i> <span data-i18n="feed.grid.t">هفت ماژول — یک سامانه</span></h3>
     <div class="feed-grid">
-      <div class="feed-card" data-goto="v-dash"><i class="fa-solid fa-chart-line"></i><h4 data-i18n="feed.card.dash.t">??????? ??????????</h4><p data-i18n="feed.card.dash.p">?????? ????????? ?? ??????? ???? ????? FCR ???????? ? ???? ??-????</p><span class="feed-go"><span data-i18n="feed.go">???? ?? ???</span> <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="feed-card" data-goto="v-exp"><i class="fa-solid fa-vial"></i><h4 data-i18n="feed.card.exp.t">??? ??????</h4><p data-i18n="feed.card.exp.p">?????� ??? ?????? ????? ? ????? � ????? ?�??? ? ????</p><span class="feed-go"><span data-i18n="feed.go">???? ?? ???</span> <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="feed-card" data-goto="v-farm"><i class="fa-solid fa-map"></i><h4 data-i18n="feed.card.farm.t">???? ?�??? ????</h4><p data-i18n="feed.card.farm.p">??? ????? ?? ??????? ?????? ????? ?? ? ?????? ?????</p><span class="feed-go"><span data-i18n="feed.go">???? ?? ???</span> <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="feed-card" data-goto="v-sim"><i class="fa-solid fa-satellite-dish"></i><h4 data-i18n="feed.card.sim.t">????????? ????</h4><p data-i18n="feed.card.sim.p">????? ??????? RFID/???? ?????? ???? ? ?????</p><span class="feed-go"><span data-i18n="feed.go">???? ?? ???</span> <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="feed-card" data-goto="v-scn"><i class="fa-solid fa-layer-group"></i><h4 data-i18n="feed.card.scn.t">????????</h4><p data-i18n="feed.card.scn.p">?????? ??�????? ?? seed ????? � ??? ?????</p><span class="feed-go"><span data-i18n="feed.go">???? ?? ???</span> <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="feed-card" data-goto="v-dev"><i class="fa-solid fa-microchip"></i><h4 data-i18n="feed.card.dev.t">?????? ? ????</h4><p data-i18n="feed.card.dev.p">?????? ?????? ???? ??� ? schema ??-?????</p><span class="feed-go"><span data-i18n="feed.go">???? ?? ???</span> <i class="fa-solid fa-arrow-left"></i></span></div>
-      <div class="feed-card" data-goto="v-met"><i class="fa-solid fa-flask-vial"></i><h4 data-i18n="feed.card.met.t">?????????</h4><p data-i18n="feed.card.met.p">?????? ???? ??????? ? ??????????? ??�??�</p><span class="feed-go"><span data-i18n="feed.go">???? ?? ???</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-dash"><i class="fa-solid fa-chart-line"></i><h4 data-i18n="feed.card.dash.t">داشبورد اعتبارسنجی</h4><p data-i18n="feed.card.dash.p">مقایسه روزبه‌روز با کاتالوگ رسمی سویه، FCR پنجره‌ای و باند نر-ماده</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-exp"><i class="fa-solid fa-vial"></i><h4 data-i18n="feed.card.exp.t">طرح آزمایش</h4><p data-i18n="feed.card.exp.p">تعریف پن، تعداد، تیمار و تکرار — مبنای فارم و آمار</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-farm"><i class="fa-solid fa-map"></i><h4 data-i18n="feed.card.farm.t">نقشه فارم پویا</h4><p data-i18n="feed.card.farm.p">پخش زمانی با پرندگان متحرک، اشغال پن و انتخاب پرنده</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-sim"><i class="fa-solid fa-satellite-dish"></i><h4 data-i18n="feed.card.sim.t">شبیه‌سازی زنده</h4><p data-i18n="feed.card.sim.p">جریان لحظه‌ای RFID/وزن، نمودار زنده و خروجی</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-scn"><i class="fa-solid fa-layer-group"></i><h4 data-i18n="feed.card.scn.t">سناریوها</h4><p data-i18n="feed.card.scn.p">مقایسه جفت‌شده با seed یکسان — اثر تیمار</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-dev"><i class="fa-solid fa-microchip"></i><h4 data-i18n="feed.card.dev.t">دستگاه و داده</h4><p data-i18n="feed.card.dev.p">معماری سنسور، منطق صف و schema ۱۲-ستونه</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
+      <div class="feed-card" data-goto="v-met"><i class="fa-solid fa-flask-vial"></i><h4 data-i18n="feed.card.met.t">روش‌شناسی</h4><p data-i18n="feed.card.met.p">زنجیره مدل، معادلات و محدودیت‌های شفاف</p><span class="feed-go"><span data-i18n="feed.go">ورود به بخش</span> <i class="fa-solid fa-arrow-left"></i></span></div>
     </div>
   </div>
 
   <div class="feed-cta">
-    <div><h4 data-i18n="feed.cta.t">????? ???? ??????</h4><p data-i18n="feed.cta.p">??? ??? ?? ?????? ?? ????????? ???? ?? ???? ???? � ??????? ??????? ?????? ????? ??????.</p></div>
+    <div><h4 data-i18n="feed.cta.t">آماده پایش هستید؟</h4><p data-i18n="feed.cta.p">طرح خود را بسازید یا شبیه‌سازی زنده را آغاز کنید — داده‌ها به‌صورت خودکار ذخیره می‌شود.</p></div>
     <div class="cta-actions">
-      <button class="btn primary" data-goto="v-sim"><i class="fa-solid fa-play"></i> <span data-i18n="feed.btn.sim">???? ????????? ????</span></button>
-      <button class="btn ghost" data-goto="v-exp"><i class="fa-solid fa-vial"></i> <span data-i18n="feed.btn.exp">????? ??????</span></button>
+      <button class="btn primary" data-goto="v-sim"><i class="fa-solid fa-play"></i> <span data-i18n="feed.btn.sim">شروع شبیه‌سازی زنده</span></button>
+      <button class="btn ghost" data-goto="v-exp"><i class="fa-solid fa-vial"></i> <span data-i18n="feed.btn.exp">طراحی آزمایش</span></button>
     </div>
   </div>
 </section>
 <section class="view" id="v-dash">
   <div class="view-head">
-    <span class="eyebrow">DASH � <span data-i18n="dash.h">dash.h</span></span>
+    <span class="eyebrow">DASH · <span data-i18n="dash.h">dash.h</span></span>
     <h2 data-i18n="dash.h.t">dash.h.t</h2>
     <p data-i18n="dash.p">dash.p</p>
   </div>
   <div class="strainbanner">
-    ?? <span data-i18n="dash.active">??????? ?�???:</span> <b id="db-strain">�</b>
-    <span class="dm">�</span><span id="db-guide">�</span>
-    <a class="src-lnk srcs" id="db-glink" href="#" target="_blank" rel="noopener" data-i18n="dash.source">???? ???? ?</a>
+    🧬 <span data-i18n="dash.active">کاتالوگ فعال:</span> <b id="db-strain">—</b>
+    <span class="dm">·</span><span id="db-guide">—</span>
+    <a class="src-lnk srcs" id="db-glink" href="#" target="_blank" rel="noopener" data-i18n="dash.source">منبع رسمی ↗</a>
   </div>
 
   <div class="grid g4">
-    <div class="card kpi"><h3><span class="ic">??�</span><span data-i18n="kpi.bw">??? ????? ????? d??</span></h3>
-      <div class="v acc"><span id="k-bw">�</span><small style="font-size:13px"> g</small></div>
-      <div class="u"><span data-i18n="kpi.poTarget">???� ???????:</span> <b id="k-bw-po">�</b> g � <span data-i18n="kpi.dev">??????�</span> <b id="k-bw-dev">�</b></div></div>
-    <div class="card kpi"><h3><span class="ic">??</span><span data-i18n="kpi.mae">MAE ??? ????? ???????</span></h3>
-      <div class="v blue" id="k-mae" dir="ltr">�</div>
-      <div class="u" data-i18n="kpi.maeSub">??????? ??????? ???? ??? ?????</div></div>
-    <div class="card kpi"><h3><span class="ic">?�</span><span data-i18n="kpi.fcr">FCR ???????? d??�??</span></h3>
-      <div class="v org" id="k-fcr" dir="ltr">�</div>
-      <div class="u"><span data-i18n="kpi.ref">????:</span> <b id="k-fcr-po">�</b></div></div>
-    <div class="card kpi"><h3><span class="ic">?�??�</span><span data-i18n="kpi.visits">???? ?????? ?? ?????</span></h3>
-      <div class="v prp" id="k-visits">�</div>
-      <div class="u">p5�p95: <b id="k-vrange">�</b></div></div>
+    <div class="card kpi"><h3><span class="ic">⚖️</span><span data-i18n="kpi.bw">وزن نهایی تجمعی d۶۰</span></h3>
+      <div class="v acc"><span id="k-bw">—</span><small style="font-size:13px"> g</small></div>
+      <div class="u"><span data-i18n="kpi.poTarget">هدف کاتالوگ:</span> <b id="k-bw-po">—</b> g · <span data-i18n="kpi.dev">انحراف</span> <b id="k-bw-dev">—</b></div></div>
+    <div class="card kpi"><h3><span class="ic">🎯</span><span data-i18n="kpi.mae">MAE وزن مقابل کاتالوگ</span></h3>
+      <div class="v blue" id="k-mae" dir="ltr">—</div>
+      <div class="u" data-i18n="kpi.maeSub">میانگین قدرمطلق خطا، همه پن‌ها</div></div>
+    <div class="card kpi"><h3><span class="ic">🔁</span><span data-i18n="kpi.fcr">FCR پنجره‌ای d۱۵–۶۰</span></h3>
+      <div class="v org" id="k-fcr" dir="ltr">—</div>
+      <div class="u"><span data-i18n="kpi.ref">مرجع:</span> <b id="k-fcr-po">—</b></div></div>
+    <div class="card kpi"><h3><span class="ic">🍽️</span><span data-i18n="kpi.visits">وعده روزانه هر پرنده</span></h3>
+      <div class="v prp" id="k-visits">—</div>
+      <div class="u">p5–p95: <b id="k-vrange">—</b></div></div>
   </div>
 
   <div class="grid g4" style="margin-top:13px">
-    <div class="ministat"><span class="mv bad" id="ms-deaths">�</span><span class="ml" data-i18n-html="ms.deaths">???�?? ?????<br>(????%/??? ?? d??)</span></div>
-    <div class="ministat"><span class="mv blue" id="ms-fills">�</span><span class="ml" data-i18n-html="ms.fills">???? ????<br>(?????? ?kg ?� ??kg)</span></div>
-    <div class="ministat"><span class="mv org" id="ms-ovl">�</span><span class="ml" data-i18n-html="ms.ovl">?????? ????????<br>(???�???? ?? ??� >??s)</span></div>
-    <div class="ministat"><span class="mv acc" id="ms-rows">�</span><span class="ml" data-i18n-html="ms.rows">????? ??????<br>(? ????�/????)</span></div>
+    <div class="ministat"><span class="mv bad" id="ms-deaths">—</span><span class="ml" data-i18n-html="ms.deaths">تلفات تجمعی<br>(۰٫۰۸٪/روز از d۲۱)</span></div>
+    <div class="ministat"><span class="mv blue" id="ms-fills">—</span><span class="ml" data-i18n-html="ms.fills">شارژ مخزن<br>(آستانه ۳kg ← ۲۵kg)</span></div>
+    <div class="ministat"><span class="mv org" id="ms-ovl">—</span><span class="ml" data-i18n-html="ms.ovl">رویداد هم‌زمانی<br>(صرف‌نظر از صف >۹۰s)</span></div>
+    <div class="ministat"><span class="mv acc" id="ms-rows">—</span><span class="ml" data-i18n-html="ms.rows">رکورد دستگاه<br>(۳ ردیف/وعده)</span></div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
     <div class="card">
-      <h3><span class="ic">??</span><span data-i18n="ch.growth">????? ??? � ????????? vs ???????</span>
+      <h3><span class="ic">📈</span><span data-i18n="ch.growth">منحنی رشد — شبیه‌سازی vs کاتالوگ</span>
         <small class="src" id="ch-growth-src">(Aviagen)</small></h3>
       <div class="chart-box tall"><canvas id="c-growth"></canvas></div>
       <div class="legend">
-        <span class="lg"><span class="sw" style="background:var(--acc)"></span><span data-i18n="lg.sim">?????????</span></span>
-        <span class="lg"><span class="sw" style="background:#8a95ab"></span><span data-i18n="lg.po">??????? ????</span></span>
-        <span class="lg"><span class="sw bar" style="background:rgba(139,92,246,.25)"></span><span data-i18n="lg.band">???? ??�????</span></span>
+        <span class="lg"><span class="sw" style="background:var(--acc)"></span><span data-i18n="lg.sim">شبیه‌سازی</span></span>
+        <span class="lg"><span class="sw" style="background:#8a95ab"></span><span data-i18n="lg.po">کاتالوگ رسمی</span></span>
+        <span class="lg"><span class="sw bar" style="background:rgba(139,92,246,.25)"></span><span data-i18n="lg.band">باند نر–ماده</span></span>
       </div>
     </div>
     <div class="card">
-      <h3><span class="ic">??</span><span data-i18n="ch.intake">????� ????? ?????? ?? ?????</span></h3>
+      <h3><span class="ic">🌾</span><span data-i18n="ch.intake">مصرف خوراک روزانه هر پرنده</span></h3>
       <div class="chart-box tall"><canvas id="c-intake"></canvas></div>
       <div class="legend">
-        <span class="lg"><span class="sw bar" style="background:rgba(61,123,253,.85)"></span><span data-i18n="lg.sim">?????????</span></span>
-        <span class="lg"><span class="sw" style="background:var(--warn)"></span><span data-i18n="lg.target">???� ???????</span></span>
+        <span class="lg"><span class="sw bar" style="background:rgba(61,123,253,.85)"></span><span data-i18n="lg.sim">شبیه‌سازی</span></span>
+        <span class="lg"><span class="sw" style="background:var(--warn)"></span><span data-i18n="lg.target">هدف کاتالوگ</span></span>
       </div>
     </div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
     <div class="card">
-      <h3><span class="ic">?�</span><span data-i18n="ch.fcr">FCR ???????? ?? ??�??? ?????? ??</span></h3>
+      <h3><span class="ic">🔁</span><span data-i18n="ch.fcr">FCR پنجره‌ای به تفکیک اندازه پن</span></h3>
       <div class="chart-box"><canvas id="c-fcr"></canvas></div>
       <div class="note gd" id="fcr-note" style="margin-top:10px"></div>
     </div>
     <div class="card">
-      <h3><span class="ic">??</span><span data-i18n="ch.diurnal">????? ?????????? ??????????</span>
-        <small class="src">(18L:6D � [8])</small></h3>
+      <h3><span class="ic">🌗</span><span data-i18n="ch.diurnal">الگوی شبانه‌روزی خوراک‌خوری</span>
+        <small class="src">(18L:6D — [8])</small></h3>
       <div class="chart-box"><canvas id="c-diurnal"></canvas></div>
       <div class="legend">
-        <span class="lg"><span class="sw bar" style="background:rgba(139,92,246,.8)"></span><span data-i18n="lg.hourShare">??? ???? ?? ????�</span></span>
-        <span class="lg"><span class="sw bar" style="background:#232d44"></span><span data-i18n="lg.dark">??????</span></span>
+        <span class="lg"><span class="sw bar" style="background:rgba(139,92,246,.8)"></span><span data-i18n="lg.hourShare">سهم ساعت از مصرف</span></span>
+        <span class="lg"><span class="sw bar" style="background:#232d44"></span><span data-i18n="lg.dark">تاریکی</span></span>
       </div>
     </div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
     <div class="card">
-      <h3><span class="ic">??</span><span data-i18n="ch.station">????? ????? ??????? ?????</span></h3>
+      <h3><span class="ic">🚦</span><span data-i18n="ch.station">تحلیل اشباع ایستگاه تغذیه</span></h3>
       <div id="st-list"></div>
-      <div class="note wn" style="margin-top:11px" data-i18n-html="dash.stationNote">?? ???�?? ?????: ?? ?? ?????? ?? ???? ????? ????? ??? ??????? ??????? ?? ?????? ?? ???�?? ???? ?????? ? ???? ?? =?? ??????? ??? ????? ?????? (?? ????????).</div>
+      <div class="note wn" style="margin-top:11px" data-i18n-html="dash.stationNote">💡 یافته طراحی: از پن ۱۰تایی به بالا اشباع ساعات پیک معنادار می‌شود؛ پن ۱۲تایی از ظرفیت عبور می‌کند ⇒ برای پن ≥۱۰ ایستگاه دوم توصیه می‌شود (تب سناریوها).</div>
     </div>
     <div class="card">
-      <h3><span class="ic">??</span><span data-i18n="ch.valTable">???? ????? ??????</span></h3>
+      <h3><span class="ic">📋</span><span data-i18n="ch.valTable">جدول تطبیق روزانه</span></h3>
       <div class="tbl-scroll">
         <table><thead><tr>
-          <th data-i18n="t.day">???</th><th class="num" data-i18n="t.simBW">??? sim</th><th class="num">PO</th>
-          <th class="num" data-i18n="t.dev">??????�</th><th class="num" data-i18n="t.simFI">FI sim</th>
-          <th class="num">FI PO</th><th data-i18n="t.status">?????</th>
+          <th data-i18n="t.day">روز</th><th class="num" data-i18n="t.simBW">وزن sim</th><th class="num">PO</th>
+          <th class="num" data-i18n="t.dev">انحراف</th><th class="num" data-i18n="t.simFI">FI sim</th>
+          <th class="num">FI PO</th><th data-i18n="t.status">وضعیت</th>
         </tr></thead><tbody id="tb-val"></tbody></table>
       </div>
     </div>
@@ -2178,40 +2178,40 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <!-- ================= 02 EXPERIMENT DESIGNER ================= -->
 <section class="view" id="v-exp">
   <div class="view-head">
-    <span class="eyebrow">EXP � <span data-i18n="exp.h">exp.h</span></span>
+    <span class="eyebrow">EXP · <span data-i18n="exp.h">exp.h</span></span>
     <h2 data-i18n="exp.h.t">exp.h.t</h2>
     <p data-i18n="exp.p">exp.p</p>
   </div>
   <div class="card">
-    <h3><span class="ic">?�?</span><span data-i18n="exp.title">???? ?????? � ??? ????? ? ?????</span>
-      <small class="src" data-i18n="exp.sub">???? ???? ?�??? ? ????????</small></h3>
+    <h3><span class="ic">🐔</span><span data-i18n="exp.title">طراح آزمایش — پن، تعداد و تیمار</span>
+      <small class="src" data-i18n="exp.sub">پایه نقشه فارم و خروجی‌ها</small></h3>
     <div class="controls">
-      <div class="ctrl"><label data-i18n="exp.preset">???? ?????</label>
+      <div class="ctrl"><label data-i18n="exp.preset">قالب آماده</label>
         <select id="exp-preset">
-          <option value="std" data-i18n="pre.std">????????? ????? � ? ?? ? ?? ?? ????</option>
-          <option value="t4x2" data-i18n="pre.t4x2">? ????? � ? ????? � ? ?? � ??</option>
-          <option value="heatcmp" data-i18n="pre.heatcmp">??? ?????? � ? ???? + ? ??? � ??</option>
-          <option value="vax" data-i18n="pre.vax">??? ??????????? � ?+? � ??</option>
-          <option value="big" data-i18n="pre.big">?? ???? ???? � ??</option>
+          <option value="std" data-i18n="pre.std">استاندارد پروژه — ۶ پن ۳ تا ۱۲ شاهد</option>
+          <option value="t4x2" data-i18n="pre.t4x2">۴ تیمار × ۲ تکرار — ۸ پن × ۱۵</option>
+          <option value="heatcmp" data-i18n="pre.heatcmp">تنش حرارتی — ۲ شاهد + ۲ تنش × ۲۰</option>
+          <option value="vax" data-i18n="pre.vax">اثر واکسیناسیون — ۳+۳ × ۲۵</option>
+          <option value="big" data-i18n="pre.big">پن بزرگ واحد — ۵۰</option>
         </select></div>
-      <button class="btn ghost" id="btn-exp-preset" data-i18n="btn.apply">? ????? ????</button>
-      <button class="btn ghost" id="btn-exp-add" data-i18n="btn.addPen">+ ??�???? ??</button>
-      <button class="btn ghost" id="btn-exp-defaults">? <span data-i18n="btn.defaults">?????? ?? ?????�??</span></button>
+      <button class="btn ghost" id="btn-exp-preset" data-i18n="btn.apply">↥ اعمال قالب</button>
+      <button class="btn ghost" id="btn-exp-add" data-i18n="btn.addPen">＋ افزودن پن</button>
+      <button class="btn ghost" id="btn-exp-defaults">↺ <span data-i18n="btn.defaults">بازگشت به پیش‌فرض</span></button>
       <span style="flex:1"></span>
-      <span class="pill tag bl" id="exp-totals">�</span>
+      <span class="pill tag bl" id="exp-totals">—</span>
     </div>
     <div class="tbl-scroll" style="max-height:340px;margin-top:12px">
       <table><thead><tr>
-        <th>#</th><th data-i18n="exp.penId">????? ??</th><th data-i18n="exp.n">????? ?????</th>
-        <th data-i18n="exp.treat">?????</th><th></th></tr></thead>
+        <th>#</th><th data-i18n="exp.penId">شناسه پن</th><th data-i18n="exp.n">تعداد پرنده</th>
+        <th data-i18n="exp.treat">تیمار</th><th></th></tr></thead>
         <tbody id="exp-rows"></tbody></table>
     </div>
     <div class="note" style="margin-top:12px" data-i18n-html="exp.effectsNote">
-      <b data-i18n="sci.effectTitle">??? ???????</b> (????? ??????? ???????): ???? = ???? ??????? � ????????? � +?% ????�/+???% ??? � ??�?????? ??? � +?%/+???% � ????? ??�? ???? ~??% d??�?? � ?????????? +?% ????�/-???% ??? � ??? ?????? ??? +?�C ?? d??�??.</div>
-    <div class="note wn" data-i18n-html="exp.blockNote">?? ???????? ?????�? ?�??? ???: ????? i-???� ??? ????? ???????? ????? ?????? ?? ??????� ????? ??? ????? ????? ????? ???? ???? ?????? ?? ????? =? ????? (??) ?????.</div>
+      <b data-i18n="sci.effectTitle">اثر تیمارها</b> (ضرایب کالیبره جهت‌دار): شاهد = مسیر کاتالوگ · پروبیوتیک ≈ +۱٪ مصرف/+۱٫۵٪ وزن · افزاینده رشد ≈ +۲٪/+۲٫۵٪ · واکسن افت موقت ~۱۰٪ d۱۹–۲۲ · کم‌پروتئین +۴٪ مصرف/−۲٫۵٪ وزن · تنش حرارتی موج +۵°C در d۳۲–۳۸.</div>
+    <div class="note wn" data-i18n-html="exp.blockNote">🎲 بند‌بندی تصادفی فعال است: پرنده i-امِ همه پن‌ها هم‌ویژگی ساخته می‌شود تا اختلاف پن‌ها اثر واقعی تیمار باشد؛ برای توان آماری، هر تیمار ≥۳ تکرار (پن) بدهید.</div>
     <div class="controls" style="margin-top:14px">
-      <button class="btn" id="btn-exp-farm" data-i18n="btn.buildFarm">???� ???? ???? ?�??? ? ????? ????</button>
-      <span class="dm" style="font-size:11px;align-self:center">seed = 308 � <span data-i18n="exp.repro">????? ?????????</span></span>
+      <button class="btn" id="btn-exp-farm" data-i18n="btn.buildFarm">🗺️ ساخت نقشه فارم و اجرای دوره</button>
+      <span class="dm" style="font-size:11px;align-self:center">seed = 308 · <span data-i18n="exp.repro">اجرای تکرارپذیر</span></span>
     </div>
   </div>
 </section>
@@ -2219,26 +2219,26 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <!-- ================= 03 FARM MAP ================= -->
 <section class="view" id="v-farm">
   <div class="view-head">
-    <span class="eyebrow">FARM � <span data-i18n="farm.h">farm.h</span></span>
+    <span class="eyebrow">FARM · <span data-i18n="farm.h">farm.h</span></span>
     <h2 data-i18n="farm.h.t">farm.h.t</h2>
     <p data-i18n="farm.p">farm.p</p>
   </div>
   <div class="card">
     <div class="controls">
-      <button class="btn" id="fm-play">? <span data-i18n="btn.play">???</span></button>
-      <button class="btn ghost" id="fm-nextday">?�? <span data-i18n="btn.nextDay">??? ???</span></button>
-      <button class="btn ghost" id="fm-restart">?? <span data-i18n="btn.restart">?? ??? ??</span></button>
-      <div class="ctrl"><label data-i18n="fm.speed">???? ????</label>
+      <button class="btn" id="fm-play">▶ <span data-i18n="btn.play">پخش</span></button>
+      <button class="btn ghost" id="fm-nextday">⏭ <span data-i18n="btn.nextDay">روز بعد</span></button>
+      <button class="btn ghost" id="fm-restart">🔄 <span data-i18n="btn.restart">از روز ۱۵</span></button>
+      <div class="ctrl"><label data-i18n="fm.speed">سرعت زمان</label>
         <select id="fm-speed">
-          <option value="600">�600</option>
-          <option value="1800" selected>�1800</option>
-          <option value="3600">�3600</option>
-          <option value="10800">�10800</option>
+          <option value="600">×600</option>
+          <option value="1800" selected>×1800</option>
+          <option value="3600">×3600</option>
+          <option value="10800">×10800</option>
         </select></div>
-      <div class="fm-clock"><b id="fm-day">�</b><span id="fm-hour">�:�</span></div>
+      <div class="fm-clock"><b id="fm-day">—</b><span id="fm-hour">—:—</span></div>
       <span style="flex:1"></span>
-      <button class="btn blue" id="fm-xlsx" disabled data-i18n="btn.xlsx">?? ???? ????</button>
-      <button class="btn ghost" id="fm-csv" disabled data-i18n="btn.csvRaw">? CSV ???</button>
+      <button class="btn blue" id="fm-xlsx" disabled data-i18n="btn.xlsx">📊 اکسل کامل</button>
+      <button class="btn ghost" id="fm-csv" disabled data-i18n="btn.csvRaw">⬇ CSV خام</button>
     </div>
     <div class="prog" style="margin-top:13px"><i id="fm-pg"></i></div>
     <div class="fm-meta"><span id="fm-lbl"></span><span id="fm-env"></span></div>
@@ -2246,55 +2246,55 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 
   <div class="farm-grid" style="margin-top:13px">
     <div class="card barn-card">
-      <h3><span class="ic">?�?</span><span data-i18n="farm.barn">???? ???????? � ???? ????</span>
-        <small class="src" data-i18n="farm.locked">?? ???? ????? = ?? ???? ????</small>
-        <button id="fm-tags" class="tag bl" style="cursor:pointer;border:none" data-on="1">?�? <span data-i18n="farm.tags">?????</span></button>
-        <span class="lightchip" id="fm-light">?? <span data-i18n="farm.light">???????</span></span></h3>
+      <h3><span class="ic">🏡</span><span data-i18n="farm.barn">سالن تحقیقاتی — نمای زنده</span>
+        <small class="src" data-i18n="farm.locked">هر وعده موتور = یک حرکت جوجه</small>
+        <button id="fm-tags" class="tag bl" style="cursor:pointer;border:none" data-on="1">🏷 <span data-i18n="farm.tags">تگ‌ها</span></button>
+        <span class="lightchip" id="fm-light">💡 <span data-i18n="farm.light">روشنایی</span></span></h3>
       <div class="barn">
-        <div class="fanrow"><span class="fan">??</span><span class="fan">??</span><span class="fan">??</span></div>
+        <div class="fanrow"><span class="fan">🌀</span><span class="fan">🌀</span><span class="fan">🌀</span></div>
         <div id="pens-wrap" class="pens-wrap"></div>
-        <div class="darkveil" id="fm-veil">?? <span data-i18n="farm.dark">???? ?????? � 18L:6D</span></div>
+        <div class="darkveil" id="fm-veil">🌙 <span data-i18n="farm.dark">دوره تاریکی — 18L:6D</span></div>
         <div class="fm-empty" id="fm-empty">
-          <div class="inner"><div class="e">?�?</div>
-            <p data-i18n="farm.emptyP">???? ??????? ????? ???? ???. ?? ?? �??? ??????� ????? ? ??????? ?? ?????� ????.</p>
-            <button class="btn" id="btn-goto-exp" data-i18n="farm.goExp">?�? ??�?? ?? ???? ??????</button>
+          <div class="inner"><div class="e">🏡</div>
+            <p data-i18n="farm.emptyP">هنوز دوره‌ای ساخته نشده است. از تب «طرح آزمایش» پن‌ها و تیمارها را تعریف کنید.</p>
+            <button class="btn" id="btn-goto-exp" data-i18n="farm.goExp">🐔 رفتن به طراح آزمایش</button>
           </div></div>
       </div>
     </div>
     <div class="side-col">
       <div class="card insp">
-        <h3><span class="ic">?�</span><span data-i18n="farm.insp">????????? �</span> <span id="insp-title" class="acc" data-i18n="farm.wholeFarm">?? ?�???</span></h3>
+        <h3><span class="ic">🔍</span><span data-i18n="farm.insp">اینسپکتور —</span> <span id="insp-title" class="acc" data-i18n="farm.wholeFarm">کل فارم</span></h3>
         <div id="insp-body"></div>
         <div class="chart-box sm" style="margin-top:9px"><canvas id="c-insp"></canvas></div>
       </div>
       <div class="card tickercard">
-        <h3><span class="ic">??</span><span data-i18n="farm.ticker">????? ????????</span></h3>
+        <h3><span class="ic">📡</span><span data-i18n="farm.ticker">جریان رویدادها</span></h3>
         <ul id="ticker"></ul>
       </div>
     </div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
-    <div class="card"><h3><span class="ic">??</span><span data-i18n="ch.farmGrowth">??? ?? ??�??? ????? �SE</span></h3>
+    <div class="card"><h3><span class="ic">📈</span><span data-i18n="ch.farmGrowth">رشد به تفکیک تیمار ±SE</span></h3>
       <div class="chart-box tall"><canvas id="c-farm-growth"></canvas></div>
       <div class="legend" id="lg-farm-growth"></div></div>
-    <div class="card"><h3><span class="ic">??</span><span data-i18n="ch.farmFi">????� ?????? ?? ??�??? ?????</span></h3>
+    <div class="card"><h3><span class="ic">🌾</span><span data-i18n="ch.farmFi">مصرف روزانه به تفکیک تیمار</span></h3>
       <div class="chart-box tall"><canvas id="c-farm-fi"></canvas></div>
       <div class="legend" id="lg-farm-fi"></div></div>
   </div>
 
   <div class="card" style="margin-top:13px">
-    <h3><span class="ic">?�</span><span data-i18n="bio.title">????????? ???? ?????</span>
-      <small class="src" data-i18n="bio.sub">???? ????? = ?? � Welch t / ANOVA ??????? / ?� / Holm</small></h3>
+    <h3><span class="ic">📐</span><span data-i18n="bio.title">آزمایشگاه آمار زیستی</span>
+      <small class="src" data-i18n="bio.sub">واحد نمونه = پن · Welch t / ANOVA یک‌راهه / η² / Holm</small></h3>
     <div class="controls">
-      <div class="ctrl"><label data-i18n="bio.metric">????? ????</label>
+      <div class="ctrl"><label data-i18n="bio.metric">متغیر پاسخ</label>
         <select id="bio-metric">
-          <option value="bw" data-i18n="bio.bw">??? ????? ???? (g)</option>
-          <option value="fi" data-i18n="bio.fi">?? ????� ?? ????? (g)</option>
-          <option value="fcr" data-i18n="bio.fcr">FCR ????????</option>
-          <option value="mort" data-i18n="bio.mort">???�?? (%)</option>
+          <option value="bw" data-i18n="bio.bw">وزن پایان دوره (g)</option>
+          <option value="fi" data-i18n="bio.fi">کل مصرف هر پرنده (g)</option>
+          <option value="fcr" data-i18n="bio.fcr">FCR پنجره‌ای</option>
+          <option value="mort" data-i18n="bio.mort">تلفات (%)</option>
         </select></div>
-      <button class="btn ghost" id="btn-bio-run" data-i18n="btn.runStats">? ????? ?????</button>
+      <button class="btn ghost" id="btn-bio-run" data-i18n="btn.runStats">⚡ تحلیل آماری</button>
     </div>
     <div id="bio-out" style="margin-top:12px"></div>
   </div>
@@ -2303,33 +2303,33 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <!-- ================= 04 LIVE SIM ================= -->
 <section class="view" id="v-sim">
   <div class="view-head">
-    <span class="eyebrow">SIM � <span data-i18n="sim.h">sim.h</span></span>
+    <span class="eyebrow">SIM · <span data-i18n="sim.h">sim.h</span></span>
     <h2 data-i18n="sim.h.t">sim.h.t</h2>
     <p data-i18n="sim.p">sim.p</p>
   </div>
   <div class="card">
     <div class="controls">
-      <div class="ctrl"><label data-i18n="sim.age0">?? ????</label><input type="number" id="in-age0" value="15" min="10" max="45"></div>
-      <div class="ctrl"><label data-i18n="sim.age1">?? ?????</label><input type="number" id="in-age1" value="60" min="20" max="70"></div>
-      <div class="ctrl"><label data-i18n="sim.pen">??</label>
+      <div class="ctrl"><label data-i18n="sim.age0">سن شروع</label><input type="number" id="in-age0" value="15" min="10" max="45"></div>
+      <div class="ctrl"><label data-i18n="sim.age1">سن پایان</label><input type="number" id="in-age1" value="60" min="20" max="70"></div>
+      <div class="ctrl"><label data-i18n="sim.pen">پن</label>
         <select id="in-pen">
-          <option value="P01">P01 � 3</option><option value="P02">P02 � 5</option>
-          <option value="P03">P03 � 7</option><option value="P04">P04 � 8</option>
-          <option value="P05" selected>P05 � 10</option><option value="P06">P06 � 12</option>
+          <option value="P01">P01 — 3</option><option value="P02">P02 — 5</option>
+          <option value="P03">P03 — 7</option><option value="P04">P04 — 8</option>
+          <option value="P05" selected>P05 — 10</option><option value="P06">P06 — 12</option>
         </select></div>
-      <div class="ctrl"><label data-i18n="sim.speed">????</label>
+      <div class="ctrl"><label data-i18n="sim.speed">سرعت</label>
         <select id="in-speed">
-          <option value="1">?�? �1</option><option value="4" selected>? �4</option>
-          <option value="12">?�? �12</option><option value="40">? �40</option>
-          <option value="999">?? <span data-i18n="sim.instant">?�???</span></option>
+          <option value="1">🐢 ×1</option><option value="4" selected>▶ ×4</option>
+          <option value="12">⏩ ×12</option><option value="40">⚡ ×40</option>
+          <option value="999">🚀 <span data-i18n="sim.instant">فوری</span></option>
         </select></div>
       <div class="ctrl"><label>seed</label><input type="number" id="in-seed" value="308" min="1" max="99999"></div>
-      <button class="btn" id="btn-run">? <span data-i18n="btn.run">????</span></button>
-      <button class="btn ghost" id="btn-jump" disabled>?�? <span data-i18n="btn.toEnd">??? ?? ?????</span></button>
-      <button class="btn ghost" id="btn-pause" disabled>?�? <span data-i18n="btn.pause">????� ????</span></button>
-      <button class="btn ghost" id="btn-stop" disabled>?�? <span data-i18n="btn.stop">?????</span></button>
-      <button class="btn blue" id="btn-export" disabled>? <span data-i18n="btn.exportCsv">CSV</span></button>
-      <button class="btn warn" id="btn-export-xlsx" disabled>?? <span data-i18n="btn.exportExcel">Excel</span></button>
+      <button class="btn" id="btn-run">▶ <span data-i18n="btn.run">اجرا</span></button>
+      <button class="btn ghost" id="btn-jump" disabled>⏭ <span data-i18n="btn.toEnd">پرش به پایان</span></button>
+      <button class="btn ghost" id="btn-pause" disabled>⏸ <span data-i18n="btn.pause">توقف موقت</span></button>
+      <button class="btn ghost" id="btn-stop" disabled>⏹ <span data-i18n="btn.stop">پایان</span></button>
+      <button class="btn blue" id="btn-export" disabled>⬇ <span data-i18n="btn.exportCsv">CSV</span></button>
+      <button class="btn warn" id="btn-export-xlsx" disabled>📊 <span data-i18n="btn.exportExcel">Excel</span></button>
     </div>
     <div class="prog" style="margin-top:13px"><i id="pg"></i></div>
     <div style="display:flex;justify-content:space-between;margin-top:7px;font-size:11px;color:var(--mut)">
@@ -2338,46 +2338,46 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
   </div>
 
   <div class="grid g4" style="margin-top:13px">
-    <div class="card kpi"><h3><span class="ic">??</span><span data-i18n="sim.day">??? ????</span></h3>
-      <div class="v" id="l-day">�</div><div class="u" id="l-date">�</div></div>
-    <div class="card kpi"><h3><span class="ic">??�</span><span data-i18n="sim.meanBw">??????? ??? ??</span></h3>
-      <div class="v acc" id="l-bw" dir="ltr">�</div>
-      <div class="u">PO: <b id="l-bwpo" dir="ltr">�</b> g � ?? <b id="l-temp" dir="ltr">�</b>�C</div></div>
-    <div class="card kpi"><h3><span class="ic">??</span><span data-i18n="sim.fiToday">????� ????? ?? ?????</span></h3>
-      <div class="v blue" id="l-fi" dir="ltr">�</div>
-      <div class="u"><span data-i18n="sim.visits">???????</span>: <b id="l-visits">�</b></div></div>
-    <div class="card kpi"><h3><span class="ic">??</span><span data-i18n="sim.busy">????? ???????</span></h3>
-      <div class="v org" id="l-busy" dir="ltr">�</div>
-      <div class="u" data-i18n="sim.capacity">???�?? ????? ????? ????</div></div>
+    <div class="card kpi"><h3><span class="ic">📅</span><span data-i18n="sim.day">روز جاری</span></h3>
+      <div class="v" id="l-day">—</div><div class="u" id="l-date">—</div></div>
+    <div class="card kpi"><h3><span class="ic">⚖️</span><span data-i18n="sim.meanBw">میانگین وزن پن</span></h3>
+      <div class="v acc" id="l-bw" dir="ltr">—</div>
+      <div class="u">PO: <b id="l-bwpo" dir="ltr">—</b> g · 🌡 <b id="l-temp" dir="ltr">—</b>°C</div></div>
+    <div class="card kpi"><h3><span class="ic">🌾</span><span data-i18n="sim.fiToday">مصرف امروز هر پرنده</span></h3>
+      <div class="v blue" id="l-fi" dir="ltr">—</div>
+      <div class="u"><span data-i18n="sim.visits">وعده‌ها</span>: <b id="l-visits">—</b></div></div>
+    <div class="card kpi"><h3><span class="ic">🚦</span><span data-i18n="sim.busy">اشباع ایستگاه</span></h3>
+      <div class="v org" id="l-busy" dir="ltr">—</div>
+      <div class="u" data-i18n="sim.capacity">ظرفیت سوراخ تغذیه واحد</div></div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
     <div class="card">
-      <h3><span class="ic">??</span><span data-i18n="sim.device">?????? ?? ????</span></h3>
+      <h3><span class="ic">🔧</span><span data-i18n="sim.device">دستگاه در لحظه</span></h3>
       <div class="dev">
-        <div class="dpart"><div class="dbox" id="d-rfid"><span class="led" id="led-rfid"></span>?? RFID
-          <b style="font-size:15px" id="dv-bird">�</b><span>RSSI <b id="dv-rssi">�</b> dBm</span></div></div>
-        <div class="dpart"><div class="dbox" id="d-scale"><span class="led" id="led-scale"></span>??� LC1
-          <span class="big"><span id="dv-w" dir="ltr">�</span> g</span><span>raw: <b id="dv-raw" dir="ltr">�</b></span></div></div>
-        <div class="dpart"><div class="dbox" id="d-bin"><span class="led" id="led-bin"></span>???� LC2
-          <div class="gauge" id="dv-gauge"><i id="dv-gfill"></i><span id="dv-binval" dir="ltr">�</span></div>
-          <span>?: <b id="dv-delta" dir="ltr">�</b> g</span></div></div>
+        <div class="dpart"><div class="dbox" id="d-rfid"><span class="led" id="led-rfid"></span>📡 RFID
+          <b style="font-size:15px" id="dv-bird">—</b><span>RSSI <b id="dv-rssi">—</b> dBm</span></div></div>
+        <div class="dpart"><div class="dbox" id="d-scale"><span class="led" id="led-scale"></span>⚖️ LC1
+          <span class="big"><span id="dv-w" dir="ltr">—</span> g</span><span>raw: <b id="dv-raw" dir="ltr">—</b></span></div></div>
+        <div class="dpart"><div class="dbox" id="d-bin"><span class="led" id="led-bin"></span>🗄️ LC2
+          <div class="gauge" id="dv-gauge"><i id="dv-gfill"></i><span id="dv-binval" dir="ltr">—</span></div>
+          <span>Δ: <b id="dv-delta" dir="ltr">—</b> g</span></div></div>
       </div>
       <div class="statusline" id="dv-status"></div>
     </div>
     <div class="card" style="padding-bottom:0">
-      <h3><span class="ic">???�</span><span data-i18n="sim.stream">????? ??? ????</span></h3>
+      <h3><span class="ic">🖥️</span><span data-i18n="sim.stream">جریان خام داده</span></h3>
       <div class="feedwrap">
-        <div class="feedhead"><i></i><i></i><i></i><span>sensor_data � live</span></div>
+        <div class="feedhead"><i></i><i></i><i></i><span>sensor_data — live</span></div>
         <div class="feed" id="feed"></div>
       </div>
     </div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
-    <div class="card"><h3><span class="ic">??</span><span data-i18n="ch.liveGrowth">??? ???? vs ???????</span></h3>
+    <div class="card"><h3><span class="ic">📈</span><span data-i18n="ch.liveGrowth">رشد زنده vs کاتالوگ</span></h3>
       <div class="chart-box"><canvas id="c-live-growth"></canvas></div></div>
-    <div class="card"><h3><span class="ic">??</span><span data-i18n="ch.liveCum">????� ????? vs ???�</span></h3>
+    <div class="card"><h3><span class="ic">📊</span><span data-i18n="ch.liveCum">مصرف تجمعی vs هدف</span></h3>
       <div class="chart-box"><canvas id="c-live-cum"></canvas></div></div>
   </div>
 </section>
@@ -2385,59 +2385,59 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <!-- ================= 05 SCENARIOS ================= -->
 <section class="view" id="v-scn">
   <div class="view-head">
-    <span class="eyebrow">SCN � <span data-i18n="scn.h">scn.h</span></span>
+    <span class="eyebrow">SCN · <span data-i18n="scn.h">scn.h</span></span>
     <h2 data-i18n="scn.h.t">scn.h.t</h2>
     <p data-i18n="scn.p">scn.p</p>
   </div>
   <div class="card">
-    <h3><span class="ic">???�</span><span data-i18n="scn.title">????? ??????? ?????????</span>
-      <small class="src" data-i18n="scn.paired">seed ??�????? � ?�?? ???? ?????? ????? ??????</small></h3>
+    <h3><span class="ic">🌡️</span><span data-i18n="scn.title">طراحی سناریوی مقایسه‌ای</span>
+      <small class="src" data-i18n="scn.paired">seed جفت‌شده — فقط عامل سناریو تغییر می‌کند</small></h3>
     <div class="controls">
-      <div class="ctrl"><label data-i18n="scn.type">??????</label>
+      <div class="ctrl"><label data-i18n="scn.type">سناریو</label>
         <select id="scn-type">
-          <option value="heat" data-i18n="scn.heat">???� ????? ??????</option>
-          <option value="stn" data-i18n="scn.stn">?�??� ??????? ??? ?????</option>
+          <option value="heat" data-i18n="scn.heat">🌡️ استرس حرارتی</option>
+          <option value="stn" data-i18n="scn.stn">🏗️ ایستگاه دوم تغذیه</option>
         </select></div>
       <div id="f-heat" style="display:contents">
-        <div class="ctrl"><label data-i18n="scn.from">???? ??? (???)</label><input type="number" id="in-from" value="32" min="16" max="58"></div>
-        <div class="ctrl"><label data-i18n="scn.days">??? (???)</label><input type="number" id="in-days" value="7" min="1" max="20"></div>
-        <div class="ctrl"><label>?T �C</label>
+        <div class="ctrl"><label data-i18n="scn.from">شروع موج (روز)</label><input type="number" id="in-from" value="32" min="16" max="58"></div>
+        <div class="ctrl"><label data-i18n="scn.days">طول (روز)</label><input type="number" id="in-days" value="7" min="1" max="20"></div>
+        <div class="ctrl"><label>ΔT °C</label>
           <select id="in-dt"><option>2</option><option>4</option><option selected>5</option><option>6</option><option>8</option></select></div>
       </div>
       <div id="f-stn" style="display:none">
-        <div class="ctrl"><label data-i18n="scn.config">????????</label>
-          <select id="in-stn"><option value="2" data-i18n="scn.twoSt">? ???????</option>
-          <option value="1" data-i18n="scn.oneSt">? ??????? (????)</option></select></div>
+        <div class="ctrl"><label data-i18n="scn.config">پیکربندی</label>
+          <select id="in-stn"><option value="2" data-i18n="scn.twoSt">۲ ایستگاه</option>
+          <option value="1" data-i18n="scn.oneSt">۱ ایستگاه (پایه)</option></select></div>
       </div>
-      <button class="btn warn" id="btn-scn">? <span data-i18n="btn.compare">????? ??????</span></button>
+      <button class="btn warn" id="btn-scn">⚡ <span data-i18n="btn.compare">اجرای مقایسه</span></button>
     </div>
-    <div class="note wn" data-i18n-html="scn.modelNote">?�????? ??????? ????: FI�exp(-0.045�?T) ??? ??? + ??�? ?????? ??? �???%/�C ?? ??????? ???? ?? ?? ???. ????? ????????? ?? ????? ???? ???? ?????? ????? ?????????? ???.</div>
+    <div class="note wn" data-i18n-html="scn.modelNote">فرضیات کالیبره گرما: FI×exp(−0.045·ΔT) حین موج + افت مستقیم وزن ≈۱٫۲٪/°C با بازیابی جزئی پس از تنش. ضرایب جهت‌دارند نه قطعی؛ مسیر پایه دقیقاً نتایج اعتبارسنجی است.</div>
   </div>
 
   <div id="scn-res" style="display:none">
     <div class="grid g4" style="margin-top:13px">
-      <div class="card kpi"><h3><span data-i18n="scn.dBw">? ??? ?????</span></h3><div class="v" id="d-bw" dir="ltr">�</div><div class="u" id="d-bw-sub">�</div></div>
-      <div class="card kpi"><h3><span data-i18n="scn.dip">?????? ??�? ??? ??????</span></h3><div class="v org" id="d-dip" dir="ltr">�</div><div class="u" id="d-dip-sub">�</div></div>
-      <div class="card kpi"><h3><span data-i18n="scn.dFcr">FCR ???????????</span></h3><div class="v blue" id="d-fcr" dir="ltr">�</div><div class="u" id="d-fcr-sub">�</div></div>
-      <div class="card kpi"><h3><span data-i18n="scn.dBusy">????? ??? ?????? ??</span></h3><div class="v prp" id="d-busy" dir="ltr">�</div><div class="u" id="d-busy-sub">�</div></div>
+      <div class="card kpi"><h3><span data-i18n="scn.dBw">Δ وزن نهایی</span></h3><div class="v" id="d-bw" dir="ltr">—</div><div class="u" id="d-bw-sub">—</div></div>
+      <div class="card kpi"><h3><span data-i18n="scn.dip">حداکثر افت حین رویداد</span></h3><div class="v org" id="d-dip" dir="ltr">—</div><div class="u" id="d-dip-sub">—</div></div>
+      <div class="card kpi"><h3><span data-i18n="scn.dFcr">FCR پایه→سناریو</span></h3><div class="v blue" id="d-fcr" dir="ltr">—</div><div class="u" id="d-fcr-sub">—</div></div>
+      <div class="card kpi"><h3><span data-i18n="scn.dBusy">اشباع پیک بدترین پن</span></h3><div class="v prp" id="d-busy" dir="ltr">—</div><div class="u" id="d-busy-sub">—</div></div>
     </div>
     <div class="grid g2" style="margin-top:13px">
-      <div class="card"><h3><span data-i18n="scn.chGrowth">??? ???? vs ??????</span></h3>
+      <div class="card"><h3><span data-i18n="scn.chGrowth">رشد پایه vs سناریو</span></h3>
         <div class="chart-box"><canvas id="c-scn-growth"></canvas></div>
         <div class="legend">
-          <span class="lg"><span class="sw" style="background:var(--acc)"></span><span data-i18n="scn.base">????</span></span>
-          <span class="lg"><span class="sw" style="background:var(--warn)"></span><span data-i18n="scn.scenario">??????</span></span>
+          <span class="lg"><span class="sw" style="background:var(--acc)"></span><span data-i18n="scn.base">پایه</span></span>
+          <span class="lg"><span class="sw" style="background:var(--warn)"></span><span data-i18n="scn.scenario">سناریو</span></span>
           <span class="lg"><span class="sw" style="background:#8a95ab"></span>PO</span></div></div>
-      <div class="card"><h3><span data-i18n="scn.chFi">????� ?????? ???? vs ??????</span></h3>
+      <div class="card"><h3><span data-i18n="scn.chFi">مصرف روزانه پایه vs سناریو</span></h3>
         <div class="chart-box"><canvas id="c-scn-fi"></canvas></div></div>
     </div>
     <div class="card" style="margin-top:13px">
-      <h3><span data-i18n="scn.table">???? ?????? ?????</span></h3>
+      <h3><span data-i18n="scn.table">جدول مقایسه پن‌ها</span></h3>
       <div class="tbl-scroll"><table><thead><tr>
-        <th data-i18n="exp.penId">??</th><th class="num">n</th>
-        <th class="num" data-i18n="scn.bwBase">??? ????</th><th class="num" data-i18n="scn.bwScn">??? ??????</th>
-        <th class="num">?%</th><th class="num" data-i18n="scn.fcrBase">FCR ????</th><th class="num" data-i18n="scn.fcrScn">FCR ??????</th>
-        <th class="num" data-i18n="scn.busyBase">????? ????</th><th class="num" data-i18n="scn.busyScn">????? ??????</th>
+        <th data-i18n="exp.penId">پن</th><th class="num">n</th>
+        <th class="num" data-i18n="scn.bwBase">وزن پایه</th><th class="num" data-i18n="scn.bwScn">وزن سناریو</th>
+        <th class="num">Δ%</th><th class="num" data-i18n="scn.fcrBase">FCR پایه</th><th class="num" data-i18n="scn.fcrScn">FCR سناریو</th>
+        <th class="num" data-i18n="scn.busyBase">اشباع پایه</th><th class="num" data-i18n="scn.busyScn">اشباع سناریو</th>
       </tr></thead><tbody id="tb-scn"></tbody></table></div>
       <div class="note gd" id="scn-note" style="margin-top:11px"></div>
     </div>
@@ -2447,20 +2447,20 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <!-- ================= 06 DEVICE & DATA ================= -->
 <section class="view" id="v-dev">
   <div class="view-head">
-    <span class="eyebrow">DEV � <span data-i18n="dev.h">dev.h</span></span>
+    <span class="eyebrow">DEV · <span data-i18n="dev.h">dev.h</span></span>
     <h2 data-i18n="dev.h.t">dev.h.t</h2>
     <p data-i18n="dev.p">dev.p</p>
   </div>
   <div class="grid g2">
     <div class="card">
-      <h3><span class="ic">??</span><span data-i18n="dev.arch">?????? ?????? ?????????????</span></h3>
+      <h3><span class="ic">🔧</span><span data-i18n="dev.arch">معماری دستگاه شبیه‌سازی‌شده</span></h3>
       <div class="srcs" style="line-height:2.2">
-        <p data-i18n-html="dev.lc1"><b>? ????? ? � ???? ?????:</b> ???? ??? s�4g ??? raw_weight_g ? ?�???? EMA ???? weight_g ????? ????? ???? ?????.</p>
-        <p data-i18n-html="dev.lc2"><b>? ????? ? � ???? ??kg:</b> ???? ??????? ??? = ????�? ???? ?????? ?? ?????? ?kg.</p>
-        <p data-i18n-html="dev.rfid"><b>? RFID ???:</b> ??????? ????? ????? ???% ???? ID ? RSSI ??????? -??dBm � ?????? ?? ??? UHF-RFID ???????? [7].</p>
-        <p data-i18n-html="dev.queue"><b>? ???? ??�:</b> ????? ????? ?????? =?? ????? ????? ?????? ???????? � ?????? ?????? ????.</p>
+        <p data-i18n-html="dev.lc1"><b>① لودسل ۱ — سکوی توزین:</b> نویز خام σ≈4g روی raw_weight_g و فیلتر EMA برای weight_g مطابق نمونه مرجع کاربر.</p>
+        <p data-i18n-html="dev.lc2"><b>② لودسل ۲ — مخزن ۲۵kg:</b> کاهش لحظه‌ای جرم = مصرف؛ شارژ خودکار در آستانه ۳kg.</p>
+        <p data-i18n-html="dev.rfid"><b>③ RFID بال:</b> شناسایی هنگام ورود؛ ۰٫۴٪ بدون ID و RSSI میانگین −۶۵dBm — سازگار با دقت UHF-RFID منتشرشده [7].</p>
+        <p data-i18n-html="dev.queue"><b>④ منطق صف:</b> سوراخ واحد؛ انتظار ≤۹۰ ثانیه وگرنه رویداد هم‌زمانی — گلوگاه پن‌های بزرگ.</p>
       </div>
-      <div class="note" data-i18n="dev.threeRows">?? ???? ?????? ? ????� ????? ?????? (????/?????/?????) ??? ????? ???????�? ????.</div>
+      <div class="note" data-i18n="dev.threeRows">هر وعده دقیقاً ۳ ردیف تولید می‌کند (شروع/میانه/پایان) مثل نمونه سه‌ردیفی مرجع.</div>
     </div>
   </div>
 
@@ -2468,21 +2468,21 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
   <div class="dev-grid">
     <!-- Cycle manager card -->
     <div class="card dev-card">
-      <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></span><span data-i18n="dev.cycles">???????? ??????</span></h3>
+      <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></span><span data-i18n="dev.cycles">دوره‌های پرورشی</span></h3>
 
       <form class="cy-form" id="cy-form" autocomplete="off">
         <div class="field">
           <input id="cy-code" class="field__input" type="text" placeholder=" " maxlength="12" />
-          <label class="field__label" for="cy-code" data-i18n="form.codeLabel">?? ???? (????? F01)</label>
+          <label class="field__label" for="cy-code" data-i18n="form.codeLabel">کد دوره (مثلاً F01)</label>
           <span class="field__bar"></span>
         </div>
         <div class="field field--grow">
           <input id="cy-label" class="field__input" type="text" placeholder=" " />
-          <label class="field__label" for="cy-label" data-i18n="form.nameLabel">??? ????</label>
+          <label class="field__label" for="cy-label" data-i18n="form.nameLabel">نام دوره</label>
           <span class="field__bar"></span>
         </div>
         <div class="field field--select">
-          <div class="strain-select" id="cy-strain" role="combobox" data-title-i18n="hdr.strainAria" aria-label="????" aria-expanded="false" aria-controls="cy-strain-list" tabindex="0">
+          <div class="strain-select" id="cy-strain" role="combobox" data-title-i18n="hdr.strainAria" aria-label="سویه" aria-expanded="false" aria-controls="cy-strain-list" tabindex="0">
             <div class="strain-select__current" id="cy-strain-current">
               <span class="strain-select__value" id="cy-strain-value">Ross 308</span>
               <span class="strain-select__icon" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span>
@@ -2496,7 +2496,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
           </div>
         </div>
         <button type="submit" id="cy-create" class="btn pri cy-form__submit">
-          <i class="fa-solid fa-plus" aria-hidden="true"></i> <span data-i18n="dev.newCycle">????? ????</span>
+          <i class="fa-solid fa-plus" aria-hidden="true"></i> <span data-i18n="dev.newCycle">ایجاد دوره</span>
         </button>
       </form>
 
@@ -2504,17 +2504,17 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 
       <div class="uk-syncrow" style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
         <button type="button" id="uk-sync" class="btn primary">
-          <i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i> <span data-i18n="dev.syncNow">?????? ???? ??????</span>
+          <i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i> <span data-i18n="dev.syncNow">دریافت داده دستگاه</span>
         </button>
-        <a id="uk-hwpanel" class="btn" href="https://uktech.ir/Login/device_weight_dashboard.php?serial=ESP800" target="_blank" rel="noopener noreferrer" data-title-i18n="dev.hwPanelTip" title="??????? ?????????? ?????? ????? (uktech)">
-          <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> <span data-i18n="dev.hwPanel">??? ??????????</span>
+        <a id="uk-hwpanel" class="btn" href="https://uktech.ir/Login/device_weight_dashboard.php?serial=ESP800" target="_blank" rel="noopener noreferrer" data-title-i18n="dev.hwPanelTip" title="داشبورد سخت‌افزاری دستگاه توزین (uktech)">
+          <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> <span data-i18n="dev.hwPanel">پنل سخت‌افزاری</span>
         </a>
-        <span id="uk-sync-status" class="cy-meta" aria-live="polite" data-i18n="dev.syncNever">???? ?????????? ????? ???? ???.</span>
+        <span id="uk-sync-status" class="cy-meta" aria-live="polite" data-i18n="dev.syncNever">هنوز همگام‌سازی انجام نشده است.</span>
         <span id="uk-sess-state" class="cy-meta" style="display:none" aria-live="polite"></span>
         <span id="uk-online" class="uk-online off" aria-live="polite"></span>
         <span id="uk-lastfetch" class="cy-meta"></span>
         <span id="uk-refresh" class="uk-refresh" style="display:none" aria-hidden="true"></span>
-        <label class="cy-meta" for="cy-source" data-i18n="dev.source">???? ????:</label>
+        <label class="cy-meta" for="cy-source" data-i18n="dev.source">منبع داده:</label>
         <select id="cy-source" dir="rtl" style="background:var(--bg2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px">
           <option value="api">API</option>
           <option value="direct">ESP32</option>
@@ -2525,149 +2525,149 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 
     <!-- ESP32 direct-ingest devices (per-device keys, bound to one cycle) -->
     <div class="card dev-card" id="esp-card">
-      <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-microchip" aria-hidden="true"></i></span><span data-i18n="dev.espTitle">?????????? ESP32</span></h3>
-      <div class="note" data-i18n="dev.espNote">?? ?????? ???? ????? ???? ?? ???? ? ??? ???? ??????? ?? ?? ?? ??? ??? ????????. ???? ??? ?????? ???? ???? ????? ???? ?????? � ?? ?? ??? ? ?? ?????? ???????.</div>
+      <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-microchip" aria-hidden="true"></i></span><span data-i18n="dev.espTitle">دستگاه‌های ESP32</span></h3>
+      <div class="note" data-i18n="dev.espNote">هر دستگاه کلید مخصوص خودش را دارد و فقط داخل دوره‌ای که به آن وصل است می‌نویسد. کلید فقط یک‌بار موقع ساخت نمایش داده می‌شود — آن را کپی و در فریمور بگذارید.</div>
       <div id="esp-keybox" class="esp-keybox" style="display:none;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
         <code id="esp-key" dir="ltr" style="user-select:all"></code>
-        <button type="button" id="esp-keycopy" class="btn"><span data-i18n="dev.espCopy">??? ????</span></button>
-        <span class="cy-meta" data-i18n="dev.espOnce">??? ???? ???? ????? ???? ???????.</span>
+        <button type="button" id="esp-keycopy" class="btn"><span data-i18n="dev.espCopy">کپی کلید</span></button>
+        <span class="cy-meta" data-i18n="dev.espOnce">این کلید دیگر نمایش داده نمی‌شود.</span>
       </div>
       <form id="esp-form" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-        <input id="esp-id" class="field__input" type="text" maxlength="64" placeholder="device_id (????? esp32-feedstation-01)" dir="ltr" style="flex:2;min-width:200px" />
-        <input id="esp-name" class="field__input" type="text" maxlength="120" placeholder="??? (???????)" style="flex:1;min-width:140px" />
-        <button type="submit" class="btn primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> <span data-i18n="dev.espCreate">??? ?????? ?? ???? ??????????</span></button>
+        <input id="esp-id" class="field__input" type="text" maxlength="64" placeholder="device_id (مثلاً esp32-feedstation-01)" dir="ltr" style="flex:2;min-width:200px" />
+        <input id="esp-name" class="field__input" type="text" maxlength="120" placeholder="نام (اختیاری)" style="flex:1;min-width:140px" />
+        <button type="submit" class="btn primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> <span data-i18n="dev.espCreate">ثبت دستگاه در دوره انتخاب‌شده</span></button>
       </form>
       <div id="esp-list" class="cy-list"></div>
     </div>
 
     <!-- Live stream card -->
     <div class="card dev-card">
-      <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-wave-square" aria-hidden="true"></i></span><span data-i18n="dev.live">????? ???? ?????? (????)</span>
+      <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-wave-square" aria-hidden="true"></i></span><span data-i18n="dev.live">جریان داده دستگاه (زنده)</span>
         <span id="ws-dot" class="ws-dot off" title="WebSocket"></span></h3>
       <div id="live-feed" class="live-feed" data-skip-i18n-scan></div>
-      <div class="note" data-i18n="dev.liveNote">????????? ??? ?????? (RFID ???? + ????? ???? + ???? ????) ??????? ???? ?? ?????? ?????�? ???????.</div>
+      <div class="note" data-i18n="dev.liveNote">رویدادهای خام دستگاه (RFID ورود + لودسل مخزن + تایم وعده) به‌صورت زنده از بک‌اند دریافت می‌شوند.</div>
     </div>
   </div>
 
   <div class="card dev-stats" style="margin-top:14px">
-    <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-chart-simple" aria-hidden="true"></i></span><span data-i18n="dev.stats">???? ???? ??????????</span></h3>
+    <h3 class="dev-card__title"><span class="ic"><i class="fa-solid fa-chart-simple" aria-hidden="true"></i></span><span data-i18n="dev.stats">آمار دوره انتخاب‌شده</span></h3>
     <div id="cy-stats" class="ministats" data-skip-i18n-scan>
-      <div class="mstat"><span class="mv" id="st-visits">�</span><span class="ml" data-i18n="dev.stat.visits">??????</span></div>
-      <div class="mstat"><span class="mv" id="st-birds">�</span><span class="ml" data-i18n="dev.stat.birds">??????? ????</span></div>
-      <div class="mstat"><span class="mv" id="st-rows">�</span><span class="ml" data-i18n="dev.stat.rows">????� ??????</span></div>
-      <div class="mstat"><span class="mv" id="st-intake">�</span><span class="ml" data-i18n="dev.stat.intake">????� ?? (g)</span></div>
-      <div class="mstat"><span class="mv" id="st-avgw">�</span><span class="ml" data-i18n="dev.stat.avgw">??????? ??? ????? (g)</span></div>
-      <div class="mstat"><span class="mv" id="st-miss">�</span><span class="ml" data-i18n="dev.stat.miss">RFID ????????�??</span></div>
+      <div class="mstat"><span class="mv" id="st-visits">—</span><span class="ml" data-i18n="dev.stat.visits">بازدید</span></div>
+      <div class="mstat"><span class="mv" id="st-birds">—</span><span class="ml" data-i18n="dev.stat.birds">پرندگان یکتا</span></div>
+      <div class="mstat"><span class="mv" id="st-rows">—</span><span class="ml" data-i18n="dev.stat.rows">ردیف دستگاه</span></div>
+      <div class="mstat"><span class="mv" id="st-intake">—</span><span class="ml" data-i18n="dev.stat.intake">مصرف کل (g)</span></div>
+      <div class="mstat"><span class="mv" id="st-avgw">—</span><span class="ml" data-i18n="dev.stat.avgw">میانگین وزن اولیه (g)</span></div>
+      <div class="mstat"><span class="mv" id="st-miss">—</span><span class="ml" data-i18n="dev.stat.miss">RFID ازدست‌رفته</span></div>
     </div>
   </div>
 
   <!-- ===== Realtime registrations (bird tag + initial weight + exact timestamp) ===== -->
   <div class="card dev-regs" style="margin-top:14px">
     <h3 class="dev-card__title">
-      <span class="ic"><i class="fa-solid fa-tag" aria-hidden="true"></i></span><span data-i18n="dev.regs">??????? ??????? ???? ?????</span>
-      <span class="dev-regs__live"><i class="fa-solid fa-circle" aria-hidden="true"></i> <span data-i18n="dev.live">????</span></span>
+      <span class="ic"><i class="fa-solid fa-tag" aria-hidden="true"></i></span><span data-i18n="dev.regs">ثبت‌های لحظه‌ای ورود پرنده</span>
+      <span class="dev-regs__live"><i class="fa-solid fa-circle" aria-hidden="true"></i> <span data-i18n="dev.live">زنده</span></span>
     </h3>
-    <div class="reg-unit-title"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i><span data-i18n="dev.unit1">????? ? � ????? ???</span></div>
+    <div class="reg-unit-title"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i><span data-i18n="dev.unit1">یونیت ۱ — توزین مرغ</span></div>
     <div class="reg-table" data-skip-i18n-scan>
       <div class="reg-thead">
-        <span class="reg-cell reg-cell--feed" data-i18n="dev.reg.feed">???? ???????? (g)</span>
-        <span class="reg-cell reg-cell--w" data-i18n="dev.reg.weight">??? ??? (g)</span>
-        <span class="reg-cell reg-cell--bin" data-i18n="dev.reg.bin">??? ???? (g)</span>
-        <span class="reg-cell reg-cell--elapsed" data-i18n="dev.reg.elapsed">???? ???????? (s)</span>
-        <span class="reg-cell reg-cell--dt" data-i18n="dev.reg.datetime">????? ? ????</span>
-        <span class="reg-cell reg-cell--tag" data-i18n="dev.reg.tag">????? ???</span>
-        <span class="reg-cell reg-cell--sensor" data-i18n="dev.reg.sensor">????? ??????</span>
-        <span class="reg-cell reg-cell--unit" data-i18n="dev.reg.unit">?????</span>
-        <span class="reg-cell reg-cell--pos" data-i18n="dev.reg.position">?????? ?????</span>
+        <span class="reg-cell reg-cell--feed" data-i18n="dev.reg.feed">غذای مصرف‌شده (g)</span>
+        <span class="reg-cell reg-cell--w" data-i18n="dev.reg.weight">وزن مرغ (g)</span>
+        <span class="reg-cell reg-cell--bin" data-i18n="dev.reg.bin">وزن مخزن (g)</span>
+        <span class="reg-cell reg-cell--elapsed" data-i18n="dev.reg.elapsed">زمان سپری‌شده (s)</span>
+        <span class="reg-cell reg-cell--dt" data-i18n="dev.reg.datetime">تاریخ و ساعت</span>
+        <span class="reg-cell reg-cell--tag" data-i18n="dev.reg.tag">شناسه مرغ</span>
+        <span class="reg-cell reg-cell--sensor" data-i18n="dev.reg.sensor">شناسه دستگاه</span>
+        <span class="reg-cell reg-cell--unit" data-i18n="dev.reg.unit">یونیت</span>
+        <span class="reg-cell reg-cell--pos" data-i18n="dev.reg.position">موقعیت پرنده</span>
       </div>
       <div id="reg-body-u1" class="reg-body"></div>
     </div>
-    <div class="reg-unit-title"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i><span data-i18n="dev.unit2">????? ? � ????? ???</span></div>
+    <div class="reg-unit-title"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i><span data-i18n="dev.unit2">یونیت ۲ — توزین مرغ</span></div>
     <div class="reg-table" data-skip-i18n-scan>
       <div class="reg-thead">
-        <span class="reg-cell reg-cell--feed" data-i18n="dev.reg.feed">???? ???????? (g)</span>
-        <span class="reg-cell reg-cell--w" data-i18n="dev.reg.weight">??? ??? (g)</span>
-        <span class="reg-cell reg-cell--bin" data-i18n="dev.reg.bin">??? ???? (g)</span>
-        <span class="reg-cell reg-cell--elapsed" data-i18n="dev.reg.elapsed">???? ???????? (s)</span>
-        <span class="reg-cell reg-cell--dt" data-i18n="dev.reg.datetime">????? ? ????</span>
-        <span class="reg-cell reg-cell--tag" data-i18n="dev.reg.tag">????? ???</span>
-        <span class="reg-cell reg-cell--sensor" data-i18n="dev.reg.sensor">????? ??????</span>
-        <span class="reg-cell reg-cell--unit" data-i18n="dev.reg.unit">?????</span>
-        <span class="reg-cell reg-cell--pos" data-i18n="dev.reg.position">?????? ?????</span>
+        <span class="reg-cell reg-cell--feed" data-i18n="dev.reg.feed">غذای مصرف‌شده (g)</span>
+        <span class="reg-cell reg-cell--w" data-i18n="dev.reg.weight">وزن مرغ (g)</span>
+        <span class="reg-cell reg-cell--bin" data-i18n="dev.reg.bin">وزن مخزن (g)</span>
+        <span class="reg-cell reg-cell--elapsed" data-i18n="dev.reg.elapsed">زمان سپری‌شده (s)</span>
+        <span class="reg-cell reg-cell--dt" data-i18n="dev.reg.datetime">تاریخ و ساعت</span>
+        <span class="reg-cell reg-cell--tag" data-i18n="dev.reg.tag">شناسه مرغ</span>
+        <span class="reg-cell reg-cell--sensor" data-i18n="dev.reg.sensor">شناسه دستگاه</span>
+        <span class="reg-cell reg-cell--unit" data-i18n="dev.reg.unit">یونیت</span>
+        <span class="reg-cell reg-cell--pos" data-i18n="dev.reg.position">موقعیت پرنده</span>
       </div>
       <div id="reg-body-u2" class="reg-body"></div>
     </div>
-    <div class="note dev-regs__note" data-i18n="dev.regsNote">?? ????? ????? ???? ?? ?????? ???????? ??????? ??? ?????? ????? ? ???? ??? ?????? ?? ???? ???? ??? ? ?? ??????? ????? ??????? � ??? ??? ???? ??????? ?? ???? ????? ??????.</div>
+    <div class="note dev-regs__note" data-i18n="dev.regsNote">هر پرنده هنگام ورود به دستگاه تگ‌خوانی می‌شود؛ وزن اولیه، تاریخ و ساعت ثبت دقیقاً در لحظه ورود ثبت و در دیتابیس ذخیره می‌گردد — این پنل همان داده‌ها را زنده نمایش می‌دهد.</div>
   </div>
 </section>
 
 <!-- ================= 07 SCIENCE ================= -->
 <section class="view" id="v-sci">
   <div class="view-head">
-    <span class="eyebrow">SCI � <span data-i18n="sci.h">sci.h</span></span>
+    <span class="eyebrow">SCI · <span data-i18n="sci.h">sci.h</span></span>
     <h2 data-i18n="sci.h.t">sci.h.t</h2>
     <p data-i18n="sci.p">sci.p</p>
   </div>
   <div class="card">
-    <h3><span class="ic">??</span><span data-i18n="sci.sources">????? ???? � ?? ??????? ??????</span></h3>
+    <h3><span class="ic">📚</span><span data-i18n="sci.sources">منابع علمی — با نقل‌قول مستقیم</span></h3>
     <div class="srcs">
-      <p><b>[1] Aviagen � Ross Broiler Management Handbook (2025)</b>
-        <a href="https://aviagen.com/assets/Tech_Center/Ross_Broiler/Aviagen-ROSS-Broiler-Handbook-EN.pdf" target="_blank" rel="noopener">?</a><br>
-        <span dir="ltr">�After 27 days of age, the temperature should remain at 20�C?�</span> ? <span data-i18n="sci.use1">???? ??????? ? ?????? ???? ???.</span></p>
+      <p><b>[1] Aviagen — Ross Broiler Management Handbook (2025)</b>
+        <a href="https://aviagen.com/assets/Tech_Center/Ross_Broiler/Aviagen-ROSS-Broiler-Handbook-EN.pdf" target="_blank" rel="noopener">↗</a><br>
+        <span dir="ltr">“After 27 days of age, the temperature should remain at 20°C”</span> → <span data-i18n="sci.use1">جدول وزن↔دما و برنامه نوری مدل.</span></p>
       <p><b>[2] Marcato et al. (2008). R. Bras. Zootec.</b>
-        <a href="https://redalyc.org/pdf/1797/179713999007.pdf" target="_blank" rel="noopener">?</a><br>
-        �the Gompertz function is the one that best describes them� ? <span data-i18n="sci.use2">?????????? ??????? Ross.</span></p>
-      <p><b>[3] Aviagen � Ross 308 Performance Objectives (2007)</b>
-        <a href="https://www.elsitioavicola.com/downloads/download/90" target="_blank" rel="noopener">?</a> �
+        <a href="https://redalyc.org/pdf/1797/179713999007.pdf" target="_blank" rel="noopener">↗</a><br>
+        «the Gompertz function is the one that best describes them» → <span data-i18n="sci.use2">پارامترهای گومپرتز Ross.</span></p>
+      <p><b>[3] Aviagen — Ross 308 Performance Objectives (2007)</b>
+        <a href="https://www.elsitioavicola.com/downloads/download/90" target="_blank" rel="noopener">↗</a> ·
         <b>Cobb-Vantress Supplement (2022)</b>
-        <a href="https://www.cobbgenetics.com/assets/Cobb-Files/2022-Cobb500-Broiler-Performance-Nutrition-Supplement.pdf" target="_blank" rel="noopener">?</a> �
+        <a href="https://www.cobbgenetics.com/assets/Cobb-Files/2022-Cobb500-Broiler-Performance-Nutrition-Supplement.pdf" target="_blank" rel="noopener">↗</a> ·
         <b>AA+ Objectives (2022)</b>
-        <a href="https://aviagen.com/assets/Tech_Center/AA_Broiler/ArborAcres-BroilerPerformanceObjectives2022-EN.pdf" target="_blank" rel="noopener">?</a> �
+        <a href="https://aviagen.com/assets/Tech_Center/AA_Broiler/ArborAcres-BroilerPerformanceObjectives2022-EN.pdf" target="_blank" rel="noopener">↗</a> ·
         <b>Hubbard Efficiency Plus (2019 metric)</b>
-        <a href="https://www.hubbardbreeders.com/media/broiler_performance_objectives_efficiency_plus_enptes_20190717__026422600_1023_23082019.pdf" target="_blank" rel="noopener">?</a><br>
-        <span data-i18n="sci.use3">??????? ???? ???/????�/FCR ?? ???? � ????? ?? ????? ???? ? ???? ????? ??? ???????.</span></p>
+        <a href="https://www.hubbardbreeders.com/media/broiler_performance_objectives_efficiency_plus_enptes_20190717__026422600_1023_23082019.pdf" target="_blank" rel="noopener">↗</a><br>
+        <span data-i18n="sci.use3">کاتالوگ کامل وزن/مصرف/FCR هر سویه — عیناً از اسناد رسمی و بدون تکرار بین سویه‌ها.</span></p>
       <p><b>[5] van der Sluis et al. (2025). Poultry Science 104:105103</b>
-        <a href="https://edepot.wur.nl/691892" target="_blank" rel="noopener">?</a><br>
-        <span dir="ltr">�The NFV decreased as the birds grew older?�</span> ? <span data-i18n="sci.use5">????? ??????? (-????/day? ??? +????s/day).</span></p>
+        <a href="https://edepot.wur.nl/691892" target="_blank" rel="noopener">↗</a><br>
+        <span dir="ltr">“The NFV decreased as the birds grew older”</span> → <span data-i18n="sci.use5">موتور وعده‌ها (−۲٫۲۱/day؛ مدت +۲٫۱۹s/day).</span></p>
       <p><b>[6] Erensoy et al. (2022). Arch Anim Breed 65:171</b>
-        <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9097258" target="_blank" rel="noopener">?</a><br>
-        <span dir="ltr">�Feed efficiency worsened with larger group size?�</span> ? <span data-i18n="sci.use6">??? ??? ?????? ????.</span></p>
-      <p><b>[7] Li et al. (2018). animal � UHF-RFID</b>
-        <a href="https://www.sciencedirect.com/science/article/pii/S1751731118003440" target="_blank" rel="noopener">?</a><br>
-        IBN 92.5% / TS 99% � �1.3 to 2.0 min per visit� ? <span data-i18n="sci.use7">??? RFID ? ??? ????.</span></p>
+        <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9097258" target="_blank" rel="noopener">↗</a><br>
+        <span dir="ltr">“Feed efficiency worsened with larger group size”</span> → <span data-i18n="sci.use6">جهت اثر اندازه گروه.</span></p>
+      <p><b>[7] Li et al. (2018). animal — UHF-RFID</b>
+        <a href="https://www.sciencedirect.com/science/article/pii/S1751731118003440" target="_blank" rel="noopener">↗</a><br>
+        IBN 92.5% / TS 99% · «1.3 to 2.0 min per visit» → <span data-i18n="sci.use7">مدل RFID و مدت وعده.</span></p>
       <p><b>[8] Li et al. (2021). Poultry Science</b>
-        <a href="https://pubmed.ncbi.nlm.nih.gov/33662663/" target="_blank" rel="noopener">?</a><br>
-        <span dir="ltr">�less than 60 s� lights ON/OFF peaks?�</span> ? <span data-i18n="sci.use8">??????? ????? ? ???????? ????.</span></p>
+        <a href="https://pubmed.ncbi.nlm.nih.gov/33662663/" target="_blank" rel="noopener">↗</a><br>
+        <span dir="ltr">“less than 60 s… lights ON/OFF peaks”</span> → <span data-i18n="sci.use8">دیورنال دوقله و هم‌زمانی آخور.</span></p>
     </div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
-    <div class="card"><h3><span class="ic">??</span><span data-i18n="sci.chain">?????? ????????</span></h3>
+    <div class="card"><h3><span class="ic">🔗</span><span data-i18n="sci.chain">زنجیره مدل‌سازی</span></h3>
       <div class="srcs" style="line-height:2.3">
-        <p><span class="step ok" data-i18n="st.1">??? ?</span><span data-i18n="chain.1">??????? ???? = ???� ??�????? ?? ??? (BW/FI ?? ? ????)</span></p>
-        <p><span class="step ok" data-i18n="st.2">??? ?</span><span data-i18n="chain.2">??????� ?�??? CV�?% + AR(1) + ???????? ??? ?????</span></p>
-        <p><span class="step ok" data-i18n="st.3">??? ?</span><span data-i18n="chain.3">??????????? RFID = ?????/??? ???? (Weibull shares)</span></p>
-        <p><span class="step ok" data-i18n="st.4">??? ?</span><span data-i18n="chain.4">??????? ????? + ??? 18L:6D</span></p>
-        <p><span class="step ok" data-i18n="st.5">??? ?</span><span data-i18n="chain.5">?????? ???? = ????? ???? FI/BW ??</span></p>
-        <p><span class="step ok" data-i18n="st.6">??? ?</span><span data-i18n="chain.6">?�???? ?????/RFID = ????? EMA? ??� =??s? ???? ????</span></p>
-        <p><span class="step wn" data-i18n="st.stat">????</span><span data-i18n="chain.7">??? ?????�? ?? (~???%) ? ??????? ????? ??????? ???? ANOVA/Welch</span></p>
-        <p><span class="step ok" data-i18n="st.out">?????</span><span data-i18n="chain.8">MAE ??? � ?�?% ???? ?? ??????? ???? ?�???</span></p>
+        <p><span class="step ok" data-i18n="st.1">گام ۱</span><span data-i18n="chain.1">کاتالوگ سویه = هدف قفل‌شده هر روز (BW/FI نر و ماده)</span></p>
+        <p><span class="step ok" data-i18n="st.2">گام ۲</span><span data-i18n="chain.2">انحراف فردی CV≈۵٪ + AR(1) + بند‌بندی بین پن‌ها</span></p>
+        <p><span class="step ok" data-i18n="st.3">گام ۳</span><span data-i18n="chain.3">رگرسیون‌های RFID = تعداد/مدت وعده (Weibull shares)</span></p>
+        <p><span class="step ok" data-i18n="st.4">گام ۴</span><span data-i18n="chain.4">دیورنال دوقله + نور 18L:6D</span></p>
+        <p><span class="step ok" data-i18n="st.5">گام ۵</span><span data-i18n="chain.5">اندازه گروه = تعدیل جزئی FI/BW پن</span></p>
+        <p><span class="step ok" data-i18n="st.6">گام ۶</span><span data-i18n="chain.6">فیزیک لودسل/RFID = نویز، EMA، صف ≤۹۰s، شارژ مخزن</span></p>
+        <p><span class="step wn" data-i18n="st.stat">آمار</span><span data-i18n="chain.7">اثر تصادفی پن (~۱٫۲٪) → واریانس واقعی تکرارها برای ANOVA/Welch</span></p>
+        <p><span class="step ok" data-i18n="st.out">خروجی</span><span data-i18n="chain.8">MAE وزن ≈ ۱–۲٪ نسبت به کاتالوگ سویه فعال</span></p>
       </div></div>
-    <div class="card"><h3><span class="ic">??�</span><span data-i18n="sci.limits">??�??�?? ? ??????????</span></h3>
+    <div class="card"><h3><span class="ic">⚖️</span><span data-i18n="sci.limits">شفافیت و محدودیت‌ها</span></h3>
       <div class="srcs" style="line-height:2.05">
-        <p data-i18n="lim.1">? Ross booklet ??? ???? ???? ???????? ?????? ?????� ???�??? ??? ???? ????? ?????.</p>
-        <p data-i18n="lim.2">? ??? ?????? ???? ?? ?�?? ????? ?????? ???????????? ????? ???? ? ?????????.</p>
-        <p data-i18n="lim.3">? ??? ??� ???? (=??s)? ????? ??????? ????? ????????? ???.</p>
-        <p data-i18n="lim.4">? ???�?? ?????? ???? ?????? ?? d?? [?????????].</p>
-        <p data-i18n="lim.5">? ????? ??????? ? ?????? ???? ??????????? ?? ??????? ?????? ????.</p>
-        <p data-i18n="lim.6">? ???? ???????? ??? �??� ???????? ???? ????? ???? n ?? = ???? ??.</p>
+        <p data-i18n="lim.1">① Ross booklet سال ۲۰۰۷ است؛ نسخه‌های جدیدتر اهداف متفاوت ولی روند یکسان دارند.</p>
+        <p data-i18n="lim.2">② اثر اندازه گروه در ۳–۱۲ پرنده غالباً غیرمعنی‌دار؛ ضرایب کوچک و جهت‌دارند.</p>
+        <p data-i18n="lim.3">③ مدل صف ساده (≤۹۰s)؛ رقابت اجتماعی واقعی پیچیده‌تر است.</p>
+        <p data-i18n="lim.4">④ تلفات احتمال ثابت روزانه از d۲۱ [تأییدنشده].</p>
+        <p data-i18n="lim.5">⑤ ضرایب تیمارها و سناریو گرما کالیبره‌اند نه استخراج مستقیم منبع.</p>
+        <p data-i18n="lim.6">⑥ آمار استنباطی روی «پن» به‌عنوان واحد نمونه است؛ n کم = توان کم.</p>
       </div></div>
   </div>
 
   <div class="card" style="margin-top:13px">
-    <h3><span class="ic">??</span><span data-i18n="about.title">?????? ? ??????</span></h3>
+    <h3><span class="ic">👤</span><span data-i18n="about.title">درباره و مالکیت</span></h3>
     <div class="srcs" style="line-height:2.2">
-      <p data-i18n-html="about.body">???? ???? ??? � ????? ? ??????????? ???? <b>Arsalan Rezazadeh</b>. ???????? ??????? ?????? RFID + ?? ????? ???? ???????? ????? ????? ?? ??????????? ???? Aviagen/Cobb-Vantress/Hubbard? ????? ????????? ? ????????? ???? ?????. ????? ?????? ??�????? ???? ????? seed ?????????.</p>
+      <p data-i18n-html="about.body">آرین نسخه ۳٫۰ — ساخته و نگهداری‌شده توسط <b>Arsalan Rezazadeh</b>. شبیه‌ساز آکادمیک دستگاه RFID + دو لودسل برای سویه‌های گوشتی صنعتی با کاتالوگ‌های رسمی Aviagen/Cobb-Vantress/Hubbard، موتور وعده‌محور و آزمایشگاه آمار زیستی. اجرای کاملاً آفلاین، بدون سرور، seed تکرارپذیر.</p>
     </div>
   </div>
 </section>
@@ -2676,56 +2676,56 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <!-- ================= VIEW: METHODOLOGY ================= -->
 <section class="view" id="v-met">
   <div class="card">
-    <h3><span class="ic">?�</span><span data-i18n="met.abstractT">?????</span></h3>
+    <h3><span class="ic">📝</span><span data-i18n="met.abstractT">چکیده</span></h3>
     <p class="abstract" style="font-size:12.5px;color:var(--mut);line-height:2.2" data-i18n-html="met.abstract">
-      ???? ?? ???????? ?????-?????? ?? ??????? ???? ????� ????? ???? ??? ?? ???????? ??? ??????
-      (RFID + ?? ?????) ?? ?? ???? ???????�? ??????? ?? ???? ????? ??????. ????? ????????? ?? ???
-      ??????????? ??????? ???? ???? ???? ????? ??�? ??? ? ?�???? ??????? ????? ?????? ????????? ??????? ??? ???.
-      ?????????? ?? ????? ????? ???? MAE ??? ?�?% ???? ??????.</p>
+      آرین یک شبیه‌ساز گسسته-رویداد از ایستگاه پایش مصرف خوراک طیور است که داده‌های سطح دستگاه
+      (RFID + دو لودسل) را با وضوح سه‌ردیفی به‌ازای هر وعده تولید می‌کند. موتور وعده‌محور آن روی
+      کاتالوگ‌های عملکردی رسمی چهار سویه صنعتی قفل شده و فیزیک سنسورها مطابق ادبیات داوری‌شده کالیبره شده است.
+      اعتبارسنجی در برابر جداول مرجع MAE وزن ۱–۲٪ نشان می‌دهد.</p>
   </div>
   <div class="grid g2" style="margin-top:13px">
     <div class="card">
-      <h3><span class="ic">??</span><span data-i18n="met.pipeline">?? ????? ????</span></h3>
+      <h3><span class="ic">🔀</span><span data-i18n="met.pipeline">خط تولید داده</span></h3>
       <div class="pipe">
-        <div class="pstep"><b>?</b><span data-i18n="met.p1">??????? ????</span><small data-i18n="met.p1s">BW/FI ?????? ?? ? ????</small></div>
-        <div class="parrow" dir="ltr">?</div>
-        <div class="pstep"><b>?</b><span data-i18n="met.p2">??? ?�???</span><small data-i18n="met.p2s" dir="ltr">CV�?% + AR(1) + ????????</small></small></div>
-<div class="parrow" dir="ltr">?</div>
-        <div class="pstep"><b>?</b><span data-i18n="met.p3">????? ????</span><small data-i18n="met.p3s">Weibull shares + ??????? ?????</small></div>
-<div class="parrow" dir="ltr">?</div>
-        <div class="pstep"><b>?</b><span data-i18n="met.p4">?�???? ??????</span><small data-i18n="met.p4s" dir="ltr">????? + RFID + ??� =??s</small></small></div>
-        <div class="parrow">?</div>
-        <div class="pstep accent"><b>?</b><span data-i18n="met.p5">????? ???</span><small data-i18n="met.p5s">? ????� schema ???????</small></div>
+        <div class="pstep"><b>۱</b><span data-i18n="met.p1">کاتالوگ سویه</span><small data-i18n="met.p1s">BW/FI روزانه نر و ماده</small></div>
+        <div class="parrow" dir="ltr">→</div>
+        <div class="pstep"><b>۲</b><span data-i18n="met.p2">مدل فردی</span><small data-i18n="met.p2s" dir="ltr">CV≈۵٪ + AR(1) + بند‌بندی</small></small></div>
+<div class="parrow" dir="ltr">→</div>
+        <div class="pstep"><b>۳</b><span data-i18n="met.p3">موتور وعده</span><small data-i18n="met.p3s">Weibull shares + دیورنال دوقله</small></div>
+<div class="parrow" dir="ltr">→</div>
+        <div class="pstep"><b>۴</b><span data-i18n="met.p4">فیزیک دستگاه</span><small data-i18n="met.p4s" dir="ltr">لودسل + RFID + صف ≤۹۰s</small></small></div>
+        <div class="parrow">→</div>
+        <div class="pstep accent"><b>۵</b><span data-i18n="met.p5">رکورد خام</span><small data-i18n="met.p5s">۳ ردیف schema ۱۲ستونه</small></div>
       </div>
     </div>
     <div class="card">
-      <h3><span class="ic">??</span><span data-i18n="met.eqTitle">??????? ???</span></h3>
+      <h3><span class="ic">🧮</span><span data-i18n="met.eqTitle">معادلات مدل</span></h3>
       <div class="eqs">
-        <div class="eq"><code>W(t) = W<sub>cat</sub>(t)�(1+CV+e_t)�m_pen�?(t)</code>
-          <small data-i18n="met.e1">??? ?�??? = ??????? � ??????� ?????? � ??? ?? � ???? ???</small></div>
-        <div class="eq"><code>e_t = 0.9�e_{t-1} + N(0,0.008�)</code>
-          <small data-i18n="met.e2">?�????? ?????????? AR(1) ???? ????? ??????</small></div>
-        <div class="eq"><code>n = max(6, round(FI/rate � 60/D))</code>
-          <small data-i18n="met.e3">????? ???? = ????� � ??? � ??? ???? [5]</small></div>
-        <div class="eq"><code>D(a) = min(135, 45+2.192�(a-15))</code>
-          <small data-i18n="met.e4">??? ????? ??? +???? s/day [5]</small></div>
-        <div class="eq"><code>w ~ Weibull(�=1.35)</code>
-          <small data-i18n="met.e5">????? ?????? ????? ????? &lt;60s [7][8]</small></div>
-        <div class="eq"><code>raw = W + N(0,4�); EMA_0.5 ? weight_g</code>
-          <small data-i18n="met.e6">?????: ???? s�4g ? ?�???? EMA</small></div>
-        <div class="eq"><code>RSSI ~ clamp(N(-65,5�))</code>
-          <small data-i18n="met.e7">RFID? 0.4% ???? 2% ????� [7]</small></div>
-        <div class="eq"><code>m_pen ~ N(0,0.012�)</code>
-          <small data-i18n="met.e8">??? ?????�? ?? ???? ??????? ????? ???????</small></div>
+        <div class="eq"><code>W(t) = W<sub>cat</sub>(t)·(1+CV+ε_t)·m_pen·γ(t)</code>
+          <small data-i18n="met.e1">وزن فردی = کاتالوگ × انحراف ژنتیکی × اثر پن × ضریب تنش</small></div>
+        <div class="eq"><code>ε_t = 0.9·ε_{t−1} + N(0,0.008²)</code>
+          <small data-i18n="met.e2">فرایند خودرگرسیون AR(1) برای نوسان روزانه</small></div>
+        <div class="eq"><code>n = max(6, round(FI/rate × 60/D))</code>
+          <small data-i18n="met.e3">تعداد وعده = مصرف ÷ نرخ ÷ مدت وعده [5]</small></div>
+        <div class="eq"><code>D(a) = min(135, 45+2.192×(a−15))</code>
+          <small data-i18n="met.e4">مدت وعده؛ شیب +۲٫۱۹ s/day [5]</small></div>
+        <div class="eq"><code>w ~ Weibull(β=1.35)</code>
+          <small data-i18n="met.e5">توزیع اندازه وعده؛ بیشتر &lt;60s [7][8]</small></div>
+        <div class="eq"><code>raw = W + N(0,4²); EMA_0.5 → weight_g</code>
+          <small data-i18n="met.e6">لودسل: نویز σ≈4g و فیلتر EMA</small></div>
+        <div class="eq"><code>RSSI ~ clamp(N(−65,5²))</code>
+          <small data-i18n="met.e7">RFID؛ 0.4% خطا، 2% ضعیف [7]</small></div>
+        <div class="eq"><code>m_pen ~ N(0,0.012²)</code>
+          <small data-i18n="met.e8">اثر تصادفی پن برای واریانس واقعی تکرارها</small></div>
       </div>
     </div>
   </div>
 
   <div class="card" style="margin-top:13px">
-    <h3><span class="ic">??</span><span data-i18n="met.accTitle">??????? ??? � ????</span>
-      <small class="src" data-i18n="met.accSub">????? ???? ?? ???? ? ?????? ?? ??????? ????</small></h3>
+    <h3><span class="ic">🎯</span><span data-i18n="met.accTitle">ماتریکس صحت — زنده</span>
+      <small class="src" data-i18n="met.accSub">اجرای کامل هر سویه و مقایسه با کاتالوگ خودش</small></h3>
     <div class="controls">
-      <button class="btn" id="btn-met-run">? <span data-i18n="btn.runAcc">????? ?????????? ? ????</span></button>
+      <button class="btn" id="btn-met-run">⚡ <span data-i18n="btn.runAcc">اجرای اعتبارسنجی ۴ سویه</span></button>
       <span class="dm" id="met-lbl"></span>
     </div>
     <div class="tbl-scroll" style="max-height:none;margin-top:12px">
@@ -2738,41 +2738,41 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
       </tr></thead><tbody id="tb-met"></tbody></table>
     </div>
     <div class="note gd" style="margin-top:11px" data-i18n-html="met.note">
-      ?? ?? ???? ????? ????????? ? ?? ????? ??????? ???? ?????? ?????? � ???? ????? ??? ???????.
-      MAE = ??????? ??????? ??????� ??? ?????? ???? ?? PO ???? ???? FCR = ????� ????? � ??�???? ??? d?? ?? ????? ??�?.</div>
+      💡 هر سویه مستقل شبیه‌سازی و در برابر کاتالوگ خودش مقایسه می‌شود — بدون تکرار بین سویه‌ها.
+      MAE = میانگین قدرمطلق انحراف وزن روزانه نسبت به PO همان روز؛ FCR = مصرف تجمعی ÷ افزایش وزن d۱۵ تا پایان افق.</div>
   </div>
 
   <div class="grid g2" style="margin-top:13px">
     <div class="card">
-      <h3><span class="ic">?�</span><span data-i18n="met.statT">??? ?????</span></h3>
+      <h3><span class="ic">📐</span><span data-i18n="met.statT">روش آماری</span></h3>
       <div class="srcs" style="line-height:2.15">
-        <p><span class="step ok">EU</span><span data-i18n="met.euText">?? ??????? ???? ????? ????? ???? ??????? ???? ?? ?????????? ? ????? ???????? ??????? ????? ??????.</span></p>
-        <p><span class="step ok">CRN</span><span data-i18n="met.crnText">???????? ?????�?: ????? i-?? ??? ????? ???????? ????? ?????? ?? ??????� ??????? ?? ???? ??�??? ??? (Common Random Numbers).</span></p>
-        <p><span class="step ok">TEST</span><span data-i18n="met.testText">ANOVA ??????? ???? ??? ??? + ?????????? ???? Welch-t (????? ?? ??????? ???????) ?? ????? Holm ???? ????? FWER.</span></p>
-        <p><span class="step ok">?�</span><span data-i18n="met.etaText">?� ???? ??????? ????????? ?? ?? ?? ????? ??????? ????? >???? ???? ? <???? ???? ???? ??????.</span></p>
-        <p><span class="step wn">POWER</span><span data-i18n="met.powerText">?? s_pen � ???% ? a=????? ????? ??? ?% ???? ?? =? ????? ?? ?? ????? ????.</span></p>
+        <p><span class="step ok">EU</span><span data-i18n="met.euText">پن آزمایشی واحد نمونه آماری است؛ مشاهدات درون پن همبسته‌اند و تحلیل استنباطی بین‌پنی انجام می‌شود.</span></p>
+        <p><span class="step ok">CRN</span><span data-i18n="met.crnText">بند‌بندی تصادفی: پرنده i-ام همه پن‌ها هم‌ویژگی ساخته می‌شود تا اختلاف تیمارها از شانس تفکیک شود (Common Random Numbers).</span></p>
+        <p><span class="step ok">TEST</span><span data-i18n="met.testText">ANOVA یک‌راهه برای اثر کلی + مقایسه‌های زوجی Welch-t (مقاوم به ناهمگنی واریانس) با اصلاح Holm برای کنترل FWER.</span></p>
+        <p><span class="step ok">η²</span><span data-i18n="met.etaText">η² نسبت واریانس بین‌گروهی به کل را گزارش می‌کند؛ مقدار >۰٫۱۴ بزرگ و <۰٫۰۶ کوچک تلقی می‌شود.</span></p>
+        <p><span class="step wn">POWER</span><span data-i18n="met.powerText">با σ_pen ≈ ۱٫۲٪ و α=۰٫۰۵، تشخیص اثر ۲٪ نیاز به ≥۳ تکرار در هر تیمار دارد.</span></p>
       </div>
     </div>
     <div class="card">
-      <h3><span class="ic">??</span><span data-i18n="met.noiseT">????? ????????? ???????</span></h3>
+      <h3><span class="ic">🔬</span><span data-i18n="met.noiseT">بودجه عدم‌قطعیت سنسورها</span></h3>
       <div class="tbl-scroll"><table>
-        <thead><tr><th>Component</th><th>Model</th><th class="num">s</th><th>Source</th></tr></thead>
+        <thead><tr><th>Component</th><th>Model</th><th class="num">σ</th><th>Source</th></tr></thead>
         <tbody>
-          <tr><td>LC1 raw weight</td><td class="num" dir="ltr">N(0,4�)</td><td class="num">4 g</td><td class="dm" data-i18n="nz.s1">Commercial platform load-cell spec</td></tr>
-          <tr><td>LC1 EMA filter</td><td class="num" dir="ltr">a=0.5</td><td class="dm">�</td><td class="dm" data-i18n="nz.s2">Exponential moving average</td></tr>
-          <tr><td>RFID read OK</td><td class="num" dir="ltr">99.6%</td><td>�</td><td class="dm">Li 2018: IBN=92.5%�4.2%</td></tr>
-          <tr><td>RFID miss</td><td class="num" dir="ltr">0.4%</td><td>�</td><td class="dm">=1-99.6%</td></tr>
-          <tr><td>RSSI</td><td class="num" dir="ltr">N(-65,5�)</td><td class="num">5 dBm</td><td class="dm">UHF band typical [7]</td></tr>
-          <tr><td>FI noise</td><td class="num" dir="ltr">exp(N(0,0.10�))</td><td class="num">10%</td><td class="dm" data-i18n="nz.s6">Individual feeding variability</td></tr>
+          <tr><td>LC1 raw weight</td><td class="num" dir="ltr">N(0,4²)</td><td class="num">4 g</td><td class="dm" data-i18n="nz.s1">Commercial platform load-cell spec</td></tr>
+          <tr><td>LC1 EMA filter</td><td class="num" dir="ltr">α=0.5</td><td class="dm">—</td><td class="dm" data-i18n="nz.s2">Exponential moving average</td></tr>
+          <tr><td>RFID read OK</td><td class="num" dir="ltr">99.6%</td><td>—</td><td class="dm">Li 2018: IBN=92.5%±4.2%</td></tr>
+          <tr><td>RFID miss</td><td class="num" dir="ltr">0.4%</td><td>—</td><td class="dm">=1−99.6%</td></tr>
+          <tr><td>RSSI</td><td class="num" dir="ltr">N(−65,5²)</td><td class="num">5 dBm</td><td class="dm">UHF band typical [7]</td></tr>
+          <tr><td>FI noise</td><td class="num" dir="ltr">exp(N(0,0.10²))</td><td class="num">10%</td><td class="dm" data-i18n="nz.s6">Individual feeding variability</td></tr>
           <tr><td>Pen effect</td><td class="num" dir="ltr">N(0,1.2%)</td><td class="num">1.2%</td><td class="dm" data-i18n="nz.s7">Between-pen lab variance</td></tr>
         </tbody></table></div>
     </div>
   </div>
 
   <div class="card" style="margin-top:13px">
-    <h3><span class="ic">?�</span><span data-i18n="met.reproT">??????????</span></h3>
+    <h3><span class="ic">🔁</span><span data-i18n="met.reproT">تکرارپذیری</span></h3>
     <div class="srcs">
-      <p data-i18n-html="met.reproBody">?? ???? ?? seed=<code>308</code> ? ???? mulberry32 ???? ??????? ????????? ??????? ?? ????? ????? (<code>seed�7919+13</code>) ????? ?????? ?? ????? ?????? ??? ?????? ???????? ????? ???? (Common Random Numbers). ?????: ?? ???? ?? seed ????? ?????????? ????????? ? ?????? ??????? ?�?? ??? ????? ?? ????? ??????.</p>
+      <p data-i18n-html="met.reproBody">هر اجرا با seed=<code>308</code> و مولد mulberry32 آغاز می‌شود؛ بلوک‌سازی پرندگان از جریان مستقل (<code>seed×7919+13</code>) تغذیه می‌شود تا ترکیب ژنتیکی همه پن‌های هم‌تیمار یکسان باشد (Common Random Numbers). نتیجه: دو اجرا با seed یکسان بیت‌به‌بیت یکسان‌اند و مقایسه تیمارها فقط اثر واقعی را منعکس می‌کند.</p>
     </div>
   </div>
 </section>
@@ -2782,9 +2782,9 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <!-- ================= VIEW: ENV CONTROL ================= -->
 <section class="view" id="v-env">
   <div class="view-head">
-    <span class="eyebrow">ENV � <span data-i18n="env.eyebrow">????? ?????</span></span>
-    <h2 data-i18n="env.h.t">????? ????? ?????</h2>
-    <p data-i18n="env.p">???? ??????? ???? ?????? ????? ????? ????� ????? ? ??? ?????? ?�???? ? ??????? ???? � ?? ???? ?????? ??????? ?? ???? MQTT ? ????? ??? ?? ?????? ?????.</p>
+    <span class="eyebrow">ENV · <span data-i18n="env.eyebrow">کنترل محیطی</span></span>
+    <h2 data-i18n="env.h.t">سیستم کنترل محیطی</h2>
+    <p data-i18n="env.p">پایش لحظه‌ای دما، رطوبت، رطوبت بستر، مصرف خوراک و آب، گازها، فن‌ها و روشنایی سالن — با داده مستقیم سنسورها از طریق MQTT و سلامت گله با بینایی ماشین.</p>
   </div>
 
   <!-- status banner: single source of "is the house healthy" -->
@@ -2792,8 +2792,8 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     <div class="env-banner-main">
       <span class="env-banner-dot" aria-hidden="true"></span>
       <div>
-        <b data-i18n="env.banner.ok">??? ???????? ?????</b>
-        <small id="env-banner-sub" data-i18n="env.banner.sub">????? ???? ??????? ??? ????? ???</small>
+        <b data-i18n="env.banner.ok">همه سیستم‌ها نرمال</b>
+        <small id="env-banner-sub" data-i18n="env.banner.sub">آخرین پیام سنسورها چند ثانیه پیش</small>
       </div>
     </div>
     <div class="env-banner-kpis" id="env-banner-kpis"></div>
@@ -2806,14 +2806,14 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 
     <!-- climate tiles (live) -->
     <div class="card env-tiles-card">
-      <h3><span class="ic">???�</span><span data-i18n="env.tiles.t">????? ??????? ????</span>
-        <small class="src" data-i18n="env.tiles.s">??????????? ???? � MQTT</small></h3>
+      <h3><span class="ic">🌡️</span><span data-i18n="env.tiles.t">شرایط لحظه‌ای سالن</span>
+        <small class="src" data-i18n="env.tiles.s">به‌روزرسانی زنده · MQTT</small></h3>
       <div class="env-tiles" id="env-tiles"></div>
     </div>
 
     <!-- house temperature chart -->
     <div class="card">
-      <h3><span class="ic">??</span><span data-i18n="env.chart.t">???? ??????? � ???????</span></h3>
+      <h3><span class="ic">📈</span><span data-i18n="env.chart.t">دمای سالن‌ها — لحظه‌ای</span></h3>
       <div class="chart-box tall"><canvas id="env-chart"></canvas></div>
       <div class="controls" style="margin-top:8px">
         <span class="dm" id="env-chart-note"></span>
@@ -2822,51 +2822,51 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 
     <!-- herd health (machine vision) -->
     <div class="card">
-      <h3><span class="ic">?�?�</span><span data-i18n="env.health.t">????? ??? � ?????? ?????</span>
-        <small class="src" data-i18n="env.health.s">?????????? ???? � ????? ??�???</small></h3>
+      <h3><span class="ic">👁️</span><span data-i18n="env.health.t">سلامت گله — بینایی ماشین</span>
+        <small class="src" data-i18n="env.health.s">دوربین‌های سالن · تحلیل رفتار</small></h3>
       <div class="env-health" id="env-health"></div>
     </div>
 
     <!-- hardware status -->
     <div class="card">
-      <h3><span class="ic">??</span><span data-i18n="env.hw.t">????? ??????�??? ? ???????</span>
-        <small class="src" data-i18n="env.hw.s">????? ???? ?? ??????</small></h3>
+      <h3><span class="ic">🧩</span><span data-i18n="env.hw.t">سلامت سخت‌افزار و سنسورها</span>
+        <small class="src" data-i18n="env.hw.s">آخرین پیام هر دستگاه</small></h3>
       <div class="tbl-scroll" style="max-height:290px">
         <table><thead><tr>
-          <th data-i18n="env.hw.device">??????</th>
-          <th data-i18n="env.hw.metric">????</th>
-          <th class="num" data-i18n="env.hw.rssi">???? ??????</th>
-          <th data-i18n="env.hw.last">????? ????</th>
-          <th data-i18n="env.hw.state">?????</th>
+          <th data-i18n="env.hw.device">دستگاه</th>
+          <th data-i18n="env.hw.metric">سنجه</th>
+          <th class="num" data-i18n="env.hw.rssi">قدرت سیگنال</th>
+          <th data-i18n="env.hw.last">آخرین پیام</th>
+          <th data-i18n="env.hw.state">وضعیت</th>
         </tr></thead><tbody id="tb-env-hw"></tbody></table>
       </div>
     </div>
 
-    <!-- trends report (????? ???????) � segmented scope picker -->
+    <!-- trends report (گزارش تغییرات) — segmented scope picker -->
     <div class="card env-export-card">
-      <h3><span class="ic">??</span><span data-i18n="env.export.t">????? ???????</span>
-        <small class="src" data-i18n="env.export.s">??????????? ?????? � ?????/??????/??????/???? ??????</small></h3>
-      <p class="env-export-hint" data-i18n="env.export.hint">??? ????? ?? ?????? ? ?�??? ?? ?????�? ???? � ???? ??? ???????? ????? ???? ????.</p>
+      <h3><span class="ic">📤</span><span data-i18n="env.export.t">گزارش تغییرات</span>
+        <small class="src" data-i18n="env.export.s">میانگین‌های تجمیعی · ساعتی/روزانه/ماهانه/بازه دلخواه</small></h3>
+      <p class="env-export-hint" data-i18n="env.export.hint">نوع گزارش را انتخاب و فایل را دریافت کنید — شامل همه سنجه‌های محیطی همان سالن.</p>
       <div class="env-export-bar">
         <div class="env-scope" id="env-scope" role="group" aria-label="Report scope">
-          <button id="btn-env-exp-hour" class="on" data-scope="hour"><span class="sc-ic">?�?</span><span data-i18n="env.export.hour">?????</span></button>
-          <button id="btn-env-exp-day" data-scope="day"><span class="sc-ic">??</span><span data-i18n="env.export.day">??????</span></button>
-          <button id="btn-env-exp-month" data-scope="month"><span class="sc-ic">??</span><span data-i18n="env.export.month">??????</span></button>
-          <button id="btn-env-exp-range" data-scope="range"><span class="sc-ic">??</span><span data-i18n="env.export.range">???? ??????</span></button>
+          <button id="btn-env-exp-hour" class="on" data-scope="hour"><span class="sc-ic">⏱</span><span data-i18n="env.export.hour">ساعتی</span></button>
+          <button id="btn-env-exp-day" data-scope="day"><span class="sc-ic">📅</span><span data-i18n="env.export.day">روزانه</span></button>
+          <button id="btn-env-exp-month" data-scope="month"><span class="sc-ic">🗓</span><span data-i18n="env.export.month">ماهانه</span></button>
+          <button id="btn-env-exp-range" data-scope="range"><span class="sc-ic">🧾</span><span data-i18n="env.export.range">بازه دلخواه</span></button>
         </div>
         <div class="env-export-fields hidden" id="env-range-fields">
           <label class="env-field">
-            <span data-i18n="env.export.from">?? ?????</span>
+            <span data-i18n="env.export.from">از تاریخ</span>
             <input type="date" id="env-exp-from">
           </label>
-          <span class="env-arrow" dir="ltr">?</span>
+          <span class="env-arrow" dir="ltr">→</span>
           <label class="env-field">
-            <span data-i18n="env.export.to">?? ?????</span>
+            <span data-i18n="env.export.to">تا تاریخ</span>
             <input type="date" id="env-exp-to">
           </label>
         </div>
         <div class="env-export-actions">
-          <button class="btn primary" id="btn-env-exp-go">? <span data-i18n="env.export.go">?????�? ?�??? ????</span></button>
+          <button class="btn primary" id="btn-env-exp-go">⬇ <span data-i18n="env.export.go">دریافت فایل اکسل</span></button>
           <span class="env-exp-status" id="env-exp-lbl" role="status" aria-live="polite"></span>
         </div>
       </div>
@@ -2878,48 +2878,48 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <!-- ================= VIEW: ABOUT ================= -->
 <section class="view" id="v-products" aria-label="Products and Services">
   <div class="prod-hero">
-    <h2 data-i18n="prod.hero.t">??????? ? ????? ????</h2>
-    <p data-i18n="prod.hero.p">?????????? ?????? ????? ? ????? ???? ???? ????? � ?? ??? ???? ???? ?? ???? ??????? ?? ????? ?????? ????? ????? ????? ????????? ???? ????? ????????? ??????? ???? ? ?�??????? ?????.</p>
+    <h2 data-i18n="prod.hero.t">محصولات و خدمات آرین</h2>
+    <p data-i18n="prod.hero.p">سامانه‌های هوشمند پرورش و اصلاح نژاد طیور گوشتی — از ثبت دقیق داده در واحد آزمایشی تا کنترل خودکار شرایط محیطی سالن؛ طراحی‌شده برای مراکز تحقیقاتی، واحدهای مادر و فارم‌های تجاری.</p>
   </div>
   <div class="prod-grid">
 
     <article class="prod-card">
       <div class="prod-ic"><i class="fa-solid fa-utensils" aria-hidden="true"></i></div>
       <div>
-        <div class="prod-tag" data-i18n="prod.p1.tag">????? ?</div>
-        <h3 data-i18n="prod.p1.t">????? ???? ????� ?????</h3>
+        <div class="prod-tag" data-i18n="prod.p1.tag">محصول ۱</div>
+        <h3 data-i18n="prod.p1.t">سیستم پایش مصرف خوراک</h3>
       </div>
-      <p class="prod-desc" data-i18n="prod.p1.d">??? ?????? ?????? ?? ????? ?? ??????? ????? ?? ??????? ?????????? ? ????? ???????? ?????? ???? ????� ????? ?�???? ??????? ?????? ? ????? ?????? ???????? ???????? � ???? ????? ?????? ? ???? ????? ???.</p>
+      <p class="prod-desc" data-i18n="prod.p1.d">ثبت خودکار بازدید هر پرنده از ایستگاه تغذیه با شناسایی الکترونیکی و توزین هم‌زمان؛ محاسبه دقیق مصرف خوراک فردی، وزن‌کشی پیوسته و تشخیص هوشمند وعده‌های تغذیه‌ای — بدون دخالت انسانی و بدون استرس گله.</p>
       <ul class="prod-feats">
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f1">??????? ?????????? ?? ????? ?? ?????? ? ??? ??????? ???? ? ????</span></li>
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f2">??????? ??????? ?? ????????? ???? ? ??? ?? ?? ???</span></li>
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f3">?????? ?????? ????� ????? ?�???? ????? ?????? ? ???? ????</span></li>
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f4">?????? ???????? ?????? ?? ???????? ?????? ??????? ?? ?????</span></li>
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f5">??? ? ?????????? ?????? ??????? ? ?????? ???? ?? ???????</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f1">شناسایی الکترونیکی هر پرنده با بال‌تگ و ثبت لحظه‌ای ورود و خروج</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f2">حسگرهای وزن‌کشی با هموارسازی نویز و دقت در حد گرم</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f3">محاسبه خودکار مصرف خوراک فردی، شمارش بازدید و بستن وعده</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f4">مدیریت دوره‌های پرورشی با داده‌های کاملاً اختصاصی هر کاربر</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p1.f5">ثبت و ذخیره‌سازی خودکار داده‌ها و استریم زنده به داشبورد</span></li>
       </ul>
       <div class="prod-foot">
-        <span class="prod-status"><span class="dot"></span> <span data-i18n="prod.p1.status">?�??? � ???? ???? ?? ?????</span></span>
-        <button class="prod-cta" data-goto="v-dev"><i class="fa-solid fa-microchip"></i> <span data-i18n="prod.demo">?????? ???</span></button>
+        <span class="prod-status"><span class="dot"></span> <span data-i18n="prod.p1.status">فعال · داده زنده ۲۴ ساعته</span></span>
+        <button class="prod-cta" data-goto="v-dev"><i class="fa-solid fa-microchip"></i> <span data-i18n="prod.demo">مشاهده دمو</span></button>
       </div>
     </article>
 
     <article class="prod-card">
       <div class="prod-ic"><i class="fa-solid fa-temperature-half" aria-hidden="true"></i></div>
       <div>
-        <div class="prod-tag" data-i18n="prod.p2.tag">????? ?</div>
-        <h3 data-i18n="prod.p2.t">????? ?????? ????? ?????</h3>
+        <div class="prod-tag" data-i18n="prod.p2.tag">محصول ۲</div>
+        <h3 data-i18n="prod.p2.t">سیستم هوشمند کنترل محیطی</h3>
       </div>
-      <p class="prod-desc" data-i18n="prod.p2.d">???? ? ????? ?????? ???? ????? ? ????? ???? ?? ???? ???????????? ???? ?????? ????? ?????? ????? ????? ?? ?? ??? ???? ??? ?????? ? ????? ???? ????? ????? � ??????? ?? ?? ??????? ????.</p>
+      <p class="prod-desc" data-i18n="prod.p2.d">پایش و کنترل خودکار دما، رطوبت و تهویه سالن بر اساس استانداردهای رسمی پرورش؛ تنظیم هوشمند شرایط محیطی در هر سن، کاهش تنش گرمایی و بهبود ضریب تبدیل خوراک — همه‌چیز از یک داشبورد واحد.</p>
       <ul class="prod-feats">
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f1">??????? ??? ? ????? ?? ??? ?????? ?? ?? ???? ????</span></li>
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f2">???? ????? ?????? ????? ? ?????? ?? ???? ?? ???</span></li>
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f3">????? ??????? ??????� ?? ???? ????????? ?? ????</span></li>
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f4">????????? ????? ???? ?????� ? ????? ???????</span></li>
-        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f5">?????????? ??????? ? ?????????? ?? ?????� ??????? ????</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f1">حسگرهای دما و رطوبت با ثبت پیوسته در هر نقطه سالن</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f2">منطق کنترل خودکار تهویه و گرمایش بر اساس سن گله</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f3">هشدار لحظه‌ای انحراف از بازه استاندارد هر سویه</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f4">سناریوهای محیطی قابل تعریف و اجرای آزمایشی</span></li>
+        <li><i class="fa-solid fa-circle-check"></i> <span data-i18n="prod.p2.f5">گزارش‌گیری دوره‌ای و هم‌راستایی با اهداف عملکردی سویه</span></li>
       </ul>
       <div class="prod-foot">
-        <span class="prod-status"><span class="dot"></span> <span data-i18n="prod.p2.status">?�??? � ???? ?? ?????</span></span>
-        <button class="prod-cta" data-goto="v-scn"><i class="fa-solid fa-sliders"></i> <span data-i18n="prod.demo">?????? ???</span></button>
+        <span class="prod-status"><span class="dot"></span> <span data-i18n="prod.p2.status">فعال · پایش ۲۴ ساعته</span></span>
+        <button class="prod-cta" data-goto="v-scn"><i class="fa-solid fa-sliders"></i> <span data-i18n="prod.demo">مشاهده دمو</span></button>
       </div>
     </article>
 
@@ -2928,29 +2928,29 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 
 <section class="view" id="v-about">
   <div class="card">
-    <h3><span class="ic">?�??�</span><span data-i18n="about.uniT">??????? ????? ???? � ???? ???? ????</span></h3>
+    <h3><span class="ic">🏛️</span><span data-i18n="about.uniT">دانشگاه تربیت مدرس — گروه علوم دامی</span></h3>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:15px">
       <div style="width:64px;height:64px;border-radius:14px;display:grid;place-items:center;
-        border:2px solid rgba(25,195,154,.38);border-radius:16px;box-shadow:0 0 16px rgba(25,195,154,.2)"><img src="logo_128.png" width="56" height="56" style="object-fit:contain;display:block" alt="????" data-alt-i18n="brand.name"></div>
+        border:2px solid rgba(25,195,154,.38);border-radius:16px;box-shadow:0 0 16px rgba(25,195,154,.2)"><img src="logo_128.png" width="56" height="56" style="object-fit:contain;display:block" alt="آرین" data-alt-i18n="brand.name"></div>
       <div>
-        <b style="font-size:17px" data-i18n="footer.brand">???? v1.0.0</b><br>
-        <small class="dm" data-i18n="about.subTitle">???????? ??????? ?????? ???? ????� ????? ???? ?????</small>
+        <b style="font-size:17px" data-i18n="footer.brand">آرین v1.0.0</b><br>
+        <small class="dm" data-i18n="about.subTitle">شبیه‌ساز آکادمیک دستگاه پایش مصرف خوراک طیور گوشتی</small>
       </div>
     </div>
     <div class="srcs">
-      <p data-i18n-html="about.history"><b>???????:</b> ??? ????? ?? ?? ???? ???? ???? ??: ????? ??????? ???? ???� ????? ????? ?????? ???????? ?????? ???? ?????? ???? ????� ????? ?? ?????? ??? ? ????? ???? ???? ??? (Python) ???? ?????????? ??? ????? ????? ??? ??? ????? ?? JavaScript ????? ? ???? ?? ?????? ????�? ????? ?? ?????? ??????? ???? ??? ??????�???? ????????? ?????� ?? ?????? ? ???? ????? ??? ??? ?? ??????.</p>
-      <p data-i18n-html="about.teamT"><b>???:</b> ?????? ???????????? ? ??????? ???? Arsalan Rezazadeh ????? ??? ???. ???????? ???? ? ??????? ????????? ???? ???? ???? ???? ??????? ????? ???? ???? ???�?? ???.</p>
-      <p data-i18n-html="about.dataNote"><b>????? ????:</b> ????? ??????? Ross 308, Cobb 500, Arbor Acres Plus, Hubbard Efficiency Plus ????? ?? ????? ???? ???????? ??????????? ??????? ? ?? ?�??? strains.js ????? ???????. ??�??? ???????? ?? ???? ?????? ????????? Poultry Science ? animal ??????? ??? ???.</p>
-      <p data-i18n-html="about.future"><b>???? ???:</b> ??�???? ???????? ???? (Indian River)? ????? ????????? ?? ??? ????? ????? PDF ????? ?????? ????? ?? ???????? IoT ?????.</p>
+      <p data-i18n-html="about.history"><b>تاریخچه:</b> این پروژه از یک ایده ساده آغاز شد: چگونه می‌توان بدون صرف هزینه پرورش واقعی، الگوریتم پردازش داده دستگاه پایش مصرف خوراک را طراحی، تست و بهینه کرد؟ نسخه اول (Python) برای اعتبارسنجی مدل ریاضی ساخته شد؛ سپس موتور به JavaScript منتقل و رابط وب تعاملی اضافه گردید تا محققان بتوانند بدون نصب نرم‌افزار، سناریوهای مختلف را آزموده و توان آماری طرح خود را بسنجند.</p>
+      <p data-i18n-html="about.teamT"><b>تیم:</b> طراحی، برنامه‌نویسی و نگهداری توسط Arsalan Rezazadeh انجام شده است. راهنمایی علمی و بازبینی روش‌شناسی توسط گروه علوم دامی دانشگاه تربیت مدرس صورت گرفته است.</p>
+      <p data-i18n-html="about.dataNote"><b>منابع داده:</b> جداول عملکردی Ross 308, Cobb 500, Arbor Acres Plus, Hubbard Efficiency Plus عیناً از اسناد رسمی شرکت‌های اصلاح‌نژادی استخراج و در فایل strains.js تعبیه شده‌اند. رفتار تغذیه‌ای بر اساس مقالات داوری‌شده Poultry Science و animal کالیبره شده است.</p>
+      <p data-i18n-html="about.future"><b>نقشه راه:</b> افزودن سویه‌های جدید (Indian River)، تحلیل کوواریانس با وزن شروع، خروجی PDF گزارش آماری، اتصال به سنسورهای IoT واقعی.</p>
     </div>
 
     <div class="own" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">
       <a href="https://github.com/arsalan-codes" target="_blank" rel="noopener"
          style="display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--mut);font-size:12.5px">
-        ?�? <b>github.com/arsalan-codes</b></a>
+        🐙 <b>github.com/arsalan-codes</b></a>
       <a href="https://www.linkedin.com/in/arsalan-rezazadeh/" target="_blank" rel="noopener"
          style="display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--mut);font-size:12.5px">
-        ?? <b>linkedin.com/in/arsalan-rezazadeh</b></a>
+        💼 <b>linkedin.com/in/arsalan-rezazadeh</b></a>
     </div>
   </div>
 </section>
@@ -2961,7 +2961,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
   <div class="f-top">
     <div class="f-brand">
       <img src="logo_32.png" alt="" width="22" height="22" style="border-radius:6px;object-fit:contain">
-      <b data-i18n="brand.name">????</b>
+      <b data-i18n="brand.name">آرین</b>
       <span class="f-ver" data-vbadge>v1.0.0</span>
     </div>
     <div class="own">
@@ -2969,9 +2969,9 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
       <a href="https://www.linkedin.com/in/arsalan-rezazadeh/" target="_blank" rel="noopener"><i class="fa-brands fa-linkedin" aria-hidden="true"></i><span>arsalan-rezazadeh</span></a>
     </div>
   </div>
-  <div class="f-meta" data-i18n="foot.data">???????: Aviagen � Cobb-Vantress � Hubbard � Poultry Science � animal � Arch Anim Breed</div>
-  <div class="f-meta" data-i18n="foot.offline">????? ???? ??�???? � seed ????????? = 308 � ???? ????? ?????: ??</div>
-  <div class="f-copy">� 2026 Arsalan Rezazadeh</div>
+  <div class="f-meta" data-i18n="foot.data">داده‌ها: Aviagen · Cobb-Vantress · Hubbard · Poultry Science · animal · Arch Anim Breed</div>
+  <div class="f-meta" data-i18n="foot.offline">اجرای کامل آفلاین · seed تکرارپذیر = 308 · واحد نمونه آماری: پن</div>
+  <div class="f-copy">© 2026 Arsalan Rezazadeh</div>
 </footer>
 
 </div><!-- /wrap -->
@@ -3002,29 +3002,29 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
 <!-- ================= EXPORT CENTER MODAL ================= -->
 <div id="ex-modal" class="modal-wrap" style="display:none">
   <div class="modal" role="dialog" aria-modal="true">
-    <div class="dhead"><b data-i18n="ex.title">???? ????? ????</b>
-      <button id="ex-close" class="icon-btn" aria-label="Close">?</button></div>
+    <div class="dhead"><b data-i18n="ex.title">مرکز خروجی داده</b>
+      <button id="ex-close" class="icon-btn" aria-label="Close">✕</button></div>
     <div class="mrow">
-      <span class="hlabel" data-i18n="ex.source">????:</span><b id="ex-src" class="dir-ltr">�</b>
+      <span class="hlabel" data-i18n="ex.source">منبع:</span><b id="ex-src" class="dir-ltr">—</b>
     </div>
     <div class="mrow">
-      <span class="hlabel" data-i18n="ex.format">????</span>
+      <span class="hlabel" data-i18n="ex.format">قالب</span>
       <div class="langseg" id="ex-format" role="group">
-        <button data-fmt="xlsx" class="on">?? Excel</button><button data-fmt="csv">? CSV</button>
+        <button data-fmt="xlsx" class="on">📊 Excel</button><button data-fmt="csv">⬇ CSV</button>
       </div>
     </div>
     <div id="ex-sheets"></div>
     <div id="ex-cols" style="display:none;margin-top:10px"></div>
     <div id="ex-csvp" style="display:none">
-      <span class="hlabel" data-i18n="ex.dataset">???????????</span>
+      <span class="hlabel" data-i18n="ex.dataset">مجموعه‌داده</span>
       <select id="ex-dataset"></select>
     </div>
     <div class="note wn" id="ex-warn" style="display:none"></div>
   </div>
   <div class="mfoot">
     <span class="dm" id="ex-size"></span>
-    <button class="btn ghost" id="ex-back">? <span data-i18n="ex.back">??????</span></button>
-    <button class="btn blue" id="ex-go">? <span data-i18n="ex.generate">????? ? ?????�?</span></button>
+    <button class="btn ghost" id="ex-back">↩ <span data-i18n="ex.back">بازگشت</span></button>
+    <button class="btn blue" id="ex-go">⬇ <span data-i18n="ex.generate">تولید و دریافت</span></button>
   </div>
 </div>
 
@@ -3034,16 +3034,16 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
   <div class="tt-head"><span class="tt-icon" id="tt-icon"><i class="fa-solid fa-graduation-cap"></i></span><b id="tt-title"></b><span id="tt-step" class="tag bl" style="margin-inline-start:auto"></span></div>
   <div id="tt-text"></div>
   <div class="tt-foot">
-    <button id="tt-skip" class="btn ghost" data-i18n="tour.skip">?? ????</button>
+    <button id="tt-skip" class="btn ghost" data-i18n="tour.skip">رد کردن</button>
     <span class="dots" id="tt-dots"></span>
-    <button id="tt-prev" class="btn ghost" aria-label="Previous">� <span data-i18n="tour.prev">????</span></button>
-    <button id="tt-next" class="btn primary" aria-label="Next"><span data-i18n="tour.next">????</span> �</button>
+    <button id="tt-prev" class="btn ghost" aria-label="Previous">‹ <span data-i18n="tour.prev">قبلی</span></button>
+    <button id="tt-next" class="btn primary" aria-label="Next"><span data-i18n="tour.next">بعدی</span> ›</button>
   </div>
 </div>
 <div id="tour-shade"></div>
 
 <script>
-/* landing facts chip � real numbers from strains.js (single source of truth) */
+/* landing facts chip — real numbers from strains.js (single source of truth) */
 (function(){
   function fill(){
     try{
@@ -3053,7 +3053,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
       for(var k in S){ if(!S.hasOwnProperty(k)) continue;
         n++;
         var st=S[k]; var dl=st.day?st.day.length:0;
-        pts+=dl*10; /* 10 reference series per strain: day + 3�(bw,fi,fcr) */
+        pts+=dl*10; /* 10 reference series per strain: day + 3×(bw,fi,fcr) */
       }
       el.textContent=(window.num?window.num(n,0):String(n));
       pt.textContent=(window.num?window.num(pts,0):String(pts));
@@ -3065,7 +3065,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
   window.addEventListener('rossim:lang', fill);    /* re-render digits per locale */
 })();
 (function(){
-  /* hero subtitle typer � LOOP: type ? hold ? erase ? retype.
+  /* hero subtitle typer — LOOP: type → hold → erase → retype.
      Respects prefers-reduced-motion (static full text), replays on language switch. */
   var el = document.getElementById('landing-typed');
   if(!el) return;
@@ -3091,7 +3091,7 @@ html[data-theme=light] .lcard:hover::after,.feed-card:hover::after{opacity:.5}
     try{
       var title = el.closest('.landing-title') || el.parentElement;
       var maxW = title.getBoundingClientRect().width || el.parentElement.getBoundingClientRect().width;
-      if (maxW < 100) return;                            /* layout not ready � skip */
+      if (maxW < 100) return;                            /* layout not ready — skip */
       var cs = getComputedStyle(el);
       var base = parseFloat(cs.fontSize);                /* from breakpoint ladder */
       /* measure with the FULL target text at ladder size */
