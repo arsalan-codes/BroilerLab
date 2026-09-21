@@ -755,6 +755,8 @@ window.I18N_FA={
 "footer.copyright": "© 2026 Arsalan Rezazadeh",
 "sci.effectTitle": "اثر تیمارها",
 "dev.syncNow": "دریافت داده دستگاه",
+"dev.hwPanel": "پنل سخت‌افزاری",
+"dev.hwPanelTip": "داشبورد سخت‌افزاری دستگاه توزین (uktech)",
 "dev.syncing": "در حال دریافت...",
 "dev.syncNeedCycle": "اول یک دوره را انتخاب کنید.",
 "dev.syncDone": "همگام‌سازی انجام شد: {n} رکورد جدید",

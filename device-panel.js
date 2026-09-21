@@ -514,6 +514,14 @@
     var st = $("uk-sync-status");
     if (st) st.textContent = msg;
   }
+  // Hardware panel link (uktech vendor dashboard): keep the serial query
+  // param in step with the backend's UKTECH_SERIAL (default ESP800).
+  function updateHwPanel(serial) {
+    var a = $("uk-hwpanel");
+    if (!a || !serial) return;
+    var base = "https://uktech.ir/Login/device_weight_dashboard.php";
+    a.href = base + "?serial=" + encodeURIComponent(String(serial));
+  }
   function fmtDT(iso) {
     if (!iso) return "";
     try {
@@ -529,6 +537,7 @@
         setUkStatus(tr("dev.syncNoToken", "توکن API دستگاه روی سرور تنظیم نشده است."));
         return;
       }
+      if (s && s.serial) updateHwPanel(s.serial);
       if (s && s.updated_at) {
         var t = fmtDT(s.updated_at);
         var last = s.last_id || 0;

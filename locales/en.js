@@ -755,6 +755,8 @@ window.I18N_EN={
 "theme.dark": "Dark theme",
 "theme.light": "Light theme",
 "dev.syncNow": "Fetch device data",
+"dev.hwPanel": "Hardware panel",
+"dev.hwPanelTip": "Vendor hardware dashboard for the weighing device (uktech)",
 "dev.syncing": "Fetching...",
 "dev.syncNeedCycle": "Select a cycle first.",
 "dev.syncDone": "Sync done: {n} new records",
