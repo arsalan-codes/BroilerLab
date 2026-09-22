@@ -334,7 +334,8 @@
       if (body.querySelector('[data-visit-id="' + d.visit_id + '"]')) return;
     } catch (e) {}
     var w = d.final_weight_g != null ? d.final_weight_g
-      : (d.initial_weight_g != null ? d.initial_weight_g : d.weight_g);
+          : d.live_weight_g != null ? d.live_weight_g
+          : (d.initial_weight_g != null ? d.initial_weight_g : d.weight_g);
     var feed = d.visit_feed_g != null ? d.visit_feed_g : d.feed_intake_g;
     var row = document.createElement("div");
     row.className = "reg-row new";
@@ -358,12 +359,17 @@
   function fillRegRow(row, r) {
     // single mapping from a registrations-shaped object onto a row —
     // shared by full reloads and smart change patches so both render
-    // identical cells. w is the LIVE weight (final first, entry fallback);
-    // elapsed is the latest record's value, never ticked locally.
+    // identical cells. w: CLOSED visits freeze at final; OPEN visits show
+    // the LIVE weight (updating every record), falling back to the last
+    // VALID reading and then the entry weight; elapsed is the latest
+    // record's value, never ticked locally.
     if (r.id != null) {
       try { row.setAttribute("data-visit-id", r.id); } catch (e) {}
     }
-    var w = r.final_weight_g != null ? r.final_weight_g : r.initial_weight_g;
+    var w = r.final_weight_g != null ? r.final_weight_g
+          : r.live_weight_g != null ? r.live_weight_g
+          : r.last_valid_weight_g != null ? r.last_valid_weight_g
+          : r.initial_weight_g;
     row.innerHTML = regRowHtml({
       feed: r.feed_intake_g, w: w, bin: r.bin_weight_g,
       elap: r.elapsed_s, dtJoin: regDateJoin(r.registered_at || ""),

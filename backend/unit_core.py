@@ -52,6 +52,28 @@ UNIT_CHANNELS = {
 INSIDE = "inside"
 OUTSIDE = "outside"
 
+
+def _norm_tag(t):
+    """RFID readers sometimes emit the same tag multiple times concatenated
+    in one read (e.g. 5300285E1E3B5300285E1E3B, or a tripled variant):
+    collapse it to the single tag, so one physical bird stays one identity
+    everywhere (table, stats, swap detection). Guards: total length >= 16
+    and the repeated unit >= 8 chars, so no legit short tag can ever be
+    touched.
+    """
+    if not t:
+        return t
+    s = str(t).strip().upper()
+    n = len(s)
+    for k in (4, 3, 2):  # longest repeat first
+        if n >= 16 and n % k == 0:
+            unit = s[:n // k]
+            if len(unit) >= 8 and unit * k == s:
+                s = unit
+                break
+    return s
+
+
 # Second-reading confirmation band for the `confirmed` annotation only
 # (mirrors the old STABLE_TOLERANCE; never gates anything).
 CONFIRM_TOL_G = 2.0
@@ -72,7 +94,7 @@ def new_visit_state(sample: dict, cfg: dict) -> dict:
         inv_since = sample["ts"]
         inv_deadline = sample["ts"] + eject
     return {
-        "bird_id": sample["rfid"],
+        "bird_id": _norm_tag(sample["rfid"]),
         "initial": sample["bird"],
         "confirmed": None,
         "current": sample["bird"],
@@ -97,7 +119,7 @@ def new_visit_state(sample: dict, cfg: dict) -> dict:
         "invalid_deadline": inv_deadline,
         "business_state": st,
         "position": INSIDE,
-        "last_tag": sample["rfid"],
+        "last_tag": _norm_tag(sample["rfid"]),
         "close_reason": None,
         "stale": bool(sample.get("stale")),
         "last_source_ts": sample["ts"],
@@ -129,7 +151,7 @@ def build_samples(rec: dict, ts_epoch: float) -> list:
     except (TypeError, ValueError):
         counter = 0.0
     for unit, ch in UNIT_CHANNELS.items():
-        rfid = (rec.get(ch["rfid"]) or "").strip() or None
+        rfid = _norm_tag((rec.get(ch["rfid"]) or "").strip() or None)
         out.append({
             "unit": unit,
             "ts": ts_epoch,
@@ -345,8 +367,8 @@ def process_unit_sample(sample: dict, visit: dict | None,
             events.append("confirmed")
 
     # 2) tag swap with continuous weight (no empty between).
-    rfid = sample.get("rfid")
-    if rfid and rfid != v.get("bird_id"):
+    rfid = _norm_tag(sample.get("rfid"))
+    if rfid and rfid != _norm_tag(v.get("bird_id")):
         if swap_policy == "close-open":
             snap = finalize_visit(v, ts, "swap")
             events.append("swap-close")

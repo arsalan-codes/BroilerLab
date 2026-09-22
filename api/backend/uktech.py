@@ -1251,7 +1251,8 @@ def sync_serial_to_cycle(cycle_id: int, serial: str = None, limit: int = None,
                     except Exception:
                         _eject = None
                     tmp.append((_v.visit_start,
-                                {"id": _v.id, "bird_id": _v.bird_id,
+                                {"id": _v.id,
+                                 "bird_id": _core._norm_tag(_v.bird_id),
                                  "initial_weight_g": _v.initial_weight_g,
                                  "final_weight_g": _v.final_weight_g,
                                  "live_weight_g": _v.live_weight_g,

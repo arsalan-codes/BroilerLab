@@ -533,7 +533,8 @@ def recent_registrations(cycle_id: int, limit: int = 50, current: User = Depends
                     eject_in = max(0.0, (_dl - now).total_seconds())
             except Exception:
                 eject_in = None
-            out.append({"id": v.id, "bird_id": v.bird_id, "initial_weight_g": v.initial_weight_g,
+            out.append({"id": v.id, "bird_id": _unitcore._norm_tag(v.bird_id),
+                        "initial_weight_g": v.initial_weight_g,
                         "final_weight_g": v.final_weight_g,
                         "live_weight_g": v.live_weight_g,
                         "last_valid_weight_g": v.last_valid_weight_g,
@@ -974,6 +975,10 @@ def _ingest_one(dev: Device, cyc: dict, ev: dict, now: datetime):
         str(_ds).strip().upper() != "ONLINE"
     rfid = ev.get("bird_id")
     rfid = (str(rfid).strip() if rfid is not None else "") or None
+    # normalize double-read tags (same tag concatenated twice) at the door:
+    # one bird = one identity in the log, the visit and the table
+    if rfid:
+        rfid = _unitcore._norm_tag(rfid)
     flock = ev.get("flock_id")
     flock = (str(flock).strip() if flock is not None else "") or None
     age_day = None
