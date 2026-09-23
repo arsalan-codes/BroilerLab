@@ -362,14 +362,15 @@ def _core_cfg() -> dict:
     from config import (UKTECH_EMPTY_THRESHOLD_G, UKTECH_EMPTY_DEBOUNCE,
                         UKTECH_FEED_NOISE_G, UKTECH_REFILL_JUMP_G,
                         UKTECH_RFID_SWAP_POLICY, UKTECH_BIRD_JUMP_G,
-                        UKTECH_INVALID_EJECT_S)
+                        UKTECH_INVALID_EJECT_S, UKTECH_FALLBACK_MAX_GAP_S)
     return {"EMPTY_THRESHOLD_G": UKTECH_EMPTY_THRESHOLD_G,
             "EMPTY_DEBOUNCE": UKTECH_EMPTY_DEBOUNCE,
             "FEED_NOISE_G": UKTECH_FEED_NOISE_G,
             "REFILL_JUMP_G": UKTECH_REFILL_JUMP_G,
             "RFID_SWAP_POLICY": UKTECH_RFID_SWAP_POLICY,
             "BIRD_JUMP_G": UKTECH_BIRD_JUMP_G,
-            "INVALID_EJECT_S": UKTECH_INVALID_EJECT_S}
+            "INVALID_EJECT_S": UKTECH_INVALID_EJECT_S,
+            "FALLBACK_MAX_GAP_S": UKTECH_FALLBACK_MAX_GAP_S}
 
 
 def _gen_key(serial: str, cycle_id: int) -> str:

@@ -736,11 +736,17 @@
         // cursor ahead of upstream without corroborating evidence: show the
         // reason instead of freezing silently like before.
         setUkStatus(tr("dev.syncStalled", "همگام‌سازی متوقف مانده است.") + " " + (r.stalled_reason || ""));
-      } else if ((r && r.changes && r.changes.length) && patchRegChanges(r.changes)) {
-        // smart path: the sync analysed exactly which visits changed — patch
-        // those rows in place; stats still reload, no full re-render needed.
-        loadStats(selectedCycle);
-        devLog("[device] poll patched", "rows=" + r.changes.length);
+      } else if (r && r.changes && r.changes.length) {
+        if (patchRegChanges(r.changes)) {
+          // smart path: the sync analysed exactly which visits changed — patch
+          // those rows in place; stats still reload, no full re-render needed.
+          loadStats(selectedCycle);
+          devLog("[device] poll patched", "rows=" + r.changes.length);
+        } else {
+          // DB changed in a shape the patcher does not know: fall back to a
+          // precise full reload so the table always matches the database.
+          loadStats(selectedCycle); loadRegistrations(selectedCycle);
+        }
       } else if (n > 0 || ((r && r.events) || 0) > 0) {
         // refresh on visit events too (ratchet/close/timeout can change
         // open rows with zero new logs), toast only for new records.

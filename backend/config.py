@@ -134,6 +134,11 @@ UKTECH_BIRD_JUMP_G = float(os.getenv("UKTECH_BIRD_JUMP_G", "30"))
 # (exit = invalid_since + window) in the same row. A lone flaky glitch
 # plus an irregular gap never ejects a feeding bird.
 UKTECH_INVALID_EJECT_S = float(os.getenv("UKTECH_INVALID_EJECT_S", "30"))
+# Max silence (s) the elapsed/presence wall-clock fallback may bridge:
+# the record stream is the only truth — a gap larger than this is
+# unobserved time and re-baselines (adds nothing) instead of inflating
+# elapsed into hours. 0 disables the cap.
+UKTECH_FALLBACK_MAX_GAP_S = float(os.getenv("UKTECH_FALLBACK_MAX_GAP_S", "120"))
 # Canonical alias from the monitoring spec (§51); same knob, either name.
 EJECTION_TIMEOUT_SECONDS = float(
     os.getenv("EJECTION_TIMEOUT_SECONDS",

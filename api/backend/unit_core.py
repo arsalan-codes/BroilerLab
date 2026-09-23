@@ -196,6 +196,11 @@ def process_unit_sample(sample: dict, visit: dict | None,
     DEB = max(1, int(cfg.get("EMPTY_DEBOUNCE", 2)))
     NOISE = cfg["FEED_NOISE_G"]
     REFILL = cfg["REFILL_JUMP_G"]
+    # Max silence (s) the wall-clock fallback may bridge: the record stream
+    # is the only truth — a gap larger than this is unobserved time, never
+    # presence/elapsed (a 3-hour reporting hole must not become 3 hours of
+    # "elapsed"). 0 disables the cap.
+    GAP = max(0.0, float(cfg.get("FALLBACK_MAX_GAP_S", 120.0)))
     swap_policy = str(cfg.get("RFID_SWAP_POLICY", "keep-open")).lower()
 
     ts = sample["ts"]
@@ -277,10 +282,12 @@ def process_unit_sample(sample: dict, visit: dict | None,
         # empty readings grow the debounce streak; a lone flicker never
         # closes. Presence still takes the closing span (bird was there
         # until this record) when the previous record was VALID; later
-        # empties add nothing — the bird is already gone.
+        # empties add nothing — the bird is already gone. The span is
+        # gap-capped like the elapsed fallback below.
         if uprev is not None and uprev.get("valid") and uprev.get("bird"):
-            v["presence_acc"] = (v.get("presence_acc") or 0.0) + max(
-                0.0, ts - uprev["ts"])
+            _span = max(0.0, ts - uprev["ts"])
+            if not (GAP > 0 and _span > GAP):
+                v["presence_acc"] = (v.get("presence_acc") or 0.0) + _span
         v["streak"] = (v.get("streak") or 0) + 1
         if v["streak"] == 1:
             v["empty_since"] = ts
@@ -387,9 +394,20 @@ def process_unit_sample(sample: dict, visit: dict | None,
         v["last_tag"] = rfid
         events.append("swap-kept")
 
-    # 3) feed from bin drops, every record.
+    # 3) feed from bin drops, every record. Unobserved stretches never
+    # feed: after an INVALID span or a silent reporting hole bigger than
+    # FALLBACK_MAX_GAP_S, the hopper drift inside it cannot be attributed
+    # to this visit — re-baseline only (section 4 owns the rebaseline
+    # event + counter for the same spans).
     b = sample.get("bin")
-    if b is not None:
+    prev_valid = bool(uprev and uprev.get("valid"))
+    gap_hold = bool(uprev is not None and (not prev_valid
+                     or (GAP > 0 and (ts - uprev.get("ts", ts)) > GAP)))
+    if b is not None and gap_hold:
+        v["bin_base"] = b
+        if sample.get("bin_cal") is not None:
+            v["bin_cal"] = sample.get("bin_cal")
+    elif b is not None:
         bcal = sample.get("bin_cal")
         if (v.get("bin_cal") is not None and bcal is not None
                 and bcal != v.get("bin_cal")):
@@ -416,14 +434,18 @@ def process_unit_sample(sample: dict, visit: dict | None,
 
     # 4) elapsed: counter deltas across VALID-prev pairs, else fallback.
     c = sample.get("counter") or 0.0
-    prev_valid = bool(uprev and uprev.get("valid"))
-    if uprev is not None and not prev_valid:
-        # First VALID after INVALID (or stale): re-baseline, add nothing;
-        # the whole gap through this record stays excluded.
+    _span = (ts - uprev["ts"]) if uprev else 0.0
+    _gap = bool(GAP > 0 and _span > GAP)
+    if uprev is not None and (not prev_valid or _gap):
+        # First VALID after INVALID/stale, or a silent gap larger than
+        # FALLBACK_MAX_GAP_S: re-baseline, add nothing; the unobserved
+        # stretch (incl. any hopper drift inside it) stays excluded, like
+        # the INVALID re-baseline above.
         v["counter_last"] = c
         if b is not None:
             v["bin_base"] = b
-        events.append("rebaselined")
+        events.append("gap-rebaselined"
+                      if (prev_valid and _gap) else "rebaselined")
     else:
         wall = max(0.0, ts - uprev["ts"]) if uprev else 0.0
         if c > (v.get("counter_last") or 0.0):

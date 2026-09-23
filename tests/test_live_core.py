@@ -423,3 +423,44 @@ def test_build_samples_splits_record():
     assert samples[0]["rfid"] == "TAG1" and samples[0]["bird"] == 220.5
     assert samples[0]["bin"] == 340.0 and samples[0]["counter"] == 42.0
     assert samples[1]["rfid"] is None and samples[1]["valid"] is False
+
+def test_elapsed_silent_gap_rebaselines():
+    # a silent reporting hole is unobserved time: it must not inflate
+    # elapsed/presence, and hopper drift inside it must not become feed
+    v, up = None, None
+    r0 = core.process_unit_sample(sample(1000, 220.0, bin_g=340.0), v, up, CFG)
+    v, up = r0["visit"], r0["uprev"]
+    r1 = core.process_unit_sample(sample(1010, 220.0, bin_g=338.5), v, up, CFG)
+    assert r1["visit"]["elapsed"] == 10.0 and r1["visit"]["feed"] == 1.5
+    v, up = r1["visit"], r1["uprev"]
+    # 10000s of silence with the same bird still there: re-baseline, add nothing
+    r2 = core.process_unit_sample(sample(11010, 220.0, bin_g=300.0), v, up, CFG)
+    assert "gap-rebaselined" in r2["events"]
+    assert r2["visit"]["elapsed"] == 10.0
+    assert r2["visit"]["presence_acc"] == 10.0
+    assert r2["visit"]["feed"] == 1.5
+    assert r2["visit"]["bin_base"] == 300.0  # hopper re-based, drift excluded
+
+def test_presence_closing_span_capped_after_silence():
+    v, up = None, None
+    r0 = core.process_unit_sample(sample(1000, 220.0), v, up, CFG)
+    v, up = r0["visit"], r0["uprev"]
+    r1 = core.process_unit_sample(sample(1010, 220.0), v, up, CFG)
+    v, up = r1["visit"], r1["uprev"]
+    # first empty after 10000s of silence: no 10000s presence credit
+    r2 = core.process_unit_sample(sample(11010, 0.0), v, up, CFG)
+    assert r2["outcome"] == "empty-streak"
+    assert r2["visit"]["presence_acc"] == 10.0
+    # second empty closes; presence stays what was actually observed
+    v2, up2 = r2["visit"], r2["uprev"]
+    r3 = core.process_unit_sample(sample(11020, 0.0), v2, up2, CFG)
+    assert r3["outcome"] == "closed"
+    assert r3["closed"]["presence"] == 10.0
+
+def test_gap_cap_disabled_with_zero():
+    cfg = dict(CFG, FALLBACK_MAX_GAP_S=0)
+    v, up = None, None
+    r0 = core.process_unit_sample(sample(1000, 220.0), v, up, cfg)
+    v, up = r0["visit"], r0["uprev"]
+    r1 = core.process_unit_sample(sample(11010, 220.0), v, up, cfg)
+    assert r1["visit"]["elapsed"] == 10010.0

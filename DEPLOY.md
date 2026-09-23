@@ -68,6 +68,7 @@ postgresql://USER:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/neondb?sslm
 | `UKTECH_RFID_SWAP_POLICY` | سیاست تعویض تگ (`keep-open` پیش‌فرض؛ `close-open` هم ممکن) |
 | `UKTECH_BIRD_JUMP_G` | پرش تک‌مرحله‌ای وزن پرنده (پیش‌فرض `30`) — شیب تخلیه وزن زنده را فریز می‌کند |
 | `UKTECH_INVALID_EJECT_S` / `EJECTION_TIMEOUT_SECONDS` | پنجره تخلیه INVALID (پیش‌فرض `30`) — ددلاین persisted، با restart ریست نمی‌شود |
+| `UKTECH_FALLBACK_MAX_GAP_S` | سقف سکوت مجاز fallback دیواری (پیش‌فرض `120`) — شکاف بزرگ‌تر re-baseline می‌شود و به elapsed/‏presence/‏feed اضافه نمی‌شود (`0` = بدون سقف) |
 | `UKTECH_PRESENCE_TOL_S` | تلرانس اختلاف presence/elapsed برای لاگ (پیش‌فرض `30`) |
 | `UKTECH_AUTO_POLL` / `UKTECH_POLL_SECONDS` / `UKTECH_CYCLE_ID` | پول پس‌زمینه فقط dev (`false` پیش‌فرض؛ روی Vercel همیشه خاموش — تیک ۳s کلاینت) |
 
